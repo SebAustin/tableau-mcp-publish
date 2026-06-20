@@ -22,6 +22,14 @@ function ready(): boolean {
 }
 
 async function main(): Promise<void> {
+  // Load a local, gitignored .env if present so credentials never need to be
+  // exported on the command line (Node 20.12+/22+ built-in; no dependency).
+  try {
+    process.loadEnvFile(".env");
+  } catch {
+    // No .env file — fall back to the ambient environment.
+  }
+
   if (!ready()) {
     console.log(
       "Demo skipped. Set SERVER, SITE_NAME, PAT_NAME, PAT_VALUE and DEMO_PROJECT to run it.",

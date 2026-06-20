@@ -36,7 +36,7 @@ no silent overwrite / no Default-project publish) are present and effective.
 | F-05 | LOW | Sidecar token compared non-constant-time | ✅ Fixed — `hmac.compare_digest` |
 | F-06 | LOW | Unescaped IDs in permission/publish XML | ✅ Fixed — `xmlEscape` on all interpolated IDs |
 | F-07 | LOW | DB password in Postgres conninfo string | ✅ Fixed — keyword args to `psycopg.connect` |
-| F-08 | LOW | `hyperd.log` written into the source tree, shipped in npm `files` | ✅ Fixed — removed + `.npmignore` excludes logs/tests/caches |
+| F-08 | LOW | `hyperd.log`/tests/caches shipped in the npm package | ✅ Fixed — `files` allowlist narrowed to `dist` + `sidecar/*.py` + `pyproject.toml` + `uv.lock`; verified clean via `npm pack --dry-run` (`.npmignore` kept as defense-in-depth) |
 | F-09 | LOW | Generated extracts in shared temp (default perms) | ⚠️ Accepted — loopback-only; cleanup noted in runbook |
 | F-10 | LOW | `csvPath` reads an arbitrary local file | ✅ Hardened — regular-file check; documented |
 | F-11 | LOW | Whole-file / whole-result in memory | ⚠️ Accepted — `maxRows` cap mitigates; streaming is a follow-up |

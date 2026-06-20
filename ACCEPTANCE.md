@@ -40,8 +40,9 @@ export SERVER=… SITE_NAME=… PAT_NAME=… PAT_VALUE=… DEMO_PROJECT="<existi
 npm run demo -- examples/top_customers.csv
 ```
 
-> _Result to be recorded here after the gated run: datasource URL, workbook URL, and a note/
-> screenshot confirming the workbook renders the revenue-by-region bar mark._
+**Status: deferred by owner.** The owner chose to skip the live run during this build; the demo is
+ready to execute against a Dev site at any time. Record the datasource URL, workbook URL, and a
+screenshot confirming the revenue-by-region bar mark here once run.
 
 ## Built / deferred / next
 

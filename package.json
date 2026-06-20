@@ -25,7 +25,9 @@
   },
   "files": [
     "dist",
-    "sidecar"
+    "sidecar/*.py",
+    "sidecar/pyproject.toml",
+    "sidecar/uv.lock"
   ],
   "engines": {
     "node": ">=20"

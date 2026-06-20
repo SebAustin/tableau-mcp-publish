@@ -8,7 +8,7 @@ Acceptance record for `tableau-mcp-publish` v0.1.
 |---|---|---|
 | TypeScript | `npm run build` / `npm run lint` / `npm test` | build clean · lint 0 · **28 tests pass** |
 | Python sidecar | `uv run ruff check .` / `mypy --strict .` / `pytest -q` | ruff clean · mypy clean · **18 tests pass** |
-| CI | GitHub Actions matrix (Node 22.x/24.x/26.x, Python 3.12/3.13) | **green** — run [27881542469](https://github.com/SebAustin/tableau-mcp-publish/actions/runs/27881542469) |
+| CI | GitHub Actions matrix (Node 22.x/24.x/26.x, Python 3.12/3.13) | **green** — run [27881730517](https://github.com/SebAustin/tableau-mcp-publish/actions/runs/27881730517) |
 | Security | prod `npm audit --omit=dev` | **0 vulnerabilities** |
 
 ## Success criteria
@@ -20,7 +20,7 @@ Acceptance record for `tableau-mcp-publish` v0.1.
 | 3 | single (≤64MB incl. exactly 64MB) vs chunked (>64MB) + mid-stream abort | ✅ | `tests/restClient.test.ts` — strategy boundary, 3-chunk split, "never finalizes" abort test |
 | 4 | `.hyper` round-trip; `.tdsx` zip validity; `.twb` structural binding | ✅ | `sidecar/tests/test_hyper_builder.py`, `test_tds_builder.py`, `test_twb_builder.py` |
 | 5 | 11 tools w/ descriptions+schemas; publish requires explicit non-Default project, overwrite=false; delete needs confirm; perms allowlist + elevated gate; **PAT never logged (asserted)** | ✅ | `tests/tools.test.ts` (incl. Default-delete refusal, elevated-capability gate), `tests/secrets.test.ts` (PAT log-capture), `resolveProjectId` rejects empty + "Default" |
-| 6 | CI green on the version matrix | ✅ | run 27881542469 — 5/5 jobs success |
+| 6 | CI green on the version matrix | ✅ | run 27881730517 — 5/5 jobs success |
 | 7 | live publish: datasource opens + workbook renders ≥1 mark (gated demo) | ⏳ pending | requires a Dev-site PAT; run `npm run demo`. Recorded below once executed. |
 
 ## Security

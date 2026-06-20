@@ -1,0 +1,33 @@
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# Secrets / local env
+.env
+.env.local
+*.pat
+
+# Python sidecar
+sidecar/.venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated Tableau artifacts (never commit data)
+*.hyper
+*.tdsx
+*.twb
+*.twbx
+tmp/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

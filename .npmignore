@@ -1,0 +1,11 @@
+# Keep the published package lean and free of caches, logs, and test fixtures.
+**/*.log
+**/__pycache__/
+sidecar/.venv/
+sidecar/tests/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+coverage/
+tests/
+scripts/

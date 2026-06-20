@@ -1,0 +1,48 @@
+# .cursorrules — tableau-mcp-publish
+# Owner: Sebastien Henry (Tableau Ambassador 2025). The WRITE side of Tableau MCP.
+
+You are pairing with a senior Tableau + AI engineer. Write production code.
+
+## Architecture (HARD)
+- Two layers. TypeScript MCP server (src/) matches the official @tableau/mcp-server
+  conventions so this drops into the same client config. Python sidecar (sidecar/)
+  does Hyper + Document API authoring (those APIs are Python-first; do not reimplement
+  in TS).
+- The TS layer spawns the Python sidecar as a local FastAPI process (sidecar.ts) and
+  calls it over localhost. The sidecar never touches the network except localhost.
+- REST API calls (signin, publish, projects, permissions) are done in TS via
+  restClient.ts. Hyper/.tdsx/.twbx file authoring is done in Python.
+
+## Stack (verified Jun 2026 — see ASSUMPTIONS.md for deviations from the original spec)
+- TS: @modelcontextprotocol/sdk 1.29.0 (McpServer.registerTool API), zod 3.x (NOT v4),
+  undici 7.2.0, Node 22+ (CI pins 22.7.5), vitest, tsx, eslint 9.
+- Python: tableauhyperapi, tableauserverclient, pantab 5.x, pandas 2.x, fastapi 0.115.x,
+  uvicorn, pydantic 2.x, ruff, mypy --strict. Python 3.12–3.13.
+
+## Auth contract (HARD)
+- Identical env vars to the official server: SERVER, SITE_NAME, PAT_NAME, PAT_VALUE.
+  This is deliberate — same MCP client config works for both servers side by side.
+- PAT only. Never username/password. Never log PAT_VALUE.
+- Sign in once, reuse the REST API session token, sign out on shutdown.
+
+## Publishing safety (HARD)
+- Every publish tool requires an explicit projectName (or projectLuid). Never
+  publish to the Default project silently.
+- Publish tools support an overwrite flag, default FALSE. Never overwrite existing
+  content unless overwrite=true is passed explicitly.
+- Large datasources use the REST API chunked/multipart publish (>64MB). Implement it.
+- Every tool returns the published content LUID + the Cloud URL so the agent can
+  hand the user a link.
+
+## Vibe-code contract
+- create_datasource_from_query takes a connection (Snowflake/Postgres/CSV), a SQL
+  string, a target datasource name, and a project. It runs the query, materializes a
+  .hyper extract, packages a .tdsx, and publishes. One tool call, NL-drivable.
+- create_starter_workbook takes a published datasource LUID + name + a list of desired
+  sheets (markType + rows/cols/measures) and generates a .twbx with those sheets
+  pre-built, then publishes.
+
+## Forbidden
+- console.log of secrets. Reimplementing the Hyper API in TypeScript.
+- Publishing to the Default project. Silent overwrite. Unpinned deps.
+- Username/password auth.

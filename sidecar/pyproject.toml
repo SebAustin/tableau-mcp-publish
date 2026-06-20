@@ -1,0 +1,64 @@
+[project]
+name = "tableau-authoring-sidecar"
+version = "0.1.0"
+description = "Local FastAPI sidecar that authors Tableau .hyper / .tdsx / .twbx files for tableau-mcp-publish."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "tableauhyperapi==0.0.21408",
+  "pantab==5.2.0",
+  "pandas==2.2.3",
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.32.0",
+  "pydantic==2.9.2",
+  "structlog==24.4.0",
+]
+
+# Database drivers are OPTIONAL. The Hyper / .tdsx / .twbx authoring path and the CSV
+# connection work without them; CI exercises authoring without installing DB drivers.
+# Install with: uv sync --extra connectors
+[project.optional-dependencies]
+connectors = [
+  "snowflake-connector-python==3.12.3",
+  "psycopg[binary]==3.2.3",
+  "sqlalchemy==2.0.36",
+]
+dev = [
+  "ruff==0.8.4",
+  "mypy==1.13.0",
+  "pytest==8.3.4",
+  "pytest-cov==6.0.0",
+  "httpx==0.28.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+warn_unused_ignores = false
+exclude = ["tests/"]
+
+[[tool.mypy.overrides]]
+module = [
+  "pantab.*",
+  "tableauhyperapi.*",
+  "pandas.*",
+  "snowflake.*",
+  "psycopg.*",
+  "sqlalchemy.*",
+  "structlog.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["."]

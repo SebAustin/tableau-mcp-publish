@@ -16,8 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Spec pin (22.7.5) + current line (24.x) + local dev runtime (26.x).
-        node: ["22.7.5", "24.x", "26.x"]
+        # Node 22 line (spec intent; 22.7.5 isn't in the setup-node manifest, so latest 22)
+        # + current line (24.x) + local dev runtime (26.x).
+        node: ["22.x", "24.x", "26.x"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

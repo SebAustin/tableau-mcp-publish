@@ -81,8 +81,9 @@ Boundary: REST + auth in TS; all file authoring (`.hyper`/`.tdsx`/`.twbx`) in Py
   the structural contract in criterion 4 (connection class, relation, per-column metadata,
   sqlproxy reference, mark class, dependency column names). The flagship demo additionally proves
   real render once against a live site.
-- **CI version matrix:** TypeScript job runs Node `22.7.5`, `24.x`, **and** `26.x`; Python job
-  runs `3.12` **and** `3.13`. This covers both the spec's pin (22.7.5) and the local dev runtime
+- **CI version matrix:** TypeScript job runs Node `22.x`, `24.x`, **and** `26.x`; Python job
+  runs `3.12` **and** `3.13`. This covers the Node 22 line the spec intended (the exact `22.7.5`
+  patch isn't in the setup-node manifest), the current line, and the local dev runtime
   (Node 26 / Python 3.13.9), closing the "green locally, red in CI" gap on both legs.
 
 ## Verification

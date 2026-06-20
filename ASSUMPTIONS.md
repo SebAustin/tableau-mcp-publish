@@ -22,7 +22,7 @@ were validated against reality (June 2026); where they were stale or wrong, they
 | `.tdsx` packaging | "use tableau-document-api if it cleanly supports creation" | hand-build the zip (`.tds` XML + `Data/<name>.hyper`) | No maintained Document-API library creates `.tdsx`; hand-building a `connection class='hyper'` `.tds` + zip is the reliable path. |
 | `.twb` marks | bar / line / text / map | MVP = **bar / line / text(table)**; **map = experimental/best-effort** | Hand-authored workbook XML is fragile; geographic encoding is the most brittle. Bar/line/text are reliably generatable. |
 | lint tooling | `eslint src/` (no eslint pinned) | add ESLint 9 flat config + `typescript-eslint` to devDeps | The spec's `lint` script referenced eslint without declaring it; added so `npm run lint` actually runs. |
-| Node | 22.7.5 | local build/test on Node 26; **CI pins 22.7.5** | Local toolchain is Node 26; CI matches the spec's pin. |
+| Node | 22.7.5 | CI matrix **22.x / 24.x / 26.x**; local dev on Node 26 | `actions/setup-node` has no `22.7.5` in its linux-x64 manifest (CI fails to find it), so CI uses `22.x` (latest Node 22) to cover the Node 22 line the spec intended, plus 24.x and the local 26.x. |
 
 ## Connection drivers (sidecar)
 

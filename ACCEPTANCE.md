@@ -89,3 +89,92 @@ Open the workbook in Cloud to confirm the revenue-by-region bar mark renders.
 - **Deferred (non-goals for v0.1):** read/query tools (use the official server); live-connection
   datasources (issue #2); metadata-driven sheet suggestions (issue #3); map marks (experimental).
 - **Next:** flip the repo public; open the upstream discussion (issue #1); publish to npm (gated); restart Cursor MCP servers after `.env` is set.
+
+---
+
+# Acceptance — Prompt-Driven Authoring (feature)
+
+Acceptance record for the prompt-driven datasource + dashboard authoring feature
+(branch `feat/prompt-driven-authoring`). Adds 3 MCP tools (tools 11 → **14**), a deterministic
+stateless BI planner (`src/planner/*`), multi-format file ingest, and real dashboard XML.
+
+## Verification commands (all green locally)
+
+| Layer | Command | Result |
+|---|---|---|
+| TypeScript | `npm run build` / `npm run lint` / `npm test` | build clean · lint 0 · **75 tests pass** |
+| Python sidecar | `uv run ruff check .` / `mypy --strict .` / `pytest -q` | ruff clean · mypy clean · **71 tests pass** |
+| Full gate | `make ci` | **exit 0** — 146 tests total, independently re-run by the solution-verifier |
+| Security | prod `npm audit --omit=dev` | **0 vulnerabilities** |
+
+The full feature gate was run as the last step of the build loop and again, independently, by the
+solution-verifier (verdict **SOLID**, solution-rubric 5.00/5.00).
+
+## Success criteria (REQUIREMENTS IDs — verified)
+
+| ID | Criterion | Status | Evidence |
+|---|---|---|---|
+| PA-1 | File ingest round-trips for csv/json/jsonl/xlsx/parquet | ✅ | `sidecar/tests/test_hyper_builder_formats.py`; `/datasource/from-file` route → valid `.tdsx` per format (`test_server_new_routes.py`) |
+| PA-2 | Unsupported extension errors **before** any sidecar call (0 calls) | ✅ | `tests/tools.test.ts` (spy asserts 0 sidecar calls); `test_file_to_dataframe_unsupported_type` |
+| PA-3 | Excel sheet selectable by index / name | ✅ | `test_file_to_dataframe_xlsx_sheet_by_index/name` |
+| DB-1 | `<dashboard>` with one `<zone type="worksheet">` per sheet, names match | ✅ | `test_twb_dashboard.py`, `test_server_new_routes.py` |
+| DB-2 | Zone geometry: distinct offsets, full coverage Σ==100000, zero overlap (n∈[1,8]) | ✅ | `_tile_zones` unit tests (`test_twb_dashboard.py`) |
+| DB-3 | `build_from_plan` → sidecar dashboard build + publish flow | ✅ | `tests/tools.test.ts` E2E-1 (call-count asserts) |
+| MA-1 | Autonomous exec → ≤3 sheets, marks ⊂ {bar,line,text}, KPI (text) first | ✅ | `tests/planner.test.ts` (reproduced by verifier) |
+| MA-2 | Autonomous analyst → ≤8 sheets | ✅ | `tests/planner.test.ts` |
+| MA-3 | Autonomous operational → tiled_vertical, ≥1 text mark | ✅ | `tests/planner.test.ts` |
+| MB-1 | Interview mode → 3–7 questions, no `sheets` key | ✅ | `tests/planner.test.ts`, `tests/tools.test.ts` |
+| MB-2 | `interview_followup` → DashboardPlan with non-empty rationale | ✅ | `tests/planner.test.ts` |
+| MC-1 | Directed exact string (audience analyst) → 2 sheets `[text, bar]` | ✅ | `tests/planner.test.ts` |
+| MC-2 | Directed **without** `directions` → validation error | ✅ | guard in `src/tools/designDashboard.ts`; rewritten test asserts `/directions/` |
+| E2E-1 | `build_from_plan` (no datasource spec) → 1× dashboard build, 1× publishWorkbook, 0× publishDatasource; audience-derived canvas | ✅ | `tests/tools.test.ts` (mocked sidecar+REST) |
+| E2E-2 | `build_from_plan` with `datasourceSpec.filePath` → datasource built first, `datasourceLuid` returned | ✅ | `tests/tools.test.ts` |
+| E2E-3 | Live: published workbook has a rendered dashboard tab on Cloud | ⏳ **gated** | Runnable via `npm run demo:dashboard` (authorized outward action — see below). Not yet captured. |
+| CI-1 | New tests pass on Node 22/24/26 + Python 3.12/3.13 | ✅ (configured) | `.github/workflows/ci.yml` matrix; green locally |
+| CI-2 | build/lint/ruff/mypy --strict clean after new modules | ✅ | `make ci` exit 0 |
+
+**16/17 headless criteria pass. E2E-3 (live render) is the only gated criterion** — it is an
+outward write to a real Tableau site and is intentionally left for an explicit, authorized run.
+
+## Security (added surface)
+
+STRIDE + dependency review appended to `SECURITY.md`: **0 CRITICAL, 0 HIGH.** Two MEDIUM findings
+remediated — PA-1 (`file_to_dataframe` now has a byte cap + row clamp, with tests) and PA-3
+(`fastapi`→0.121.0 pulls `starlette==0.49.3`, clearing 8 transitive advisories). `openpyxl` pinned
+(`==3.1.5`). The arbitrary-file-read trust boundary is by-design (the agent already holds the PAT's
+authority) and matches the existing `csvPath` posture; the path is never logged.
+
+## Guardrails verified
+
+14 tools registered (explicit count test); `build_from_plan` rejects empty/`Default` project and
+defaults `overwrite=false`; placeholder tokens (`<measure>`/`<dimension>`) and audience-invariant
+violations are rejected **before** any publish; `design_dashboard` is side-effect-free; PAT/sidecar
+token never logged (`tests/secrets.test.ts`); the 46-test baseline regression guard stayed green.
+
+## Gated live demo (E2E-3 — authorized only)
+
+```bash
+# .env: SERVER, SITE_NAME, PAT_NAME, PAT_VALUE, DEMO_PROJECT (non-Default)
+npm run demo:dashboard
+```
+
+Builds a datasource from a bundled file, runs `design_dashboard` (autonomous, analyst audience) for a
+sample business question, calls `build_from_plan`, and prints the published datasource + workbook Cloud
+URLs. **Not executed by the agency** (outward write to a live site). Note: free port 8899 first if a
+stale sidecar is bound — `kill $(lsof -ti :8899)`.
+
+## Built / deferred / next
+
+- **Built:** `create_datasource_from_file` (5 formats), `design_dashboard` (4 modes + 4 audiences,
+  deterministic & stateless), `build_from_plan` (real `<dashboard>`/`<zones>` output, per-audience
+  canvas sizing); 2 sidecar routes; the planner pipeline (field inference → marks → audience clamp →
+  plan) implementing the normative `BI_DESIGN.md`; 100 new tests (47 TS + 53 Python); full docs +
+  ADR-0005; DEPLOYMENT.md gated runbook.
+- **Deferred (documented gaps with fallbacks, see `BI_DESIGN.md` §2.3/§4.4):** scatter (`Circle`) and
+  treemap (`Square`) marks, color encoding, reference lines, and top-N filter emission — each falls
+  back to a supported mark with a `rationale` annotation until the builder gains the mark class.
+  E2E-3 live render capture (gated). Stale `REQUIREMENTS.md` naming (`datasourceName` → code uses
+  `name`) — docs follow the code.
+- **Next:** run the gated `npm run demo:dashboard` against the Dev site and paste the dashboard URL +
+  screenshot here to close E2E-3; consider adding `Circle`/`Square`/color-encoding builder support to
+  graduate the deferred chart types from fallback to native.

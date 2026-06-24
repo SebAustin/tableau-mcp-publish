@@ -30,6 +30,27 @@ export interface SheetSpec {
   measures: string[];
 }
 
+export interface FileArgs {
+  /** Logical datasource name (shown in Tableau). */
+  name: string;
+  /** Absolute path to the source file on disk. */
+  filePath: string;
+  /**
+   * Explicit file type.  When omitted the sidecar infers from the extension.
+   * Accepted: csv | json | jsonl | xlsx | xls | parquet
+   */
+  fileType?: string;
+  /**
+   * Excel only: sheet name or 0-based index.  Defaults to the first sheet.
+   */
+  excelSheet?: string | number;
+  /**
+   * JSON/JSONL only: simple JSONPath selector to extract an array from the
+   * document (e.g. `$.data`).  Only a single-level key is supported.
+   */
+  jsonPath?: string;
+}
+
 export interface WorkbookArgs {
   /** Display name / caption of the published datasource. */
   datasourceName: string;
@@ -40,6 +61,17 @@ export interface WorkbookArgs {
   /** Tableau Cloud/Server host URL (e.g. https://10ax.online.tableau.com). */
   serverUrl?: string;
   sheets: SheetSpec[];
+}
+
+export interface DashboardWorkbookArgs extends WorkbookArgs {
+  /** Sheet titles to include in the dashboard (subset or all of sheets[].title). */
+  dashboardSheetTitles: string[];
+  /** Zone tiling direction. */
+  dashboardLayout?: "tiled_vertical" | "tiled_horizontal";
+  /** Canvas width in pixels. */
+  canvasWidth?: number;
+  /** Canvas height in pixels. */
+  canvasHeight?: number;
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -160,6 +192,19 @@ export class AuthoringSidecar {
     return (await res.body.json()) as T;
   }
 
+  async buildDatasourceFromFile(args: FileArgs): Promise<{ tdsxPath: string }> {
+    const payload: Record<string, unknown> = {
+      name: args.name,
+      filePath: args.filePath,
+    };
+    if (args.fileType) payload["fileType"] = args.fileType;
+    if (args.excelSheet !== undefined) payload["excelSheet"] = args.excelSheet;
+    if (args.jsonPath) payload["jsonPath"] = args.jsonPath;
+
+    const { path } = await this.post<BuildResult>("/datasource/from-file", payload);
+    return { tdsxPath: path };
+  }
+
   async buildDatasourceFromQuery(args: QueryArgs): Promise<{ tdsxPath: string }> {
     const { path } = await this.post<BuildResult>("/datasource/from-query", args);
     return { tdsxPath: path };
@@ -172,6 +217,27 @@ export class AuthoringSidecar {
 
   async buildStarterWorkbook(args: WorkbookArgs): Promise<{ twbxPath: string }> {
     const { path } = await this.post<BuildResult>("/workbook/starter", args);
+    return { twbxPath: path };
+  }
+
+  async buildDashboardWorkbook(args: DashboardWorkbookArgs): Promise<{ twbxPath: string }> {
+    const payload: Record<string, unknown> = {
+      datasourceName: args.datasourceName,
+      datasourceContentUrl: args.datasourceContentUrl,
+      site: args.site,
+      serverUrl: args.serverUrl ?? "",
+      sheets: args.sheets,
+      dashboards: [
+        {
+          name: "Dashboard",
+          sheetTitles: args.dashboardSheetTitles,
+        },
+      ],
+      dashboardLayout: args.dashboardLayout ?? "tiled_vertical",
+      canvasWidth: args.canvasWidth ?? 1000,
+      canvasHeight: args.canvasHeight ?? 800,
+    };
+    const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };
   }
 

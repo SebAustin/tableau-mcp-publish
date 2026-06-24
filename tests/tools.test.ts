@@ -46,6 +46,8 @@ function makeCtx() {
     buildDatasourceFromQuery: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/x.tdsx" }),
     buildDatasourceFromTable: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/t.tdsx" }),
     buildStarterWorkbook: vi.fn().mockResolvedValue({ twbxPath: "/tmp/w.twbx" }),
+    buildDatasourceFromFile: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/f.tdsx" }),
+    buildDashboardWorkbook: vi.fn().mockResolvedValue({ twbxPath: "/tmp/d.twbx" }),
   };
   return { config: cfg, rest, sidecar };
 }
@@ -68,8 +70,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 11 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(11);
+  it("registers all 14 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(14);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -91,6 +93,10 @@ describe("tool registration", () => {
       "list_content",
       "refresh_datasource",
       "delete_content",
+      // M2–M6 new tools
+      "create_datasource_from_file",
+      "design_dashboard",
+      "build_from_plan",
     ]) {
       expect(names).toContain(t);
     }
@@ -232,5 +238,273 @@ describe("create_datasource_from_table", () => {
     });
     expect(ctx.sidecar.buildDatasourceFromTable).toHaveBeenCalled();
     expect(res.structuredContent).toMatchObject({ datasourceLuid: "DS" });
+  });
+});
+
+describe("create_datasource_from_file (M2)", () => {
+  it("passes filePath and name to the sidecar and publishes", async () => {
+    const res = await invoke("create_datasource_from_file", {
+      name: "Sales CSV",
+      filePath: "/data/sales.csv",
+      projectName: "Sales",
+    });
+    expect(ctx.sidecar.buildDatasourceFromFile).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Sales CSV", filePath: "/data/sales.csv" }),
+    );
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledWith(
+      "/tmp/f.tdsx",
+      "Sales CSV",
+      "PID",
+      false,
+    );
+    expect(res.structuredContent).toMatchObject({ datasourceLuid: "DS" });
+  });
+
+  it("forwards optional excelSheet and jsonPath to sidecar", async () => {
+    await invoke("create_datasource_from_file", {
+      name: "Excel DS",
+      filePath: "/data/data.xlsx",
+      fileType: "xlsx",
+      excelSheet: "Sheet2",
+      projectName: "Sales",
+    });
+    expect(ctx.sidecar.buildDatasourceFromFile).toHaveBeenCalledWith(
+      expect.objectContaining({ excelSheet: "Sheet2", fileType: "xlsx" }),
+    );
+  });
+
+  // PA-2: unsupported extension → error thrown BEFORE sidecar is called (zero sidecar calls)
+  it("PA-2: unsupported extension throws before sidecar is called (zero sidecar calls)", async () => {
+    await expect(
+      invoke("create_datasource_from_file", {
+        name: "Bad DS",
+        filePath: "/data/file.xml",
+        projectName: "Sales",
+      }),
+    ).rejects.toThrow(/Unsupported file extension/);
+    expect(ctx.sidecar.buildDatasourceFromFile).not.toHaveBeenCalled();
+  });
+
+  // PA-2: extension with no dot in path throws
+  it("PA-2: filePath with no extension throws before sidecar call", async () => {
+    await expect(
+      invoke("create_datasource_from_file", {
+        name: "No Ext DS",
+        filePath: "/data/noextension",
+        projectName: "Sales",
+      }),
+    ).rejects.toThrow(/Unsupported file extension/);
+    expect(ctx.sidecar.buildDatasourceFromFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("design_dashboard (M5)", () => {
+  it("autonomous mode returns a plan with kind='plan'", async () => {
+    const res = await invoke("design_dashboard", {
+      mode: "autonomous",
+      audience: "analyst",
+      businessQuestion: "How is revenue trending?",
+      fieldHints: [
+        { name: "order_date", dataType: "date" },
+        { name: "revenue", dataType: "number" },
+      ],
+      datasourceLuid: "DS",
+      datasourceName: "Sales",
+      projectName: "Sales",
+    });
+    const plan = (res.structuredContent as { plan: { kind: string; sheets: unknown[] } }).plan;
+    expect(plan.kind).toBe("plan");
+    expect(plan.sheets.length).toBeGreaterThan(0);
+  });
+
+  it("interview mode returns kind='questions' with 3–7 questions", async () => {
+    const res = await invoke("design_dashboard", { mode: "interview" });
+    const plan = (res.structuredContent as { plan: { kind: string; questions: unknown[] } }).plan;
+    expect(plan.kind).toBe("questions");
+    expect(plan.questions.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("throws when autonomous mode is missing datasourceLuid", async () => {
+    await expect(
+      invoke("design_dashboard", {
+        mode: "autonomous",
+        audience: "exec",
+        businessQuestion: "Revenue?",
+        datasourceName: "Sales",
+        projectName: "Sales",
+      }),
+    ).rejects.toThrow(/datasourceLuid/);
+  });
+});
+
+describe("build_from_plan (M6)", () => {
+  const basePlan = {
+    schemaVersion: 1,
+    kind: "plan",
+    workbookName: "Test WB",
+    datasourceLuid: "DS",
+    datasourceName: "Sales",
+    projectName: "Sales",
+    audience: "analyst",
+    rationale: "test",
+    dashboardLayout: "tiled_vertical",
+    sheets: [
+      { title: "Rev by Region", markType: "bar", cols: ["region"], rows: [], measures: ["revenue"] },
+    ],
+  };
+
+  it("builds dashboard workbook and publishes", async () => {
+    const res = await invoke("build_from_plan", { plan: basePlan });
+    expect(ctx.rest.getDatasource).toHaveBeenCalledWith("DS");
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalled();
+    expect(ctx.rest.publishWorkbook).toHaveBeenCalledWith("/tmp/d.twbx", "Test WB", "PID", false);
+    expect(res.structuredContent).toMatchObject({ workbookLuid: "WB" });
+  });
+
+  // E2E-1: exactly 1× /workbook/dashboard sidecar call, 1× publishWorkbook, 0× publishDatasource
+  it("E2E-1: calls sidecar dashboard once, publishWorkbook once, publishDatasource zero times when no spec", async () => {
+    await invoke("build_from_plan", { plan: basePlan });
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledTimes(1);
+    expect(ctx.rest.publishWorkbook).toHaveBeenCalledTimes(1);
+    expect(ctx.rest.publishDatasource).not.toHaveBeenCalled();
+  });
+
+  // E2E-1: canvasWidth/canvasHeight are derived from audience and forwarded to sidecar
+  it("E2E-1: passes audience-derived canvasWidth/canvasHeight to sidecar (analyst → 1200×900)", async () => {
+    await invoke("build_from_plan", { plan: basePlan }); // audience: analyst
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+      expect.objectContaining({ canvasWidth: 1200, canvasHeight: 900 }),
+    );
+  });
+
+  // E2E-2: datasourceSpec.filePath → file build first, datasourceLuid in result
+  it("E2E-2: with datasourceSpec.filePath, builds datasource first and returns datasourceLuid", async () => {
+    const planWithSpec = {
+      ...basePlan,
+      datasourceSpec: {
+        datasourceName: "New Sales DS",
+        filePath: "/data/sales.csv",
+        fileType: "csv",
+      },
+    };
+    const res = await invoke("build_from_plan", { plan: planWithSpec });
+    // sidecar.buildDatasourceFromFile must be called before buildDashboardWorkbook
+    expect(ctx.sidecar.buildDatasourceFromFile).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "New Sales DS", filePath: "/data/sales.csv" }),
+    );
+    // publishDatasource must be called once (for the new datasource)
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledTimes(1);
+    // workbook build must still happen
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledTimes(1);
+    // result must include datasourceLuid
+    expect(res.structuredContent).toMatchObject({ workbookLuid: "WB", datasourceLuid: "DS" });
+  });
+
+  it("throws when plan has invalid schemaVersion", async () => {
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          schemaVersion: 99,
+          kind: "plan",
+          workbookName: "X",
+          datasourceLuid: "DS",
+          datasourceName: "S",
+          projectName: "P",
+          audience: "exec",
+          rationale: "r",
+          dashboardLayout: "tiled_vertical",
+          sheets: [],
+        },
+      }),
+    ).rejects.toThrow();
+  });
+
+  // R-7: placeholder token rejection
+  it("R-7: throws when a sheet still contains a <measure> placeholder token", async () => {
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          ...basePlan,
+          sheets: [
+            { title: "Overview", markType: "bar", cols: ["region"], rows: [], measures: ["<measure>"] },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/placeholder token/);
+  });
+
+  it("R-7: throws when a sheet contains a <dimension> placeholder token", async () => {
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          ...basePlan,
+          sheets: [
+            { title: "Overview", markType: "bar", cols: ["<dimension>"], rows: [], measures: ["revenue"] },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/placeholder token/);
+  });
+
+  it("R-7: concrete plan (no placeholders) passes through", async () => {
+    // Should NOT throw — the basePlan has no placeholder tokens
+    const res = await invoke("build_from_plan", { plan: basePlan });
+    expect(res.structuredContent).toMatchObject({ workbookLuid: "WB" });
+  });
+
+  // R-5: audience invariant re-validation at build time
+  it("R-5: throws when a sheet exceeds maxMeasures for audience (exec allows 1)", async () => {
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          ...basePlan,
+          audience: "exec",
+          sheets: [
+            {
+              title: "Over Cap",
+              markType: "bar",
+              cols: ["region"],
+              rows: [],
+              measures: ["revenue", "cost"],  // exec cap = 1
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/measures/);
+  });
+
+  it("R-5: throws when a sheet markType is disallowed for audience", async () => {
+    // exec allows bar/line/text; map is not allowed
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          ...basePlan,
+          audience: "exec",
+          sheets: [
+            { title: "Map Sheet", markType: "map", cols: [], rows: ["country"], measures: ["revenue"] },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/markType/);
+  });
+
+  it("R-5: throws when a sheet exceeds maxDimensions for audience (exec allows 1)", async () => {
+    await expect(
+      invoke("build_from_plan", {
+        plan: {
+          ...basePlan,
+          audience: "exec",
+          sheets: [
+            {
+              title: "Over Dims",
+              markType: "bar",
+              cols: ["region", "segment"],  // exec cap = 1 dimension total
+              rows: [],
+              measures: ["revenue"],
+            },
+          ],
+        },
+      }),
+    ).rejects.toThrow(/dimensions/);
   });
 });

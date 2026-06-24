@@ -65,13 +65,81 @@ The agent calls, in sequence:
 
 Two tool calls. A governed datasource and a workbook, live on Cloud.
 
+## Prompt-driven authoring
+
+Three new tools let an agent go from a plain-language business question straight to a published
+dashboard — no manual sheet-spec assembly required.
+
+### Datasource from a file
+
+`create_datasource_from_file` reads any of CSV, JSON, JSONL, Excel (`.xlsx`/`.xls`), or Parquet
+from local disk, materialises it as a Hyper extract, and publishes a `.tdsx` to Cloud.
+
+```
+create_datasource_from_file(
+  name="Regional Sales",
+  filePath="/data/sales.parquet",
+  projectName="Analytics"
+)
+```
+
+### Dashboard from a business question — the two-tool pattern
+
+`design_dashboard` is a **pure planner**: it turns a business question, audience, and optional
+field hints into a `DashboardPlan` JSON object. It never publishes anything.
+`build_from_plan` is the **only side-effecting tool**: it consumes the plan, builds a `.twbx`
+with worksheets and a tiled `<dashboard>`, and publishes to Cloud.
+
+The split is deliberate. The agent can show the plan to the user, accept edits, then build —
+without re-running an expensive publish on every refinement.
+
+**End-to-end example — executive revenue dashboard from a Parquet file:**
+
+> *"From `sales.parquet`, build an exec dashboard answering 'How is revenue trending by region?'"*
+
+The agent calls:
+
+1. `create_datasource_from_file` with `filePath="sales.parquet"`, `projectName="Analytics"` →
+   returns `{ datasourceLuid, url }`.
+2. `design_dashboard` with `mode="autonomous"`, `audience="exec"`,
+   `businessQuestion="How is revenue trending by region?"`, the datasource LUID, and
+   `fieldHints` obtained from `@tableau/mcp-server` → returns a `DashboardPlan` (≤3 sheets,
+   KPI lead, bar + line).
+3. `build_from_plan` with the plan → publishes the `.twbx`, returns `{ workbookLuid, url }`.
+
+### Dashboard modes
+
+| Mode | When to use |
+|---|---|
+| `autonomous` | Supply a business question; the planner derives sheets and layout. |
+| `interview` | The planner returns 3–7 clarifying questions; pass answers back as `interview_followup`. |
+| `interview_followup` | Answers to interview questions → full `DashboardPlan`. |
+| `directed` | Provide explicit sheet directions (e.g. "a bar chart of revenue by region and a trend line"). |
+
+The interview is a **stateless, two-call contract**: questions → plan. The server holds no
+conversation state between calls; the agent supplies the full context on each call.
+
+### Audience
+
+`audience` shapes sheet count, mark types, density, and canvas size:
+
+| Value | Max sheets | Canvas | Effect |
+|---|---|---|---|
+| `exec` | 3 | 1000×800 | KPI lead, large text, minimal axes |
+| `analyst` | 8 | 1200×900 | Dense, scatter/map allowed, full axes |
+| `operational` | 6 | 800×1200 | Status marks, mobile-friendly single column |
+| `mixed` | 6 | 1000×900 | Balanced bar/line, one summary KPI |
+
 ## Tools
 
 | Tool | What it does |
 |---|---|
 | `create_datasource_from_query` | SQL → `.hyper` → `.tdsx` → publish to Cloud |
 | `create_datasource_from_table` | CSV / records → `.hyper` → `.tdsx` → publish |
+| `create_datasource_from_file` | CSV / JSON / JSONL / Excel / Parquet → `.tdsx` → publish |
 | `create_starter_workbook` | published datasource + NL sheet specs → `.twbx` → publish |
+| `design_dashboard` | business question + audience → `DashboardPlan` (no publish) |
+| `build_from_plan` | `DashboardPlan` → `.twbx` with dashboard → publish to Cloud |
 | `publish_datasource` | publish an existing `.tdsx`/`.hyper` file |
 | `publish_workbook` | publish an existing `.twb`/`.twbx` file |
 | `list_projects` / `create_project` | project management |

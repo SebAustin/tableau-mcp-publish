@@ -174,10 +174,10 @@ SHEETS_REGRESSION = [
     }
 ]
 
-
-def _build_baseline_xml() -> str:
-    """Reproduce the pre-feature build_twb_xml output (no dashboards kwarg)."""
-    return twb_builder.build_twb_xml("Top Customers", "TopCustomers", "mysite", SHEETS_REGRESSION)
+# NOTE: _build_baseline_xml() was removed — it was never called and its presence
+# undermined the "no golden snapshot" claim for test_default_none_regression_byte_identical.
+# The byte-identical guard is a self-comparison (two live calls vs each other), not
+# a comparison against a stored snapshot.  See ADAPTATION_PLAN §A2.5.
 
 
 def test_default_none_dashboards_no_dashboards_element() -> None:
@@ -199,6 +199,60 @@ def test_default_none_regression_byte_identical() -> None:
         dashboards=None,
     )
     assert xml_default == xml_explicit_none
+
+
+# ---------------------------------------------------------------------------
+# A2 structural pins — dashboard-specific schema-valid output shape
+# re-baselined for schema-valid output (XSD A2); see ADAPTATION_PLAN §A2
+# ---------------------------------------------------------------------------
+
+
+def test_dashboards_element_precedes_windows() -> None:
+    """<dashboards> must appear before <windows> in the workbook (XSD sequence)."""
+    xml = twb_builder.build_twb_xml(
+        "DS", "ds", "site", SHEETS_2,
+        dashboards=DASHBOARDS_BASIC,
+    )
+    root = ET.fromstring(xml)
+    children = [child.tag for child in root]
+    assert "dashboards" in children, "<dashboards> element is missing"
+    assert "windows" in children, "<windows> element is missing"
+    dashboards_idx = children.index("dashboards")
+    windows_idx = children.index("windows")
+    assert dashboards_idx < windows_idx, (
+        f"<dashboards> (index {dashboards_idx}) must come before "
+        f"<windows> (index {windows_idx})"
+    )
+
+
+def test_dashboard_has_simple_id() -> None:
+    """Each <dashboard> must have a <simple-id> child (required by XSD)."""
+    xml = twb_builder.build_twb_xml(
+        "DS", "ds", "site", SHEETS_2,
+        dashboards=DASHBOARDS_BASIC,
+    )
+    root = ET.fromstring(xml)
+    for db in root.findall(".//dashboards/dashboard"):
+        sid = db.find("simple-id")
+        assert sid is not None, f"dashboard '{db.get('name')}' missing <simple-id>"
+
+
+def test_dashboard_window_has_viewpoints_and_active() -> None:
+    """Dashboard <window> must have <viewpoints/> and <active id='1'/> (XSD required)."""
+    xml = twb_builder.build_twb_xml(
+        "DS", "ds", "site", SHEETS_2,
+        dashboards=DASHBOARDS_BASIC,
+    )
+    root = ET.fromstring(xml)
+    for win in root.findall(".//windows/window[@class='dashboard']"):
+        assert win.find("viewpoints") is not None, (
+            f"dashboard window '{win.get('name')}' missing <viewpoints/>"
+        )
+        active = win.find("active")
+        assert active is not None, (
+            f"dashboard window '{win.get('name')}' missing <active>"
+        )
+        assert active.get("id") == "1"
 
 
 def test_build_starter_twbx_with_dashboard(tmp_path: Path) -> None:

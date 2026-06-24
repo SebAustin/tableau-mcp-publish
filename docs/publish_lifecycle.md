@@ -10,7 +10,7 @@ flowchart TD
     B --> C["sidecar: dataframe_to_hyper<br/>(pantab → Extract.Extract)"]
     C --> D["sidecar: hyper_to_tdsx<br/>(.tds XML + Data/*.hyper, zipped)"]
     D --> E["TS: resolveProjectId(name)"]
-    E --> F{"file > 64 MB?"}
+    E --> F{"file ≥ 64 MB?"}
     F -->|no| G["single multipart/mixed POST<br/>/datasources?overwrite="]
     F -->|yes| H["POST /fileUploads → PUT chunks ≤64MB<br/>→ POST /datasources?uploadSessionId="]
     G --> I["{ datasourceLuid, url }"]
@@ -26,7 +26,7 @@ flowchart TD
    `.hyper` are zipped into a `.tdsx`.
 4. **Publish.** The TS layer resolves the project name to a LUID and publishes the `.tdsx`.
 
-## The chunked publish (> 64 MB)
+## The chunked publish (≥ 64 MB)
 
 Tableau requires large files to be uploaded in pieces:
 
@@ -37,8 +37,8 @@ Tableau requires large files to be uploaded in pieces:
    datasource XML metadata to finalize.
 
 **Failure handling:** if any chunk `PUT` fails, the upload is abandoned and the error propagates —
-the finalize POST is never sent, so there is no partial publish. Files at or below 64 MB (including
-exactly 64 MB) take a single multipart request instead.
+the finalize POST is never sent, so there is no partial publish. Files below 64 MB take a single
+multipart request instead; a file of exactly 64 MB takes the chunked path (TSC-aligned).
 
 ## Workbook: bind → twbx → publish
 

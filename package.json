@@ -30,7 +30,7 @@
     "sidecar/uv.lock"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.7.5"
   },
   "scripts": {
     "build": "tsc",

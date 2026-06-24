@@ -17,7 +17,7 @@ Acceptance record for `tableau-mcp-publish` v0.1.
 |---|---|---|---|
 | 1 | build clean; lint + test pass | ✅ | `tsc` green, eslint 0, vitest 28/28 |
 | 2 | sidecar ruff + mypy --strict + pytest pass | ✅ | all three clean, pytest 18/18 |
-| 3 | single (≤64MB incl. exactly 64MB) vs chunked (>64MB) + mid-stream abort | ✅ | `tests/restClient.test.ts` — strategy boundary, 3-chunk split, "never finalizes" abort test |
+| 3 | single (<64MB) vs chunked (≥64MB incl. exactly 64MB, TSC-aligned) + mid-stream abort | ✅ | `tests/restClient.test.ts` — strategy boundary, 3-chunk split, "never finalizes" abort test |
 | 4 | `.hyper` round-trip; `.tdsx` zip validity; `.twb` structural binding | ✅ | `sidecar/tests/test_hyper_builder.py`, `test_tds_builder.py`, `test_twb_builder.py` |
 | 5 | 11 tools w/ descriptions+schemas; publish requires explicit non-Default project, overwrite=false; delete needs confirm; perms allowlist + elevated gate; **PAT never logged (asserted)** | ✅ | `tests/tools.test.ts` (incl. Default-delete refusal, elevated-capability gate), `tests/secrets.test.ts` (PAT log-capture), `resolveProjectId` rejects empty + "Default" |
 | 6 | CI green on the version matrix | ✅ | run 27881730517 — 5/5 jobs success |
@@ -178,3 +178,53 @@ stale sidecar is bound — `kill $(lsof -ti :8899)`.
 - **Next:** run the gated `npm run demo:dashboard` against the Dev site and paste the dashboard URL +
   screenshot here to close E2E-3; consider adding `Circle`/`Square`/color-encoding builder support to
   graduate the deferred chart types from fallback to native.
+
+---
+
+# Acceptance — Official Ecosystem Review & Adaptation (2026-06-24)
+
+Reviewed Tableau's official GitHub org (and `tableau/tableau-ui` specifically) and adapted the project
+where warranted. Full findings + citations in [`docs/ecosystem-review/REVIEW.md`](docs/ecosystem-review/REVIEW.md);
+plan in [`docs/ecosystem-review/ADAPTATION_PLAN.md`](docs/ecosystem-review/ADAPTATION_PLAN.md).
+Plan-loop **PASS 94/100**; build & verify **SOLID 1.00/1.00**.
+
+## Verification (all green locally)
+
+| Layer | Command | Result |
+|---|---|---|
+| TypeScript | `npm run build` / `npm run lint` / `npm test` | clean · 0 · **75 tests pass** |
+| Python sidecar | `uv run ruff check .` / `mypy --strict .` / `pytest -q` | clean · clean · **83 tests pass** |
+| Full gate | `make ci` | **exit 0** — 158 tests total |
+
+## Adaptations accepted
+
+| ID | Adaptation | Status | Evidence |
+|---|---|---|---|
+| A1 | Official TWB XSD wired as a sidecar fidelity gate (`twb_2026.1.0.xsd` from `tableau/tableau-document-schemas`, pinned SHA) | ✅ | `sidecar/tests/test_twb_schema_validation.py` (4 tests, XXE-safe parser, validity-asserting — proven to reject malformed TWB); vendored XSD + W3C `xml.xsd` + `PROVENANCE.md` |
+| A2 | Fixed **6** real structural defects so `build_twb_xml()` output is schema-valid | ✅ | dashboards-before-windows; `<simple-id>`; `<style>`; `<aggregation>`; `<window>` `cards`/`viewpoints`; `<explain-data>`. Byte-identical self-comparison guard intact; dead `_build_baseline_xml` removed |
+| A3 | Chunk boundary aligned to official TSC: `>` → `>=` (exactly 64 MiB → chunked) | ✅ | `src/restClient.ts` `selectPublishStrategy`; `tests/restClient.test.ts` boundary oracle; root `PLAN.md` criterion 3; all boundary docs swept consistent |
+| A4 | Positioning reframed: official server now has Desktop `apply-workbook` authoring + admin-gated deletes; we remain the headless Cloud-publish path. 14-tool surface; transport/auth/Node refreshed | ✅ | `docs/relationship_to_official.md`, `README.md` |
+| A5 | `CODEBASE.md` 11→14 tools; TSC-divergence + non-adoption rationale documented | ✅ | `CODEBASE.md` "Alignment with official Tableau tooling" |
+
+## Non-adoptions (documented, deliberate)
+
+- **`document-api-python`** — modify-only; cannot create `.twb`/`.tds` from scratch or author dashboards
+  (its README + `Workbook.__init__` confirm). We keep hand-rolling.
+- **`tableau-ui`** (the named repo) — React-16 browser component library; no attachment point in a
+  headless stdio MCP server. **FUTURE-ONLY** — relevant only if a separate web admin console is built.
+
+## Security
+
+The new surface is XML parsing of our OWN output against a vendored, trusted XSD. lxml is configured
+XXE-safe (`resolve_entities=False, no_network=True, load_dtd=False, huge_tree=False`) with a guard test.
+The earlier feature's PA-1/PA-3/PA-4 findings are now marked **Fixed** in `SECURITY.md` (the labels were
+stale). 0 Critical / 0 High.
+
+## Built / deferred / next
+
+- **Built:** official-XSD fidelity gate + 6 structural fixes; TSC-aligned chunk boundary; reframed
+  positioning + 14-tool docs; 12 new tests (158 total).
+- **Deferred (YAGNI):** `TABLEAU_CHUNK_SIZE_MB` env knob; Hyper-native `COPY … FORMAT PARQUET` for very
+  large Parquet; emitting workbook `version="26.1"` (current string already passes the XSD).
+- **Next:** the gated live demo (E2E-3) still proves real render; the XSD gate is a strong structural
+  proxy but not a substitute for one authorized `npm run demo:dashboard` against the Dev site.

@@ -188,7 +188,7 @@ will report a sidecar startup error. Kill the existing sidecar process first:
   with `create_project`.
 - **Workbook opens but a field is unknown:** the sheet referenced a field that isn't in the
   published datasource — field names must match the datasource columns exactly.
-- **Large files:** publishing automatically switches to chunked upload above 64 MB.
+- **Large files:** publishing automatically switches to chunked upload at 64 MB or larger.
 - **`design_dashboard` in directed mode:** `directions` is required and must be non-empty; the
   tool rejects calls where it is absent or blank.
 

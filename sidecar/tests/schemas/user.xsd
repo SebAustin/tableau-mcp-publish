@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal stub for the http://www.tableausoftware.com/xml/user namespace.
+
+  PURPOSE:  twb_2026.1.0.xsd imports this namespace but the upstream repo
+  (tableau/tableau-document-schemas) does not publish a user.xsd.  The only
+  construct the TWB schema references is the UserAttributes-AG attributeGroup
+  (used in three places: <worksheet>, <window>, and <view> elements).
+  This stub satisfies that import so lxml can compile the schema fully offline
+  with no_network=True.
+
+  AUTHORED LOCALLY — not vendored from any upstream source.
+  This file should NOT be updated when re-vendoring twb_2026.1.0.xsd unless
+  the TWB schema begins referencing additional user: constructs.
+-->
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://www.tableausoftware.com/xml/user"
+  xmlns:user="http://www.tableausoftware.com/xml/user"
+  elementFormDefault="qualified">
+
+  <xs:attributeGroup name="UserAttributes-AG">
+    <!-- Accepts any attribute from the user: namespace without validation.
+         The TWB schema uses this as an extension point for Tableau-internal
+         attributes; processContents="skip" matches the permissive posture
+         used throughout the rest of the TWB schema. -->
+    <xs:anyAttribute processContents="skip"/>
+  </xs:attributeGroup>
+
+</xs:schema>

@@ -9,8 +9,8 @@
 - **`config.ts`** — env-var config (`SERVER`, `SITE_NAME`, `PAT_NAME`, `PAT_VALUE`,
   `TABLEAU_API_VERSION`, `SIDECAR_HOST/PORT`), validated with zod. Errors never echo the PAT.
 - **`restClient.ts`** — Tableau REST client over `undici`: PAT sign-in, projects, content,
-  permissions, and publishing. Publishing chooses **single multipart** (≤64 MB) or **chunked
-  `fileUploads`** (>64 MB); a failed chunk aborts without finalizing.
+  permissions, and publishing. Publishing chooses **single multipart** (<64 MB) or **chunked
+  `fileUploads`** (≥64 MB, incl. exactly 64 MB); a failed chunk aborts without finalizing.
 - **`sidecar.ts`** — spawns the Python sidecar and calls it over loopback HTTP with a per-spawn
   `X-Sidecar-Token` header. Provides `buildDatasourceFromFile` and `buildDashboardWorkbook`
   alongside the existing methods.

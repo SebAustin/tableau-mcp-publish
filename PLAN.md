@@ -64,8 +64,10 @@ official server so both drop into one MCP client config.
 1. `npm run build` compiles clean; `npm run lint` and `npm test` pass with 0 failures.
 2. `cd sidecar && uv run ruff check . && uv run mypy --strict . && uv run pytest -q` pass.
 3. REST client implements PAT signin and **both** publish paths. Tests assert: (a) a file
-   `<= 64 MB` (incl. exactly 64 MB) takes the single-request path; (b) a file `> 64 MB` takes the
-   chunked path and splits into `ceil(size/chunk)` chunks; (c) a simulated mid-stream chunk
+   `< 64 MiB` takes the single-request path; (b) a file `>= 64 MiB` (incl. exactly 64 MiB)
+   takes the chunked path — aligned to official TSC, which is the authority for the boundary
+   (`server-client-python` chunks when `file_size >= FILESIZE_LIMIT_MB * BYTES_PER_MB`);
+   (c) a file `> 64 MiB` splits into `ceil(size/chunk)` chunks; (d) a simulated mid-stream chunk
    failure **aborts** the session and surfaces an error (no partial publish).
 4. `.hyper` validity = re-open via the Hyper API and assert row count + per-column Hyper types
    match the source. `.tdsx` validity = the zip contains a top-level `.tds` **and** `Data/*.hyper`,
@@ -119,9 +121,9 @@ Boundary: REST + auth in TS; all file authoring (`.hyper`/`.tdsx`/`.twbx`) in Py
 ## Risk mitigations & hardening (from plan review)
 
 - **Chunked publish lifecycle:** `initiate → append(N) → finalize(uploadSessionId)`. On any append
-  failure, abort and raise — never finalize a partial upload. Boundary at exactly 64 MB uses the
-  single-request path. Both the boundary and a mid-stream failure are unit-tested against mocked
-  undici.
+  failure, abort and raise — never finalize a partial upload. Boundary aligns to official TSC
+  `>=`: a file `>= 64 MiB` (incl. exactly 64 MiB) takes the chunked path. Both the boundary and
+  a mid-stream failure are unit-tested against mocked undici.
 - **Sidecar trust & lifecycle:** the sidecar binds `127.0.0.1` on a configurable port; the TS layer
   generates a **per-spawn random token**, passes it to the child via env, and sends it as an
   `X-Sidecar-Token` header on every call. The sidecar **rejects** requests without the matching

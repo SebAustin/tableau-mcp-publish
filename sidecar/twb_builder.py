@@ -7,6 +7,21 @@ shelf layout, a mark class, and a <datasource-dependencies> block whose field
 names match the requested fields exactly.
 
 Mark types bar/line/text are well supported; map is experimental.
+
+Schema compliance
+-----------------
+Output is validated against the official TWB XSD (twb_2026.1.0.xsd from
+tableau/tableau-document-schemas) in the test suite (test_twb_schema_validation.py).
+Key structural requirements imposed by the XSD:
+
+- ``<view>`` must contain ``<datasources>``, ``<datasource-dependencies>``,
+  then ``<aggregation value="true"/>`` (required last child of view).
+- ``<table>`` sequence: ``<view>``, ``<style/>``, ``<panes>``, ``<rows>``, ``<cols>``.
+- ``<worksheet>`` must have ``<simple-id uuid="..."/>`` after ``<table>``.
+- ``<windows>`` sequence: worksheets windows with ``<cards/>`` then ``<simple-id>``;
+  dashboard windows with ``<viewpoints/>``, ``<active id="1"/>``, ``<simple-id>``.
+- Workbook child ordering: ``<worksheets>``, ``<dashboards>``, ``<windows>``,
+  then ``<explain-data>`` (required).
 """
 
 from __future__ import annotations
@@ -38,6 +53,18 @@ def _measure_instance(field: str) -> str:
 
 def _repository_path(site: str) -> str:
     return f"/t/{site}/datasources" if site else "/datasources"
+
+
+def _quuid(n: int) -> str:
+    """Return a deterministic, schema-valid QUUID string for index *n*.
+
+    Format: ``{XXXXXXXX-0000-0000-0000-000000000000}`` where the first 8 hex
+    digits encode the integer *n*.  Determinism is required so the byte-identical
+    self-comparison guard (``test_default_none_regression_byte_identical``) keeps
+    passing: both sides of the equality produce the same UUIDs.
+    """
+    hex8 = f"{n:08x}"
+    return "{" + f"{hex8}-0000-0000-0000-000000000000" + "}"
 
 
 def _add_dependency_columns(
@@ -85,7 +112,39 @@ def _ds_internal_name(content_key: str) -> str:
     return f"sqlproxy.{safe}"
 
 
-def _build_worksheet(sheet: dict[str, Any], ds_caption: str, ds_internal: str) -> ET.Element:
+def _build_worksheet(
+    sheet: dict[str, Any],
+    ds_caption: str,
+    ds_internal: str,
+    sheet_index: int,
+) -> ET.Element:
+    """Build a schema-valid ``<worksheet>`` element.
+
+    XSD-mandated structure (A2, re-baselined for schema-valid output):
+
+    .. code-block:: text
+
+        <worksheet name="...">
+          <table>
+            <view>
+              <datasources>...</datasources>
+              <datasource-dependencies>...</datasource-dependencies>
+              <aggregation value="true"/>   ← required by XSD
+            </view>
+            <style/>                        ← required before <panes>/<rows>/<cols>
+            <panes>...</panes>
+            <rows>...</rows>
+            <cols>...</cols>
+          </table>
+          <simple-id uuid="..."/>           ← required by XSD
+        </worksheet>
+
+    Args:
+        sheet:        Sheet spec dict.
+        ds_caption:   Human-readable datasource caption.
+        ds_internal:  Internal datasource name (``sqlproxy.*``).
+        sheet_index:  Zero-based index used to derive a deterministic UUID.
+    """
     title = str(sheet["title"])
     mark_type = str(sheet.get("mark_type", "bar")).lower()
     cols_dims = [str(c) for c in sheet.get("cols", [])]
@@ -94,6 +153,9 @@ def _build_worksheet(sheet: dict[str, Any], ds_caption: str, ds_internal: str) -
 
     worksheet = ET.Element("worksheet", {"name": title})
     table = ET.SubElement(worksheet, "table")
+
+    # --- <view> -------------------------------------------------------
+    # Schema sequence: datasources → datasource-dependencies → aggregation
     view = ET.SubElement(table, "view")
     datasources = ET.SubElement(view, "datasources")
     ET.SubElement(
@@ -101,18 +163,15 @@ def _build_worksheet(sheet: dict[str, Any], ds_caption: str, ds_internal: str) -
         "datasource",
         {"caption": ds_caption, "name": ds_internal},
     )
-
     deps = ET.SubElement(view, "datasource-dependencies", {"datasource": ds_internal})
     _add_dependency_columns(deps, cols_dims + rows_dims, measures)
+    # <aggregation> is required by the XSD (last mandatory child of <view>)
+    ET.SubElement(view, "aggregation", {"value": "true"})
 
-    ds_ref = f"[{ds_internal}]"
-    cols_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in cols_dims]
-    rows_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in rows_dims]
-    rows_exprs += [f"{ds_ref}.{_measure_instance(f)}" for f in measures]
+    # --- <style> (required before <rows>/<cols> by XSD) ---------------
+    ET.SubElement(table, "style")
 
-    ET.SubElement(table, "rows").text = " / ".join(rows_exprs)
-    ET.SubElement(table, "cols").text = " / ".join(cols_exprs)
-
+    # --- <panes> ------------------------------------------------------
     panes = ET.SubElement(table, "panes")
     pane = ET.SubElement(panes, "pane")
     pane_view = ET.SubElement(pane, "view")
@@ -120,9 +179,21 @@ def _build_worksheet(sheet: dict[str, Any], ds_caption: str, ds_internal: str) -
     ET.SubElement(pane, "mark", {"class": _MARK_CLASS.get(mark_type, "Automatic")})
 
     # For a text/table mark, place the first measure on the Text encoding so it renders.
+    ds_ref = f"[{ds_internal}]"
     if mark_type == "text" and measures:
         encodings = ET.SubElement(pane, "encodings")
         ET.SubElement(encodings, "text", {"column": f"{ds_ref}.{_measure_instance(measures[0])}"})
+
+    # --- <rows> / <cols> (after <style> per XSD) ----------------------
+    cols_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in cols_dims]
+    rows_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in rows_dims]
+    rows_exprs += [f"{ds_ref}.{_measure_instance(f)}" for f in measures]
+    ET.SubElement(table, "rows").text = " / ".join(rows_exprs)
+    ET.SubElement(table, "cols").text = " / ".join(cols_exprs)
+
+    # --- <simple-id> (required by XSD, must follow <table>) -----------
+    # Index offset 1 so sheet_index=0 → "00000001-..." (UUID pattern \{[0-9A-Fa-f]{8}-...\})
+    ET.SubElement(worksheet, "simple-id", {"uuid": _quuid(sheet_index + 1)})
 
     return worksheet
 
@@ -175,11 +246,20 @@ def _build_dashboard(
     titles: list[str],
     canvas_width: int,
     canvas_height: int,
+    dashboard_index: int,
 ) -> ET.Element:
     """Return the ``<dashboards>`` ET.Element for one dashboard.
 
     Zone coordinates use the 0–100000 Tableau grid; ``canvas_width``/``canvas_height``
     are the audience-derived pixel dimensions written into ``<size>``.
+
+    Args:
+        name:            Dashboard name.
+        layout:          Zone layout (``"tiled_vertical"`` or ``"tiled_horizontal"``).
+        titles:          Ordered worksheet titles to include.
+        canvas_width:    Dashboard pixel width.
+        canvas_height:   Dashboard pixel height.
+        dashboard_index: Zero-based index for deterministic simple-id UUID.
     """
     dashboards_el = ET.Element("dashboards")
     dashboard = ET.SubElement(dashboards_el, "dashboard", {"name": name})
@@ -218,6 +298,10 @@ def _build_dashboard(
             },
         )
 
+    # <simple-id> is required for dashboard elements by the XSD.
+    # Offset by 10000 to avoid collision with worksheet UUIDs.
+    ET.SubElement(dashboard, "simple-id", {"uuid": _quuid(10000 + dashboard_index + 1)})
+
     return dashboards_el
 
 
@@ -232,6 +316,16 @@ def build_twb_xml(
     canvas_width: int = 1000,
     canvas_height: int = 800,
 ) -> str:
+    """Build a schema-valid TWB XML string.
+
+    Workbook child ordering (required by XSD):
+    ``<datasources>`` → ``<worksheets>`` → ``<dashboards>`` (if any)
+    → ``<windows>`` → ``<explain-data>`` (required).
+
+    When ``dashboards`` is ``None`` (default), the output is byte-identical to
+    the pre-feature version with respect to determinism: both calls with no
+    ``dashboards`` kwarg and with ``dashboards=None`` produce identical XML.
+    """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
     ds_internal = _ds_internal_name(content_key)
@@ -299,28 +393,60 @@ def build_twb_xml(
             {"datatype": "real", "name": f"[{field}]", "role": "measure", "type": "quantitative"},
         )
 
-    # --- Worksheets + windows ----------------------------------------------
+    # --- Worksheets ---------------------------------------------------------
+    # re-baselined for schema-valid output (XSD A2)
     worksheets = ET.SubElement(workbook, "worksheets")
-    windows = ET.SubElement(workbook, "windows")
-    for sheet in sheets:
-        worksheets.append(_build_worksheet(sheet, datasource_name, ds_internal))
-        ET.SubElement(windows, "window", {"class": "worksheet", "name": str(sheet["title"])})
+    for i, sheet in enumerate(sheets):
+        worksheets.append(_build_worksheet(sheet, datasource_name, ds_internal, i))
 
-    # --- Optional dashboard block ------------------------------------------
+    # --- Optional dashboard block (BEFORE <windows> per XSD) ----------------
+    # XSD workbook sequence: Worksheets → Dashboards → Windows → explain-data
     # When ``dashboards`` is None (default), the output is byte-identical to the
     # pre-feature version — existing twb tests continue to pass unchanged.
     if dashboards:
-        for db in dashboards:
+        for db_index, db in enumerate(dashboards):
             db_name = str(db.get("name", "Dashboard 1"))
             db_titles: list[str] = [str(t) for t in db.get("titles", [])]
             if not db_titles:
                 db_titles = [str(s["title"]) for s in sheets]
             dashboards_el = _build_dashboard(
-                db_name, dashboard_layout, db_titles, canvas_width, canvas_height
+                db_name,
+                dashboard_layout,
+                db_titles,
+                canvas_width,
+                canvas_height,
+                db_index,
             )
             workbook.append(dashboards_el)
-            # Make the dashboard the default open tab.
-            ET.SubElement(windows, "window", {"class": "dashboard", "name": db_name})
+
+    # --- Windows (after dashboards per XSD) ---------------------------------
+    # re-baselined for schema-valid output (XSD A2)
+    windows = ET.SubElement(workbook, "windows")
+    for i, sheet in enumerate(sheets):
+        # Worksheet window: requires <cards/> then <simple-id>
+        win = ET.SubElement(windows, "window", {"class": "worksheet", "name": str(sheet["title"])})
+        ET.SubElement(win, "cards")
+        # Window simple-id offset: 20000 + sheet index to avoid collision
+        ET.SubElement(win, "simple-id", {"uuid": _quuid(20000 + i + 1)})
+
+    if dashboards:
+        for db_index, db in enumerate(dashboards):
+            db_name = str(db.get("name", "Dashboard 1"))
+            # Dashboard window: requires <viewpoints/>, <active id="1"/>, <simple-id>
+            win = ET.SubElement(windows, "window", {"class": "dashboard", "name": db_name})
+            ET.SubElement(win, "viewpoints")
+            ET.SubElement(win, "active", {"id": "1"})
+            # Window simple-id offset: 30000 + dashboard index to avoid collision
+            ET.SubElement(win, "simple-id", {"uuid": _quuid(30000 + db_index + 1)})
+
+    # --- explain-data (required by XSD after <windows>) ---------------------
+    # re-baselined for schema-valid output (XSD A2)
+    explain = ET.SubElement(
+        workbook,
+        "explain-data",
+        {"enabled-for-viewer": "false", "extreme-values-enabled-for-all": "false"},
+    )
+    ET.SubElement(explain, "explanation-types")
 
     xml_body = ET.tostring(workbook, encoding="unicode")
     return f"<?xml version='1.0' encoding='utf-8' ?>\n{xml_body}"

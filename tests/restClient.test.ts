@@ -56,10 +56,13 @@ describe("splitIntoChunks (chunk math)", () => {
   });
 });
 
-describe("selectPublishStrategy (64MB boundary)", () => {
-  it("uses single at or below 64MB and chunked above", () => {
+describe("selectPublishStrategy (64MiB boundary, TSC-aligned)", () => {
+  // Boundary aligns to official server-client-python (TSC): chunks when
+  // file_size >= FILESIZE_LIMIT_MB * BYTES_PER_MB.  Exactly 64 MiB → chunked.
+  it("uses single below 64MiB, chunked at or above 64MiB", () => {
     expect(selectPublishStrategy(1)).toBe("single");
-    expect(selectPublishStrategy(SINGLE_REQUEST_LIMIT_BYTES)).toBe("single"); // exactly 64MB
+    expect(selectPublishStrategy(SINGLE_REQUEST_LIMIT_BYTES - 1)).toBe("single");
+    expect(selectPublishStrategy(SINGLE_REQUEST_LIMIT_BYTES)).toBe("chunked"); // exactly 64MiB → chunked (TSC-aligned)
     expect(selectPublishStrategy(SINGLE_REQUEST_LIMIT_BYTES + 1)).toBe("chunked");
   });
 });

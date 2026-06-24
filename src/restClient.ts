@@ -46,12 +46,21 @@ export const SINGLE_REQUEST_LIMIT_BYTES = 64 * 1024 * 1024;
 /** Max bytes per appendFileUpload chunk (Tableau allows up to 64 MB). */
 export const DEFAULT_CHUNK_SIZE_BYTES = 64 * 1024 * 1024;
 
-/** Pure helper: choose the publish strategy from a file size. 64 MB exactly stays single. */
+/**
+ * Pure helper: choose the publish strategy from a file size.
+ *
+ * Align to official TSC `>=` boundary: files at or above the limit
+ * (incl. exactly 64 MiB) use the chunked path. Official
+ * `server-client-python` (`datasources_endpoint.py`) chunks when
+ * `file_size >= FILESIZE_LIMIT_MB * BYTES_PER_MB` — the `>=` boundary
+ * is safer because a single multipart request at exactly 64 MiB exceeds
+ * the limit once boundary overhead is added.
+ */
 export function selectPublishStrategy(
   sizeBytes: number,
   limit: number = SINGLE_REQUEST_LIMIT_BYTES,
 ): "single" | "chunked" {
-  return sizeBytes > limit ? "chunked" : "single";
+  return sizeBytes >= limit ? "chunked" : "single";
 }
 
 /** Pure helper: split a buffer into <=chunkSize pieces. Unit-tested without big allocations. */

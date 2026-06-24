@@ -2,7 +2,7 @@
 
 ## Overview
 
-`tableau-mcp-publish` is the **write side** of Tableau MCP. It exposes 11 MCP tools over stdio that let an AI agent turn a SQL query, CSV file, or inline records into a fully governed, published Tableau datasource and starter workbook on Tableau Cloud — in a single tool call. It is architecturally complementary to Salesforce's read-only `@tableau/mcp-server`.
+`tableau-mcp-publish` is the **write side** of Tableau MCP. It exposes 14 MCP tools over stdio that let an AI agent turn a SQL query, CSV file, or inline records into a fully governed, published Tableau datasource and starter workbook on Tableau Cloud — in a single tool call. It is architecturally complementary to `tableau/tableau-mcp`, which covers reading, querying, Desktop-local workbook editing, and admin-gated content lifecycle.
 
 The system has two layers:
 
@@ -87,7 +87,7 @@ tableau-mcp-publish/
 ├── tests/
 │   ├── restClient.test.ts    # Unit: chunk math, strategy boundary, signIn, publish, resolveProjectId
 │   ├── secrets.test.ts       # PAT-never-logged assertions
-│   └── tools.test.ts         # Integration: all 11 tools via FakeServer + mock ctx
+│   └── tools.test.ts         # Integration: all 14 tools via FakeServer + mock ctx
 ├── sidecar/
 │   ├── server.py             # FastAPI app — token guard, /health, /datasource/from-query, /datasource/from-table, /workbook/starter
 │   ├── hyper_builder.py      # DataFrame/SQL/CSV -> .hyper extract (pantab + tableauhyperapi)
@@ -116,7 +116,7 @@ AI agent (Claude / Cursor / etc.)
         ▼
   src/index.ts  ──────────── McpServer (MCP SDK)
         │                          │
-        │ registers 11 tools       │
+        │ registers 14 tools       │
         ▼                          │
   ToolContext { config, rest, sidecar }
         │                          │
@@ -152,7 +152,52 @@ AI agent (Claude / Cursor / etc.)
 - The Tableau PAT secret is sent only in the sign-in body, never logged (asserted in `tests/secrets.test.ts`). Config validation errors print the offending field path, never the value.
 - `resolveProjectId` hard-refuses the `"Default"` project by name and empty names, preventing silent publishes to ungoverned space.
 
-**Publish strategy:** `selectPublishStrategy()` at `src/restClient.ts:50` — files ≤64 MB use a single `multipart/mixed` POST; files >64 MB use `fileUploads` chunked session. Mid-stream abort does not issue a finalize POST.
+**Publish strategy:** `selectPublishStrategy()` in `src/restClient.ts` — files `< 64 MiB` use a single `multipart/mixed` POST; files `>= 64 MiB` (incl. exactly 64 MiB) use the `fileUploads` chunked session (TSC-aligned). Mid-stream abort does not issue a finalize POST.
+
+---
+
+## Alignment with official Tableau tooling
+
+This section records deliberate divergences from official Tableau libraries and the rationale for
+two non-adoptions, so they are not re-evaluated on every review.
+
+### Divergences from `tableau/server-client-python` (TSC)
+
+TSC is the canonical Python REST client for Tableau Server/Cloud. Our publish path aligns with its
+semantics. The chunking boundary was aligned to TSC's `>=` in A3 (exact 64 MiB now takes the chunked
+path); two deliberate differences remain:
+
+| Aspect | TSC | `tableau-mcp-publish` | Rationale |
+|---|---|---|---|
+| Chunking boundary | `file_size >= 64 MB` (exact 64 MB → chunked) | `file_size >= 64 MB` — **aligned to TSC (A3)** | Was previously `>` (exact 64 MB single); a single multipart request at exactly 64 MB exceeds the cap once boundary overhead is added, so `>=` is correct. |
+| Chunk size | 50 MB per chunk | 64 MB per chunk | Larger chunks reduce round-trips; acceptable on Cloud. |
+| REST API version | Auto-negotiated (latest supported by the server) | Pinned to 3.28 | Predictability over auto-negotiation; update explicitly when new endpoints are needed. |
+| Abort / unfinalized session | Aborts unfinalized upload sessions | Does not issue a `finalize` POST on mid-stream abort | Behaviour matches TSC: an unfinalized session is automatically discarded by the server. |
+
+### Official TWB XSD (`tableau/tableau-document-schemas`)
+
+`tableau/tableau-document-schemas` publishes `schemas/2026_1/twb_2026.1.0.xsd` — a W3C XSD that
+describes the `.twb` XML format, maintained by the official Tableau team as a machine-validatable
+fidelity gate. The sidecar test suite vendors this schema and validates `build_twb_xml()` output
+against it via `lxml`. This catches the class of "parses but won't render" defects that are
+invisible to structural assertions about expected elements.
+
+### Non-adoption: `tableau/document-api-python`
+
+`document-api-python` is a library for modifying **existing** `.twb`/`.tds` files. Its own README
+states it "doesn't support creating files from scratch"; `Workbook.__init__` only opens existing
+files; `_prepare_dashboards()` returns names only (no zone writer); worksheets are name stubs
+(`# TODO: A real worksheet object`). It cannot author the XML we need to emit. We hand-roll the
+TWB XML in `sidecar/twb_builder.py`. No re-evaluation is needed unless the library gains
+create-from-scratch capability.
+
+### Non-adoption: `tableau/tableau-ui`
+
+`@tableau/tableau-ui` is a React-16 browser component library for Tableau-look-and-feel UI.
+`tableau-mcp-publish` is a headless stdio MCP server with no DOM or React attachment point. The
+library is relevant only in the single future scenario where a separate **web admin console** is
+built (e.g. a job/permission GUI) — and even then it carries a React-16-only constraint. Deferred
+as FUTURE-ONLY.
 
 ---
 
@@ -183,7 +228,7 @@ AI agent (Claude / Cursor / etc.)
 |---|---|---|
 | `tests/restClient.test.ts` | 11 | `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single publish, chunked publish (3 chunks, 3 PUTs + 1 finalize), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known |
 | `tests/secrets.test.ts` | 3 | PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT |
-| `tests/tools.test.ts` | 14 | All 11 tools registered with description+schemas; `create_datasource_from_query` wiring; `create_starter_workbook` wiring; guardrails: delete needs confirm, delete refuses Default project, `set_permissions` elevated gate, allowlist rejection, valid caps; `create_datasource_from_table` requires csvPath/records |
+| `tests/tools.test.ts` | 14 | All 14 tools registered with description+schemas; `create_datasource_from_query` wiring; `create_starter_workbook` wiring; guardrails: delete needs confirm, delete refuses Default project, `set_permissions` elevated gate, allowlist rejection, valid caps; `create_datasource_from_table` requires csvPath/records |
 
 ### Python (pytest) — 18 tests
 
@@ -337,7 +382,7 @@ All 46 tests must stay green on `make ci` (modulo the `.cursor/` lint issue whic
 **TypeScript (28 tests — `npm test`):**
 - `tests/restClient.test.ts`: `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single-request publish, 3-chunk upload (3 PUTs + 1 finalize POST), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known.
 - `tests/secrets.test.ts`: PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT.
-- `tests/tools.test.ts`: 11-tool registration count, all tool names present, `create_datasource_from_query` full wiring, `create_starter_workbook` wiring, all guardrails (delete confirm, delete Default refusal, elevated-capability gate, allowlist rejection), `create_datasource_from_table` input validation.
+- `tests/tools.test.ts`: 14-tool registration count, all tool names present, `create_datasource_from_query` full wiring, `create_starter_workbook` wiring, all guardrails (delete confirm, delete Default refusal, elevated-capability gate, allowlist rejection), `create_datasource_from_table` input validation.
 
 **Python (18 tests — `cd sidecar && uv run pytest -q`):**
 - `sidecar/tests/test_hyper_builder.py`: hyper round-trip row count + all column types, column role assignment, CSV source read, max_rows cap, records_to_dataframe.

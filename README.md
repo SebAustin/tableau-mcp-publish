@@ -12,10 +12,12 @@
 
 ## Why this exists
 
-Tableau's official MCP server is excellent and intentionally scoped to **reading**. It has no
-tools to *create* a datasource, *author* a workbook, or *publish* anything to Cloud.
+Tableau's official MCP server (`tableau/tableau-mcp` v2.18.x) covers reading, querying, and
+Desktop-local workbook editing — and adds admin-gated delete/refresh tools in its latest release.
+What it still cannot do is build a governed Hyper extract and **publish a datasource or workbook
+to Tableau Cloud**, headless, from SQL or a file.
 
-That's the half I build with all day as a Tableau Ambassador, so I built the companion. Run them
+That's the half I work with all day as a Tableau Ambassador, so I built the companion. Run them
 together and an agent goes from *"query this data"* to *"now publish a governed datasource and a
 starter workbook to my Cloud site"* — without leaving the conversation.
 
@@ -158,7 +160,7 @@ flowchart LR
     PY -->|".hyper extract"| HYPER["Hyper API"]
     PY -->|".tdsx / .twbx"| DOC["document XML"]
     PY -.->|"packaged files"| TS
-    TS -->|"chunked publish (>64MB)"| REST
+    TS -->|"chunked publish (≥64MB)"| REST
 ```
 
 Two layers: a TypeScript MCP server (REST auth + publishing) and a Python FastAPI sidecar
@@ -175,7 +177,7 @@ cp .env.example .env   # SERVER, SITE_NAME, PAT_NAME, PAT_VALUE
 npm run dev            # starts the MCP server (stdio) + spawns the Python sidecar
 ```
 
-Requirements: Node 22+, Python 3.12–3.13, and [`uv`](https://docs.astral.sh/uv/). Use the free
+Requirements: Node ≥ 22.7.5 (matching the official server's floor), Python 3.12–3.13, and [`uv`](https://docs.astral.sh/uv/). Use the free
 [Tableau Developer Program](https://www.tableau.com/developer) for a Cloud site to test against.
 
 ### Try the live demo
@@ -189,8 +191,11 @@ It publishes a datasource and a starter workbook from a bundled CSV and prints b
 
 ## Relationship to the official server
 
-This is a **companion, not a fork or a competitor.** It deliberately implements zero read/query
-tools — for those, use `@tableau/mcp-server`. See
+This is a **companion, not a fork or a competitor.** It implements zero read/query tools — for
+those, use `@tableau/mcp-server`. The precise distinction: the official server now covers
+Desktop-local workbook editing and admin-gated content lifecycle; `tableau-mcp-publish` is the
+headless, server-side path that builds a Hyper extract and publishes datasources and workbooks to
+Tableau Cloud, which the official server still cannot do. See
 [`docs/relationship_to_official.md`](docs/relationship_to_official.md). The publish tools are
 designed so this could be proposed upstream as the authoring extension if the maintainers want it.
 

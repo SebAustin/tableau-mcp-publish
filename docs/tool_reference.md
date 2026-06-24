@@ -73,7 +73,7 @@ publish it. Mark types `bar`, `line`, `text` are fully supported; `map` is exper
 ## `publish_datasource` / `publish_workbook`
 
 Publish an existing local file (`.tdsx`/`.hyper` or `.twb`/`.twbx`). Chunked upload is used
-automatically for files over 64 MB.
+automatically for files 64 MB or larger.
 
 | Param | Type | Notes |
 |---|---|---|

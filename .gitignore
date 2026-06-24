@@ -31,3 +31,4 @@ tmp/
 .DS_Store
 .idea/
 .vscode/
+.cursor/

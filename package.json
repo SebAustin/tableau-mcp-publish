@@ -40,7 +40,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "demo": "tsx scripts/demo.ts"
+    "demo": "tsx scripts/demo.ts",
+    "test:mcp-smoke": "tsx scripts/mcp-smoke.ts",
+    "verify-setup": "tsx scripts/verify-setup.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

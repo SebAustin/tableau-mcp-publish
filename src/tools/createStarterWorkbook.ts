@@ -40,6 +40,7 @@ export function registerCreateStarterWorkbook(server: McpServer, ctx: ToolContex
         datasourceName,
         datasourceContentUrl: contentUrl,
         site: ctx.config.siteName,
+        serverUrl: ctx.config.server,
         sheets,
       });
       const projectId = await ctx.rest.resolveProjectId(projectName);

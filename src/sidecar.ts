@@ -37,6 +37,8 @@ export interface WorkbookArgs {
   datasourceContentUrl: string;
   /** Site contentUrl (may be empty for the Default site). */
   site: string;
+  /** Tableau Cloud/Server host URL (e.g. https://10ax.online.tableau.com). */
+  serverUrl?: string;
   sheets: SheetSpec[];
 }
 

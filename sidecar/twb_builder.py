@@ -79,7 +79,13 @@ def _add_dependency_columns(
         )
 
 
-def _build_worksheet(sheet: dict[str, Any], ds_name: str) -> ET.Element:
+def _ds_internal_name(content_key: str) -> str:
+    """Internal workbook datasource id for a published (sqlproxy) connection."""
+    safe = re.sub(r"[^A-Za-z0-9_]+", "", content_key) or "datasource"
+    return f"sqlproxy.{safe}"
+
+
+def _build_worksheet(sheet: dict[str, Any], ds_caption: str, ds_internal: str) -> ET.Element:
     title = str(sheet["title"])
     mark_type = str(sheet.get("mark_type", "bar")).lower()
     cols_dims = [str(c) for c in sheet.get("cols", [])]
@@ -93,15 +99,13 @@ def _build_worksheet(sheet: dict[str, Any], ds_name: str) -> ET.Element:
     ET.SubElement(
         datasources,
         "datasource",
-        {"caption": ds_name, "name": f"federated.{_slug(ds_name)}"},
+        {"caption": ds_caption, "name": ds_internal},
     )
 
-    deps = ET.SubElement(
-        view, "datasource-dependencies", {"datasource": f"federated.{_slug(ds_name)}"}
-    )
+    deps = ET.SubElement(view, "datasource-dependencies", {"datasource": ds_internal})
     _add_dependency_columns(deps, cols_dims + rows_dims, measures)
 
-    ds_ref = f"[federated.{_slug(ds_name)}]"
+    ds_ref = f"[{ds_internal}]"
     cols_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in cols_dims]
     rows_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in rows_dims]
     rows_exprs += [f"{ds_ref}.{_measure_instance(f)}" for f in measures]
@@ -123,13 +127,25 @@ def _build_worksheet(sheet: dict[str, Any], ds_name: str) -> ET.Element:
     return worksheet
 
 
+def _server_host(server_url: str) -> str:
+    if not server_url:
+        return ""
+    if "://" in server_url:
+        return server_url.split("://", 1)[1].split("/", 1)[0]
+    return server_url.split("/", 1)[0]
+
+
 def build_twb_xml(
     datasource_name: str,
     datasource_content_url: str,
     site: str,
     sheets: list[dict[str, Any]],
+    server_url: str = "",
 ) -> str:
     slug = _slug(datasource_name)
+    content_key = datasource_content_url or slug
+    ds_internal = _ds_internal_name(content_key)
+    server_host = _server_host(server_url)
     workbook = ET.Element(
         "workbook",
         {"source-build": SOURCE_BUILD, "version": TWB_VERSION},
@@ -140,29 +156,35 @@ def build_twb_xml(
     datasource = ET.SubElement(
         datasources,
         "datasource",
-        {"caption": datasource_name, "name": f"federated.{slug}", "version": TWB_VERSION},
-    )
-    ET.SubElement(
-        datasource,
-        "repository-location",
         {
-            "id": datasource_content_url or datasource_name,
-            "path": _repository_path(site),
-            "revision": "1.0",
+            "caption": datasource_name,
+            "name": ds_internal,
+            "version": TWB_VERSION,
+            "inline": "true",
         },
     )
-    connection = ET.SubElement(datasource, "connection", {"class": "sqlproxy"})
-    named_conns = ET.SubElement(connection, "named-connections")
-    named_conn = ET.SubElement(
-        named_conns,
-        "named-connection",
-        {"caption": datasource_name, "name": f"sqlproxy.{slug}"},
-    )
-    ET.SubElement(
-        named_conn,
-        "connection",
-        {"class": "sqlproxy", "dbname": datasource_content_url or datasource_name},
-    )
+    repo_attrs: dict[str, str] = {
+        "id": content_key,
+        "path": _repository_path(site),
+        "revision": "1.0",
+    }
+    if site:
+        repo_attrs["site"] = site
+    ET.SubElement(datasource, "repository-location", repo_attrs)
+    conn_attrs: dict[str, str] = {
+        "class": "sqlproxy",
+        "dbname": content_key,
+    }
+    if server_host:
+        conn_attrs.update(
+            {
+                "channel": "https",
+                "directory": "/dataserver",
+                "port": "443",
+                "server": server_host,
+            }
+        )
+    ET.SubElement(datasource, "connection", conn_attrs)
 
     # Declare every referenced field once at the datasource level.
     seen_dims: list[str] = []
@@ -191,7 +213,7 @@ def build_twb_xml(
     worksheets = ET.SubElement(workbook, "worksheets")
     windows = ET.SubElement(workbook, "windows")
     for sheet in sheets:
-        worksheets.append(_build_worksheet(sheet, datasource_name))
+        worksheets.append(_build_worksheet(sheet, datasource_name, ds_internal))
         ET.SubElement(windows, "window", {"class": "worksheet", "name": str(sheet["title"])})
 
     xml_body = ET.tostring(workbook, encoding="unicode")
@@ -204,9 +226,12 @@ def build_starter_twbx(
     site: str,
     sheets: list[dict[str, Any]],
     out_path: Path,
+    server_url: str = "",
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource."""
-    twb_xml = build_twb_xml(datasource_name, datasource_content_url, site, sheets)
+    twb_xml = build_twb_xml(
+        datasource_name, datasource_content_url, site, sheets, server_url=server_url
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(f"{_slug(datasource_name)}.twb", twb_xml)

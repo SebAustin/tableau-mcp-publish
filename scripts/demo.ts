@@ -7,6 +7,7 @@
  *
  *   npm run demo -- examples/top_customers.csv
  */
+import { resolve } from "node:path";
 import { loadConfig } from "../src/config.js";
 import { TableauRestClient } from "../src/restClient.js";
 import { AuthoringSidecar } from "../src/sidecar.js";
@@ -37,7 +38,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const csvPath = process.argv[2] ?? "examples/top_customers.csv";
+  const csvPath = resolve(process.argv[2] ?? "examples/top_customers.csv");
   const projectName = process.env.DEMO_PROJECT as string;
   const config = loadConfig();
   const rest = new TableauRestClient(config);
@@ -61,11 +62,17 @@ async function main(): Promise<void> {
     const ds = await rest.publishDatasource(tdsxPath, datasourceName, projectId, true);
     console.log(`✅ Datasource published → ${ds.url}`);
 
-    const { contentUrl } = await rest.getDatasource(ds.id);
+    const contentUrl =
+      ds.contentUrl ?? (await rest.getDatasource(ds.id)).contentUrl;
+    if (!contentUrl) {
+      throw new Error("Published datasource is missing contentUrl; cannot bind the workbook.");
+    }
+    console.log(`Binding workbook to published datasource slug: ${contentUrl}`);
     const { twbxPath } = await sidecar.buildStarterWorkbook({
       datasourceName,
       datasourceContentUrl: contentUrl,
       site: config.siteName,
+      serverUrl: config.server,
       sheets: [
         { title: "Revenue by Region", markType: "bar", cols: ["region"], rows: [], measures: ["revenue"] },
       ],

@@ -77,6 +77,7 @@ class WorkbookRequest(BaseModel):
     datasource_name: str = Field(alias="datasourceName")
     datasource_content_url: str = Field(alias="datasourceContentUrl")
     site: str = ""
+    server_url: str = Field(default="", alias="serverUrl")
     sheets: list[SheetModel]
 
 
@@ -115,5 +116,6 @@ def workbook_starter(req: WorkbookRequest) -> dict[str, str]:
         site=req.site,
         sheets=sheets,
         out_path=_out("twbx"),
+        server_url=req.server_url,
     )
     return {"path": str(twbx_path)}

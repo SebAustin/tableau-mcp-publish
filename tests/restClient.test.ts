@@ -93,11 +93,18 @@ describe("publishDatasource — single request (<=64MB)", () => {
     const client = await signedInClient();
     mockedStat.mockResolvedValue({ size: 1000 } as never);
     mockedReadFile.mockResolvedValue(Buffer.from("filedata") as never);
-    mockedRequest.mockResolvedValueOnce(jsonResponse(201, { datasource: { id: "DS1" } }) as never);
+    mockedRequest.mockResolvedValueOnce(
+      jsonResponse(201, {
+        datasource: {
+          id: "DS1",
+          webpageUrl: "https://x.online.tableau.com/#/site/s/datasources/12345",
+        },
+      }) as never,
+    );
 
     const res = await client.publishDatasource("/tmp/x.tdsx", "Name", "PID", false);
     expect(res.id).toBe("DS1");
-    expect(res.url).toContain("/site/s/datasources/DS1");
+    expect(res.url).toBe("https://x.online.tableau.com/#/site/s/datasources/12345");
 
     const lastCall = mockedRequest.mock.calls.at(-1)!;
     expect(String(lastCall[0])).toContain("/api/3.28/sites/S/datasources");

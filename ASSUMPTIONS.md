@@ -35,3 +35,99 @@ drivers. CSV is always available. Documented in the sidecar README.
 Generated `.twb` files are validated as well-formed XML containing the required
 datasource/worksheet/`datasource-dependencies` elements. Full "does it render marks in Tableau"
 validation is only possible against a live site and is performed once at the gated demo step.
+
+---
+
+## Prompt-Driven Authoring Feature — Additional Assumptions (added 2026-06-24)
+
+### A-01 — `design_dashboard` is rule-based, not LLM-backed
+
+**Assumed:** The `design_dashboard` tool produces `DashboardPlan` and
+`ClarifyingQuestions` objects using deterministic rules (question templates keyed by
+audience, keyword-to-mark-type mappings, audience constraint tables).  No LLM API call
+happens inside the MCP server process.
+
+**Why:** MCP tools must be predictable, testable in CI without live API keys, and
+consistent between calls with identical inputs.  The intelligence about business context
+comes from the AI agent (Claude, Cursor) that calls the tool.
+
+**How to override:** If a future version embeds an LLM call, add a
+`DASHBOARD_LLM_PROVIDER` env var (`"none"` default), document the new dependency, gate
+on the API key at startup, and update the success criteria to cover the LLM-off path.
+
+### A-02 — Interview mode resolves in at most two `design_dashboard` calls
+
+**Assumed:** One call returns questions; one call with answers returns a plan.  No
+open-ended multi-turn loop inside the tool.
+
+**Why:** MCP is a synchronous request/response protocol.  The agent owns conversation
+state.  A bounded, stateless contract is testable and prevents the server from
+accumulating session state.
+
+**How to override:** Introduce a `sessionId` on the tool output, allow in-memory partial
+state keyed by that ID, and add a session TTL or `cancel_interview` tool.
+
+### A-03 — `openpyxl` is added as a non-optional sidecar dependency
+
+**Assumed:** `openpyxl` is added to `sidecar/pyproject.toml` unconditionally.
+
+**Why:** Excel is a first-class requested format; `pandas` already uses `openpyxl` as
+its Excel engine.
+
+**How to override:** Move to an optional extras group (`uv sync --extra excel`) if
+binary size or CI time becomes a concern.
+
+### A-04 — `pyarrow` is already available for Parquet
+
+**Assumed:** `pyarrow` is a transitive dependency of `pantab` and does not need an
+explicit addition.
+
+**How to override:** Add `pyarrow` explicitly to `sidecar/pyproject.toml` if pantab
+drops it as a transitive dep.
+
+### A-05 — Dashboard layout uses hand-built XML
+
+**Assumed:** The sidecar appends a `<dashboard>` element to the `.twb` XML produced by
+`twb_builder.py`, following the same hand-built ElementTree pattern as ADR-002.
+
+**How to override:** If a reliable Python Document API that creates dashboards becomes
+available, prefer it.
+
+### A-06 — Audience enum has exactly four values
+
+**Assumed:** `exec | analyst | operational | mixed` at MVP.
+
+**How to override:** Extend the zod enum and the constraint table in
+`docs/feature-prompt-authoring/REQUIREMENTS.md` F-4.  Each new value needs documented
+design effects and at least one unit test.
+
+### A-07 — Dashboard layout defaults to `"tiled_vertical"`
+
+**Assumed:** When `dashboardLayout` is omitted, a single-column vertical stack is used.
+
+**How to override:** Change the default in the sidecar `DashboardWorkbookRequest` model
+and the TS zod schema.
+
+### A-08 — `TWB_VERSION` and `SOURCE_BUILD` are unchanged
+
+**Assumed:** `TWB_VERSION = "18.1"` and `SOURCE_BUILD = "2024.1.0"` are reused.
+
+**Why:** Proven to open on Tableau Cloud in the v0.1 live demo.
+
+**How to override:** Bump only if a Tableau Cloud update rejects these values.
+
+### A-09 — `create_datasource_from_table` is not modified; `csvPath` stays
+
+**Assumed:** `create_datasource_from_file` is additive; `csvPath` and `records` on
+`create_datasource_from_table` are not removed.
+
+**How to override:** Deprecate `csvPath` in a future major version.
+
+### A-10 — Field names in sheet specs are supplied by the agent, not introspected
+
+**Assumed:** `design_dashboard` does not call the Tableau Metadata API to discover
+available fields.  The agent knows field names from having just created the datasource
+or from `@tableau/mcp-server`.
+
+**How to override:** If field introspection is needed, it belongs in the official
+`@tableau/mcp-server`; the agent passes results in.

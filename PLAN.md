@@ -1,6 +1,57 @@
 # PLAN.md — tableau-mcp-publish
 
-## Problem & goal
+---
+
+## Feature: Prompt-Driven Authoring — Requirements Brief
+
+### Problem & goal
+
+Today an agent must supply fully-formed worksheet specs to build a workbook.  This
+feature lifts the abstraction so a user can describe a business question, specify a data
+source (file path or SQL query), choose an audience, and optionally be guided by
+structured BI-analyst questions — and receive a published Tableau **dashboard** (not
+just loose worksheets) on Cloud.
+
+### Functional requirements (summary)
+
+- **Datasource from file (F-1):** accept `.csv`, `.json`/`.jsonl`, `.xlsx`/`.xls`,
+  `.parquet` via a new `create_datasource_from_file` tool; SQL path unchanged.
+- **Dashboard output (F-2):** new `create_dashboard_workbook` / sidecar endpoint that
+  emits a `.twb` with a `<dashboard>` + `<zones>` element; tiled vertical or horizontal.
+- **Three authoring modes via `design_dashboard` (F-3):**
+  - Autonomous: business question + audience → `DashboardPlan` in one call.
+  - Interview: returns 3–7 clarifying questions; second call with answers → plan.
+  - Directed: explicit visualization directions → plan.
+- **Audience enum (F-4):** `exec | analyst | operational | mixed` with documented
+  constraints on sheet count, mark types, and layout.
+- **`build_from_plan` (F-5):** consumes a `DashboardPlan`, creates datasource if
+  needed, builds and publishes the dashboard workbook.
+
+### Non-goals
+
+Read/query tools; live-connection datasources; pixel-perfect render validation; LLM
+inference inside the server; multi-turn conversation state inside the server; image/PDF
+export; map marks beyond experimental; metadata introspection; auto-create projects.
+
+### Success criteria (summary — full detail in `docs/feature-prompt-authoring/REQUIREMENTS.md`)
+
+| Code | What | Env |
+|---|---|---|
+| PA-1..PA-3 | Multi-format file ingest: parquet/xlsx/json/jsonl round-trip + excel sheet selection | headless |
+| DB-1..DB-3 | Dashboard XML structure: `<dashboard>` element, zone count, layout direction offsets | headless |
+| MA-1..MA-3 | Autonomous mode: audience constraints enforced on plan output | headless |
+| MB-1..MB-2 | Interview mode: question count 3–7; followup resolves to a plan | headless |
+| MC-1..MC-2 | Directed mode: directions mapped to sheets; missing directions rejected | headless |
+| E2E-1..E2E-2 | build_from_plan orchestration: correct sidecar + REST call sequence | headless |
+| E2E-3 | Live demo: published workbook has a dashboard tab on Cloud | gated |
+| CI-1..CI-2 | CI matrix green; build + lint + mypy --strict clean | headless |
+
+Full requirements, tool contracts, audience enum effects, and success-criteria
+verification methods: `docs/feature-prompt-authoring/REQUIREMENTS.md`.
+
+---
+
+## Problem & goal (v0.1 — baseline)
 
 The official `@tableau/mcp-server` is read-only (VizQL Data Service, Metadata API, Pulse). There
 is no MCP tooling to **author and publish** Tableau content. `tableau-mcp-publish` is the **write

@@ -13,6 +13,8 @@ export interface Session {
 export interface PublishResult {
   id: string;
   url: string;
+  /** Server-assigned slug; present when publishing a datasource. */
+  contentUrl?: string;
 }
 
 export interface ProjectRef {
@@ -61,6 +63,11 @@ export function splitIntoChunks(buf: Buffer, chunkSize: number): Buffer[] {
     chunks.push(buf.subarray(offset, Math.min(offset + chunkSize, buf.length)));
   }
   return chunks;
+}
+
+function asArray<T>(value: T | T[] | undefined | null): T[] {
+  if (value == null) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 function xmlEscape(value: string): string {
@@ -247,7 +254,8 @@ export class TableauRestClient {
     return { id: json.project.id, name: json.project.name };
   }
 
-  private contentUrl(type: ContentType, id: string): string {
+  /** Browser URL fallback when the REST response omits webpageUrl (uses LUID — may not open in Cloud UI). */
+  private fallbackCloudUrl(type: ContentType, id: string): string {
     const sitePart = this.cfg.siteName ? `/site/${this.cfg.siteName}` : "";
     const seg = type === "datasource" ? "datasources" : "workbooks";
     return `${this.cfg.server}/#${sitePart}/${seg}/${id}`;
@@ -268,7 +276,9 @@ export class TableauRestClient {
     projectId: string,
     overwrite: boolean,
   ): Promise<PublishResult> {
-    return this.publish("workbook", filePath, name, projectId, overwrite);
+    return this.publish("workbook", filePath, name, projectId, overwrite, {
+      skipConnectionCheck: true,
+    });
   }
 
   private async publish(
@@ -277,6 +287,7 @@ export class TableauRestClient {
     name: string,
     projectId: string,
     overwrite: boolean,
+    extraQuery?: Record<string, string | boolean | undefined>,
   ): Promise<PublishResult> {
     const { siteId } = this.requireSession();
     const { size } = await stat(filePath);
@@ -301,7 +312,7 @@ export class TableauRestClient {
         },
       ]);
       json = await this.api("POST", `/sites/${siteId}/${collection}`, {
-        query: { overwrite },
+        query: { overwrite, ...extraQuery },
         body,
         contentType,
       });
@@ -312,18 +323,34 @@ export class TableauRestClient {
       ]);
       const typeParam = type === "datasource" ? { datasourceType: fileExt } : { workbookType: fileExt };
       json = await this.api("POST", `/sites/${siteId}/${collection}`, {
-        query: { uploadSessionId, overwrite, ...typeParam },
+        query: { uploadSessionId, overwrite, ...typeParam, ...extraQuery },
         body,
         contentType,
       });
     }
 
-    const id =
+    const dsPublished =
       type === "datasource"
-        ? (json as { datasource?: { id?: string } }).datasource?.id
-        : (json as { workbook?: { id?: string } }).workbook?.id;
+        ? (json as {
+            datasource?: { id?: string; contentUrl?: string | null; webpageUrl?: string };
+          }).datasource
+        : undefined;
+    const wbPublished =
+      type === "workbook"
+        ? (json as { workbook?: { id?: string; webpageUrl?: string } }).workbook
+        : undefined;
+
+    const id = dsPublished?.id ?? wbPublished?.id;
     if (!id) throw new Error(`publish ${type}: missing id in response.`);
-    return { id, url: this.contentUrl(type, id) };
+
+    const contentUrl = dsPublished?.contentUrl ?? undefined;
+    const webpageUrl = dsPublished?.webpageUrl ?? wbPublished?.webpageUrl;
+
+    return {
+      id,
+      url: webpageUrl ?? this.fallbackCloudUrl(type, id),
+      ...(contentUrl ? { contentUrl } : {}),
+    };
   }
 
   /**
@@ -364,11 +391,38 @@ export class TableauRestClient {
   async getDatasource(id: string): Promise<{ id: string; name: string; contentUrl: string }> {
     const { siteId } = this.requireSession();
     const json = (await this.api("GET", `/sites/${siteId}/datasources/${id}`)) as {
-      datasource?: { id?: string; name?: string; contentUrl?: string };
+      datasource?: { id?: string; name?: string; contentUrl?: string | null };
     };
     const ds = json.datasource;
     if (!ds?.id) throw new Error(`getDatasource: datasource ${id} not found.`);
-    return { id: ds.id, name: ds.name ?? "", contentUrl: ds.contentUrl ?? ds.name ?? "" };
+
+    let contentUrl = ds.contentUrl ?? "";
+    if (!contentUrl) {
+      const listed = await this.getAllPages<{ id: string; contentUrl?: string; name?: string }>(
+        "/datasources",
+        (page) => {
+          const list = asArray(
+            (page as { datasources?: { datasource?: Array<{ id?: string; contentUrl?: string; name?: string }> | { id?: string; contentUrl?: string; name?: string } } })
+              .datasources?.datasource,
+          );
+          return list.map((d) => ({
+            id: d.id ?? "",
+            contentUrl: d.contentUrl,
+            name: d.name,
+          }));
+        },
+      );
+      const match = listed.find((d) => d.id === id);
+      contentUrl = match?.contentUrl ?? match?.name ?? ds.name ?? "";
+    }
+
+    if (!contentUrl) {
+      throw new Error(
+        `getDatasource: contentUrl missing for datasource ${id}. Republish the datasource or pass contentUrl from the publish response.`,
+      );
+    }
+
+    return { id: ds.id, name: ds.name ?? "", contentUrl };
   }
 
   async refreshDatasource(datasourceId: string): Promise<void> {

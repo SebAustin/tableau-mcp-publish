@@ -199,16 +199,25 @@ def _build_worksheet(
 
 
 def _build_worksheet_cards(parent: ET.Element) -> None:
-    """Populate ``<cards>`` with the shelf cards Tableau Cloud requires for render.
+    """Populate ``<cards>`` then ``<viewpoint/>`` for a worksheet window.
 
-    Tableau Cloud's render engine checks for "visual representation" by looking
-    for the ``columns``, ``rows``, and ``marks`` shelf cards in the worksheet
-    window.  An empty ``<cards/>`` is XSD-valid but causes error 400011
-    ("has no visual representation") at publish time.
+    Tableau Cloud's render engine checks for "visual representation" in two
+    steps:
 
-    The canonical structure mirrors what Tableau Desktop writes for every
-    worksheet (reference: cmtoomey fully-documented TWB gist, confirmed against
-    the ``Window-WorksheetWindow-G`` group in twb_2026.1.0.xsd):
+    1.  The ``columns``, ``rows``, and ``marks`` shelf cards must be present
+        inside ``<cards>`` (an empty ``<cards/>`` causes error 400011).
+    2.  A ``<viewpoint/>`` element must follow ``<cards>`` and precede
+        ``<simple-id>``.  Every real Tableau workbook (confirmed across 7
+        reference workbooks, wb1–wb7) carries this element; its absence is the
+        primary cause of error 400011 "has no visual representation" even when
+        the cards are correct.
+
+    The XSD ``Window-WorksheetWindow-G`` sequence is:
+    ``Cards-G → VisualDoc-G → SimpleIdentifierForThisWindow-G``.
+    ``VisualDoc-G`` wraps ``<viewpoint minOccurs="0">``, so the XSD allows
+    omitting it, but Tableau Cloud's render engine requires it at runtime.
+
+    Canonical structure (mirrors Tableau Desktop output, confirmed wb5/wb7):
 
     .. code-block:: xml
 
@@ -229,6 +238,7 @@ def _build_worksheet_cards(parent: ET.Element) -> None:
             </strip>
           </edge>
         </cards>
+        <viewpoint />    ← REQUIRED by Tableau Cloud render engine
 
     The ``size`` attribute on ``<strip>`` is required by the XSD (``Strip-G``
     mandates ``size: xs:int use="required"``).  ``2147483647`` (INT_MAX) is the
@@ -250,6 +260,13 @@ def _build_worksheet_cards(parent: ET.Element) -> None:
     ET.SubElement(cols_strip, "card", {"type": "columns"})
     rows_strip = ET.SubElement(top, "strip", {"size": "2147483647"})
     ET.SubElement(rows_strip, "card", {"type": "rows"})
+
+    # <viewpoint/> is required by Tableau Cloud's render engine to recognise this
+    # window as having a visual representation.  It follows <cards> per the XSD
+    # Window-WorksheetWindow-G sequence (Cards-G → VisualDoc-G → SimpleIdentifier).
+    # All 7 reference workbooks carry this element; its absence is the root cause
+    # of error 400011 "has no visual representation".
+    ET.SubElement(parent, "viewpoint")
 
 
 def _server_host(server_url: str) -> str:
@@ -330,14 +347,19 @@ def _build_dashboard(
     )
 
     zones_el = ET.SubElement(dashboard, "zones")
+    # Container uses `type-v2` (not `type`) per real Tableau workbooks (wb1/wb7).
     container = ET.SubElement(
         zones_el,
         "zone",
-        {"h": "100000", "id": "1", "type": "layout-basic", "w": "100000", "x": "0", "y": "0"},
+        {"h": "100000", "id": "1", "type-v2": "layout-basic", "w": "100000", "x": "0", "y": "0"},
     )
 
     quads = _tile_zones(titles, layout)
     for i, (title, quad) in enumerate(zip(titles, quads, strict=True)):
+        # A worksheet zone is identified by `name` ALONE with NO `type`/`type-v2`
+        # attribute — verified against every dashboard worksheet zone in the
+        # wb1/wb7 reference workbooks. Emitting `type="worksheet"` makes Tableau
+        # Cloud reject the dashboard ("sheet has no visual representation", 400011).
         ET.SubElement(
             container,
             "zone",
@@ -345,7 +367,6 @@ def _build_dashboard(
                 "h": str(quad["h"]),
                 "id": str(i + 2),
                 "name": title,
-                "type": "worksheet",
                 "w": str(quad["w"]),
                 "x": str(quad["x"]),
                 "y": str(quad["y"]),
@@ -489,10 +510,13 @@ def build_twb_xml(
     if dashboards:
         for db_index, db in enumerate(dashboards):
             db_name = str(db.get("name", "Dashboard 1"))
-            # Dashboard window: requires <viewpoints/>, <active id="1"/>, <simple-id>
+            # Dashboard window: requires <viewpoints/>, <active id="-1"/>, <simple-id>
+            # id="-1" is the Tableau standard for "no sheet currently active" and is
+            # used by wb3–wb7 reference workbooks.  id="1" pointed at the container
+            # zone which is not a valid sheet index.
             win = ET.SubElement(windows, "window", {"class": "dashboard", "name": db_name})
             ET.SubElement(win, "viewpoints")
-            ET.SubElement(win, "active", {"id": "1"})
+            ET.SubElement(win, "active", {"id": "-1"})
             # Window simple-id offset: 30000 + dashboard index to avoid collision
             ET.SubElement(win, "simple-id", {"uuid": _quuid(30000 + db_index + 1)})
 

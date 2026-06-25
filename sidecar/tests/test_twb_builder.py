@@ -197,3 +197,35 @@ def test_workbook_has_explain_data() -> None:
     assert explain is not None, "<workbook> missing required <explain-data> element"
     assert explain.get("enabled-for-viewer") == "false"
     assert explain.get("extreme-values-enabled-for-all") == "false"
+
+
+def test_worksheet_window_has_viewpoint_after_cards() -> None:
+    """Each worksheet <window> must have a <viewpoint/> element after <cards>.
+
+    Root cause of error 400011 "has no visual representation": Tableau Cloud's
+    render engine requires <viewpoint/> to be present in worksheet windows even
+    though the XSD marks it minOccurs="0".  All 7 reference workbooks (wb1–wb7)
+    carry this element.  The XSD Window-WorksheetWindow-G sequence is:
+    Cards-G → VisualDoc-G → SimpleIdentifierForThisWindow-G, and VisualDoc-G
+    wraps <viewpoint minOccurs="0">.
+
+    This test guards against the regression of omitting <viewpoint/>.
+    """
+    xml = twb_builder.build_twb_xml("DS", "ds", "site", SHEETS)
+    root = ET.fromstring(xml)
+    for win in root.findall(".//windows/window[@class='worksheet']"):
+        children = [c.tag for c in win]
+        assert "viewpoint" in children, (
+            f"window '{win.get('name')}' missing <viewpoint/> — "
+            "Tableau Cloud will reject with error 400011 'no visual representation'"
+        )
+        # Ordering: cards → viewpoint → simple-id
+        cards_idx = children.index("cards")
+        vp_idx = children.index("viewpoint")
+        sid_idx = children.index("simple-id")
+        assert cards_idx < vp_idx, (
+            f"window '{win.get('name')}': <viewpoint> must come after <cards>"
+        )
+        assert vp_idx < sid_idx, (
+            f"window '{win.get('name')}': <viewpoint> must come before <simple-id>"
+        )

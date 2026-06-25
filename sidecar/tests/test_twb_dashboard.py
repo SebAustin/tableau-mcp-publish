@@ -31,7 +31,9 @@ DASHBOARDS_BASIC = [{"name": "Dashboard 1", "titles": ["Revenue by Region", "Top
 
 
 # ---------------------------------------------------------------------------
-# DB-1  one <zone type="worksheet"> per sheet
+# DB-1  one worksheet zone (identified by @name, NO @type) per sheet
+# A worksheet zone carries `name` and no type/type-v2 (verified vs wb1/wb7);
+# the layout container is the only typed zone (@type-v2="layout-basic").
 # ---------------------------------------------------------------------------
 
 
@@ -43,8 +45,12 @@ def test_dashboard_zone_count_matches_sheets() -> None:
     root = ET.fromstring(xml)
     dashboards_el = root.find("dashboards")
     assert dashboards_el is not None, "<dashboards> element is missing"
-    worksheet_zones = dashboards_el.findall('.//zone[@type="worksheet"]')
+    worksheet_zones = dashboards_el.findall(".//zone[@name]")
     assert len(worksheet_zones) == len(SHEETS_2)
+    # A worksheet zone must NOT carry a type/type-v2 attribute, else Tableau
+    # rejects the dashboard with 400011 "sheet has no visual representation".
+    for z in worksheet_zones:
+        assert z.get("type") is None and z.get("type-v2") is None
 
 
 def test_dashboard_zone_names_match_titles() -> None:
@@ -53,7 +59,7 @@ def test_dashboard_zone_names_match_titles() -> None:
         dashboards=DASHBOARDS_BASIC,
     )
     root = ET.fromstring(xml)
-    names = {z.get("name") for z in root.findall('.//zone[@type="worksheet"]')}
+    names = {z.get("name") for z in root.findall(".//zone[@name]")}
     assert names == {"Revenue by Region", "Top 10 Customers"}
 
 
@@ -238,7 +244,12 @@ def test_dashboard_has_simple_id() -> None:
 
 
 def test_dashboard_window_has_viewpoints_and_active() -> None:
-    """Dashboard <window> must have <viewpoints/> and <active id='1'/> (XSD required)."""
+    """Dashboard <window> must have <viewpoints/> and <active id='-1'/> (XSD required).
+
+    id='-1' is the Tableau standard sentinel for "no sheet currently active".
+    All reference workbooks (wb3–wb7) use -1; id='1' was incorrectly pointing
+    at the container zone rather than a sheet.
+    """
     xml = twb_builder.build_twb_xml(
         "DS", "ds", "site", SHEETS_2,
         dashboards=DASHBOARDS_BASIC,
@@ -252,7 +263,10 @@ def test_dashboard_window_has_viewpoints_and_active() -> None:
         assert active is not None, (
             f"dashboard window '{win.get('name')}' missing <active>"
         )
-        assert active.get("id") == "1"
+        assert active.get("id") == "-1", (
+            f"dashboard window '{win.get('name')}' active id should be '-1' "
+            f"(no-selection sentinel), got '{active.get('id')}'"
+        )
 
 
 def test_build_starter_twbx_with_dashboard(tmp_path: Path) -> None:

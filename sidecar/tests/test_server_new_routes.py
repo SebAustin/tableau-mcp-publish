@@ -69,7 +69,8 @@ def test_workbook_dashboard_contains_dashboard_element() -> None:
         root = ET.fromstring(archive.read(twb_files[0]))
     dashboards_el = root.find("dashboards")
     assert dashboards_el is not None, "<dashboards> element missing from .twb"
-    worksheet_zones = dashboards_el.findall('.//zone[@type="worksheet"]')
+    # Worksheet zones are identified by @name with NO type/type-v2 (vs wb1/wb7).
+    worksheet_zones = dashboards_el.findall(".//zone[@name]")
     assert len(worksheet_zones) == len(_SHEETS_PAYLOAD), (
         f"Expected {len(_SHEETS_PAYLOAD)} worksheet zones, got {len(worksheet_zones)}"
     )

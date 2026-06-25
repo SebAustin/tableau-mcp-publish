@@ -133,7 +133,7 @@ solution-verifier (verdict **SOLID**, solution-rubric 5.00/5.00).
 | CI-1 | New tests pass on Node 22/24/26 + Python 3.12/3.13 | ✅ (configured) | `.github/workflows/ci.yml` matrix; green locally |
 | CI-2 | build/lint/ruff/mypy --strict clean after new modules | ✅ | `make ci` exit 0 |
 
-**18/18 criteria pass.** E2E-3 (live dashboard render) was executed 2026-06-25 and is confirmed. Gate: 87 TS + 114 Python = 201 tests.
+**18/18 criteria pass.** E2E-3 (live dashboard render) was executed 2026-06-25 and is confirmed. Gate: 87 TS + 115 Python = 202 tests.
 
 ## Security (added surface)
 
@@ -312,7 +312,7 @@ build, producing the same rendering `.twbx`; the no-embeddable-extract paths (pr
 ## Status
 
 All 18 prompt-driven success criteria are now met, **including E2E-3** (live dashboard render).
-Gate green: 87 TS + 114 Python = 201 tests. Also fixed this session: the stale-port-8899 startup crash
+Gate green: 87 TS + 115 Python = 202 tests. Also fixed this session: the stale-port-8899 startup crash
 (auto-free-port selection) and generic sheet titles (now descriptive, e.g. "Revenue by Region").
 
 ## Cleanup note

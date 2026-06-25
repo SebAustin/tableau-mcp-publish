@@ -195,7 +195,7 @@ will report a sidecar startup error. Kill the existing sidecar process first:
 ## Deployment-readiness checklist
 
 - [x] Config via environment; no secrets in code; `.env` gitignored; `.env.example` provided.
-- [x] CI green on both layers (87 TS + 114 Python) across the version matrix.
+- [x] CI green on both layers (87 TS + 115 Python) across the version matrix.
 - [x] All 14 tools compile into `dist/` (`npm run build` clean, zero TS errors).
 - [x] Headless tests for the authoring + publish paths; mocked REST (no PAT in CI).
 - [x] Graceful shutdown (sign out + stop sidecar) on SIGINT/SIGTERM.

@@ -684,8 +684,9 @@ MB-1..2, MC-1..2 (the exact fixtures in REQUIREMENTS; MC-1 pins `audience:"analy
 **M6 — `build_from_plan` tool (orchestration + publish).**
 `src/tools/buildFromPlan.ts` + `sidecar.ts` `buildDashboardWorkbook()` (derives `canvasWidth`/
 `canvasHeight` from `plan.audience`); placeholder-token rejection; `schemaVersion` re-validation;
-datasource-first ordering. *Tests:* E2E-1 (one sidecar `/workbook/dashboard`, one `publishWorkbook`,
-no `publishDatasource` when no spec), E2E-2 (`datasourceSpec.filePath` → file build first +
+datasource-first ordering. *Tests:* E2E-1 (`datasourceSpec.filePath` required → 1× `publishDatasource`
++ one sidecar `/workbook/dashboard` + one `publishWorkbook`; LUID-only / sql-only rejected),
+E2E-2 (`datasourceSpec.filePath` → file build first +
 `datasourceLuid` in result), DB-3 (mocked sidecar response → valid plan flows through), 14-tool
 registration count. *Done when:* orchestration tests green.
 
@@ -734,7 +735,7 @@ Target: ≥24 new TS tests + ≥13 new Python tests, on top of the 46 that must 
 | directed (exact string, `audience:"analyst"`) | exactly 2 sheets: `sheets[0].markType=="text"`, `sheets[1].markType=="bar"` (analyst has `minimumKpiCount==0`, so the clamp inserts no extra KPI and the `[text, bar]` pair survives) | MC-1 |
 | directed missing `directions` | zod validation error | MC-2 |
 | from-file unsupported ext | thrown error, **zero** sidecar calls (spy count 0) | PA-2 |
-| build_from_plan no spec | 1× sidecar `/workbook/dashboard`, 1× `publishWorkbook`, 0× `publishDatasource`; request carries audience-derived `canvasWidth`/`canvasHeight` | E2E-1 |
+| build_from_plan w/ datasourceSpec.filePath | 1× `publishDatasource`, 1× sidecar `/workbook/dashboard`, 1× `publishWorkbook`; LUID-only / sql-only → actionable error; request carries audience-derived `canvasWidth`/`canvasHeight` | E2E-1 |
 | build_from_plan with file spec | file build first, `datasourceLuid` in result | E2E-2 |
 | build_from_plan twbx shape | mocked sidecar response → `.twb` has `<workbook>/<datasources>/<worksheets>/<dashboard>` | DB-3 |
 | registration counts | 12 → 13 → 14 as tools land | regression |

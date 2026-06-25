@@ -146,6 +146,88 @@ def hyper_table_info(hyper_path: Path) -> dict[str, Any]:
     return {"row_count": int(row_count), "columns": columns}
 
 
+_FORMATTED_NUM_RE = re.compile(r"^-?\$?-?[\d,]+(?:\.\d+)?%?$")
+_ACCT_NEG_RE = re.compile(r"^\(\s*\$?[\d,]+(?:\.\d+)?%?\s*\)$")
+_NULL_TOKENS = {"", "null", "nan", "none", "-", "n/a", "na"}
+
+
+def _parse_formatted_number(value: object) -> float | None:
+    """Parse a display-formatted number ('$1,234', '20%', '($5)') to float, else None.
+
+    Currency ($) and thousands (,) separators are stripped; a trailing percent is
+    converted to a ratio (20% -> 0.20); accounting negatives '($5)' -> -5.0.
+    """
+    s = str(value).strip()
+    if s.lower() in _NULL_TOKENS:
+        return None
+    negative = False
+    if _ACCT_NEG_RE.match(s):
+        negative = True
+        s = s[1:-1].strip()
+    compact = s.replace(" ", "")
+    if not _FORMATTED_NUM_RE.match(compact):
+        return None
+    is_pct = compact.endswith("%")
+    cleaned = compact.replace("$", "").replace(",", "").replace("%", "")
+    try:
+        num = float(cleaned)
+    except ValueError:
+        return None
+    if is_pct:
+        num /= 100.0
+    return -num if negative else num
+
+
+def _coerce_formatted_numerics(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert display-formatted string columns ('$16', '20%') to numeric in place.
+
+    A column is converted only when >= 90% of its non-blank values parse as a
+    formatted number, so genuine text dimensions (names, IDs, categories) are left
+    untouched. Real-world exports (e.g. Tableau "migrated data") carry measures as
+    display strings that would otherwise import as un-aggregatable text.
+    """
+    for col in df.columns:
+        if df[col].dtype != object:
+            continue
+        series = df[col]
+        text = series.astype(str).str.strip()
+        nonblank = text[~text.str.lower().isin(_NULL_TOKENS)]
+        if len(nonblank) == 0:
+            continue
+        parsed_sample = nonblank.map(_parse_formatted_number)
+        if parsed_sample.notna().mean() >= 0.9:
+            df[col] = series.map(_parse_formatted_number)
+    return df
+
+
+def _sniff_csv_dialect(p: Path) -> tuple[str, str]:
+    """Sniff ``(encoding, delimiter)`` for a delimited text file from its first bytes.
+
+    Detects a UTF-16/UTF-8 byte-order mark and whether the header row is tab- or
+    comma-separated. Used only when the caller does not pass ``encoding``/``sep``.
+    Many real-world exports (e.g. Tableau's "migrated data" CSVs) are UTF-16 LE and
+    TAB-separated, which the default ``pd.read_csv`` (UTF-8 + comma) cannot parse.
+
+    Returns a best-effort guess; falls back to ``("utf-8", ",")``.
+    """
+    with p.open("rb") as fh:
+        head = fh.read(65536)
+    if head[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        encoding = "utf-16"
+    elif head[:3] == b"\xef\xbb\xbf":
+        encoding = "utf-8-sig"
+    else:
+        encoding = "utf-8"
+    try:
+        text = head.decode(encoding, errors="replace")
+    except LookupError:
+        text = head.decode("utf-8", errors="replace")
+    lines = text.splitlines()
+    first_line = lines[0] if lines else ""
+    delimiter = "\t" if first_line.count("\t") > first_line.count(",") else ","
+    return encoding, delimiter
+
+
 def file_to_dataframe(
     file_type: str,
     path: str,
@@ -153,6 +235,8 @@ def file_to_dataframe(
     json_path: str | None = None,
     max_rows: int = DEFAULT_MAX_ROWS,
     max_bytes: int = MAX_FILE_BYTES,
+    encoding: str | None = None,
+    sep: str | None = None,
 ) -> pd.DataFrame:
     """Read a local file into a DataFrame, with pre-read size and post-read row caps.
 
@@ -161,6 +245,11 @@ def file_to_dataframe(
     ``excel_sheet`` selects the sheet by name (str) or 0-based index (int); defaults to 0.
     ``json_path`` supports a single-level selector of the form ``$.<key>`` (e.g. ``$.data``).
     Anything deeper is rejected with a clear error rather than silently mis-parsing.
+
+    ``encoding`` / ``sep`` (csv only): explicit overrides for the text encoding and the
+    column delimiter. When either is omitted, the dialect is auto-sniffed from the file's
+    first bytes (BOM → encoding; tab-vs-comma in the header → delimiter), so UTF-16 / TSV
+    exports load without the caller having to know the encoding up front.
 
     Safety caps (PA-1):
     - ``max_bytes``: rejects files larger than this limit before any parsing begins.
@@ -183,20 +272,27 @@ def file_to_dataframe(
         )
 
     if ftype == "csv":
-        return pd.read_csv(p, nrows=max_rows)
+        enc, delim = encoding, sep
+        if enc is None or delim is None:
+            sniffed_enc, sniffed_delim = _sniff_csv_dialect(p)
+            enc = enc or sniffed_enc
+            delim = delim or sniffed_delim
+        return _coerce_formatted_numerics(
+            pd.read_csv(p, nrows=max_rows, encoding=enc, sep=delim)
+        )
 
     if ftype in {"xlsx", "xls"}:
         sheet: str | int = excel_sheet if excel_sheet is not None else 0
         df_excel = pd.read_excel(p, sheet_name=sheet, engine="openpyxl")
         if len(df_excel) > max_rows:
             df_excel = df_excel.head(max_rows)
-        return df_excel
+        return _coerce_formatted_numerics(df_excel)
 
     if ftype == "parquet":
         df_parquet = pd.read_parquet(p)
         if len(df_parquet) > max_rows:
             df_parquet = df_parquet.head(max_rows)
-        return df_parquet
+        return _coerce_formatted_numerics(df_parquet)
 
     if ftype in {"json", "jsonl"}:
         if json_path is not None:
@@ -241,7 +337,7 @@ def file_to_dataframe(
 
         if len(df_json) > max_rows:
             df_json = df_json.head(max_rows)
-        return df_json
+        return _coerce_formatted_numerics(df_json)
 
     raise ValueError(
         f"Unsupported file_type: {file_type!r}. "

@@ -74,6 +74,13 @@ export interface FileArgs {
    * document (e.g. `$.data`).  Only a single-level key is supported.
    */
   jsonPath?: string;
+  /**
+   * CSV only: explicit text encoding (e.g. `utf-16`) and column delimiter
+   * (e.g. `"\t"`).  When omitted, the sidecar auto-sniffs both from the file's
+   * BOM and header row, so UTF-16/TSV exports load without specifying them.
+   */
+  encoding?: string;
+  delimiter?: string;
 }
 
 export interface WorkbookArgs {
@@ -342,6 +349,8 @@ export class AuthoringSidecar {
     if (args.fileType) payload["fileType"] = args.fileType;
     if (args.excelSheet !== undefined) payload["excelSheet"] = args.excelSheet;
     if (args.jsonPath) payload["jsonPath"] = args.jsonPath;
+    if (args.encoding) payload["encoding"] = args.encoding;
+    if (args.delimiter) payload["delimiter"] = args.delimiter;
 
     const result = await this.post<FileResult>("/datasource/from-file", payload);
     return { tdsxPath: result.path, columns: result.columns, hyperPath: result.hyperPath };

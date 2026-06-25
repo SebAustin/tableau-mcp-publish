@@ -108,6 +108,9 @@ class FileRequest(BaseModel):
     excel_sheet: str | int | None = Field(default=None, alias="excelSheet")
     json_path: str | None = Field(default=None, alias="jsonPath")
     max_rows: int = Field(default=hyper_builder.DEFAULT_MAX_ROWS, alias="maxRows")
+    # csv only; auto-sniffed from the file's BOM/header when omitted.
+    encoding: str | None = Field(default=None, alias="encoding")
+    delimiter: str | None = Field(default=None, alias="delimiter")
 
 
 @app.get("/health")
@@ -264,6 +267,8 @@ def datasource_from_file(req: FileRequest) -> FileResult:
             excel_sheet=req.excel_sheet,
             json_path=req.json_path,
             max_rows=req.max_rows,
+            encoding=req.encoding,
+            sep=req.delimiter,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

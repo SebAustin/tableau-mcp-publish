@@ -23,6 +23,100 @@ def test_file_to_dataframe_csv(tmp_path: Path) -> None:
     assert len(df) == 2
 
 
+# ---------------------------------------------------------------------------
+# Encoding/delimiter auto-sniff (UTF-16 / TSV) + explicit override
+# ---------------------------------------------------------------------------
+
+
+def _write_utf16_tsv(p: Path) -> None:
+    rows = ["region\tcustomer\trevenue", "West\tAcme\t$1,234", "East\tBeta\t$5"]
+    p.write_bytes(("\n".join(rows) + "\n").encode("utf-16"))
+
+
+def test_file_to_dataframe_csv_autosniffs_utf16_tsv(tmp_path: Path) -> None:
+    p = tmp_path / "migrated.csv"
+    _write_utf16_tsv(p)
+    df = hyper_builder.file_to_dataframe("csv", str(p))  # no encoding/sep passed
+    assert list(df.columns) == ["region", "customer", "revenue"]
+    assert len(df) == 2
+    assert df["region"].tolist() == ["West", "East"]
+
+
+def test_file_to_dataframe_csv_explicit_encoding_sep(tmp_path: Path) -> None:
+    p = tmp_path / "migrated.csv"
+    _write_utf16_tsv(p)
+    df = hyper_builder.file_to_dataframe("csv", str(p), encoding="utf-16", sep="\t")
+    assert list(df.columns) == ["region", "customer", "revenue"]
+    assert len(df) == 2
+
+
+def test_sniff_csv_dialect_detects_utf16_tab(tmp_path: Path) -> None:
+    p = tmp_path / "m.csv"
+    _write_utf16_tsv(p)
+    enc, delim = hyper_builder._sniff_csv_dialect(p)
+    assert enc == "utf-16"
+    assert delim == "\t"
+
+
+def test_sniff_csv_dialect_defaults_utf8_comma(tmp_path: Path) -> None:
+    p = tmp_path / "plain.csv"
+    p.write_text("a,b,c\n1,2,3\n")
+    enc, delim = hyper_builder._sniff_csv_dialect(p)
+    assert enc == "utf-8"
+    assert delim == ","
+
+
+# ---------------------------------------------------------------------------
+# Numeric coercion of display-formatted measures ($, %, accounting negatives)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("$16", 16.0),
+        ("-$5", -5.0),
+        ("($5)", -5.0),
+        ("20%", 0.20),
+        ("$1,234.5", 1234.5),
+        ("$0", 0.0),
+        ("4.0", 4.0),
+        ("", None),
+        ("CA-2011-103800", None),
+        ("Texas", None),
+    ],
+)
+def test_parse_formatted_number(raw: str, expected: float | None) -> None:
+    assert hyper_builder._parse_formatted_number(raw) == expected
+
+
+def test_file_to_dataframe_coerces_formatted_measures(tmp_path: Path) -> None:
+    """Currency/percent string columns become numeric; text dimensions stay text."""
+    csv = tmp_path / "f.csv"
+    csv.write_text(
+        "Region,Sales,Discount,OrderID\n"
+        "West,$1234,20%,CA-001\n"
+        "East,$56,10%,CA-002\n"
+        "Central,($7),0%,CA-003\n"
+    )
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert str(df["Sales"].dtype).startswith(("float", "int"))
+    assert str(df["Discount"].dtype).startswith("float")
+    assert df["Sales"].tolist() == [1234.0, 56.0, -7.0]
+    assert df["Discount"].tolist() == [0.20, 0.10, 0.0]
+    assert df["Region"].tolist() == ["West", "East", "Central"]
+    assert df["OrderID"].dtype == object
+
+
+def test_coercion_leaves_mostly_text_columns_alone(tmp_path: Path) -> None:
+    """A column with <90% numeric-looking values is NOT coerced."""
+    csv = tmp_path / "g.csv"
+    csv.write_text("code\n$5\nABC\nDEF\nGHI\nJKL\n")  # 1/5 numeric -> below 90%
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert df["code"].dtype == object
+    assert df["code"].tolist() == ["$5", "ABC", "DEF", "GHI", "JKL"]
+
+
 def test_file_to_dataframe_json(tmp_path: Path) -> None:
     data = [{"id": 1, "val": "a"}, {"id": 2, "val": "b"}]
     p = tmp_path / "data.json"

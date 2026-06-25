@@ -228,3 +228,40 @@ stale). 0 Critical / 0 High.
   large Parquet; emitting workbook `version="26.1"` (current string already passes the XSD).
 - **Next:** the gated live demo (E2E-3) still proves real render; the XSD gate is a strong structural
   proxy but not a substitute for one authorized `npm run demo:dashboard` against the Dev site.
+
+---
+
+# Live demo session (E2E-3 attempt) — 2026-06-25
+
+Ran the authorized `npm run demo:dashboard` against site `sebaustin` (10ax). Outcome: **partial**.
+
+## Fixed and proven
+
+- **Sidecar port resilience (`f623355`):** the demo first failed because a stale sidecar held port
+  8899 (`[Errno 48] address already in use`). Fixed: the TS layer now auto-selects a free ephemeral
+  port by default (honors an explicit `SIDECAR_PORT`), with a bounded retry on the bind race.
+  **Proven live** — the sidecar started and the run proceeded with 8899 still occupied.
+- **Datasource authoring + publish works live:** every run published the datasource from the bundled
+  CSV (e.g. `…/datasources/25896408`), and `create_datasource_from_file` now returns the **real**
+  column schema (`region(string), customer(string), revenue(number)`), which the demo feeds to the
+  planner as `fieldHints` (`12b70fc`) so worksheets bind only to existing columns.
+
+## Open blocker (E2E-3 dashboard render)
+
+The dashboard **workbook** publish returns Tableau **400011**:
+`Dashboard references sheet 'Sheet 1' which has no visual representation in the workbook.`
+Three live attempts; two correct fixes applied (real-field binding; populated `<cards>`), each
+advancing the state, neither sufficient. Diagnosis: the hand-built dashboard `.twb` is **XSD-valid**
+(official gate green) but does not satisfy a Tableau **render-engine** semantic for a worksheet to
+count as having a visual on a dashboard. The pane for bar/line marks carries `<mark>` + rows/cols but
+no explicit `<encodings>`; this path was never live-validated before (E2E-3 was always gated). This is
+the plan's known hardest, partially-out-of-scope risk ("full Tableau-render validation only achievable
+against a live site").
+
+## Recommended next step
+
+Obtain one real Tableau Desktop-authored `.twb` containing a dashboard that references a worksheet bound
+to a **published** datasource, and diff our worksheet/pane/window structure against it to find the exact
+missing element (likely pane `<encodings>` and/or worksheet view metadata) — then iterate once more
+against the Dev site. Datasource authoring is fully shippable today; dashboard-workbook render is the
+remaining last mile.

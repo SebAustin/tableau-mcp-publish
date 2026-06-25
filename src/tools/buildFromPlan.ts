@@ -6,6 +6,29 @@
  *   2. Publishes the .twbx to the specified Tableau Cloud project.
  *
  * Returns { workbookLuid, url }.
+ *
+ * ## Embedded-extract requirement
+ *
+ * Tableau Cloud only renders a workbook when it can resolve all datasource
+ * bindings at publish time.  The only self-contained path is the *embedded
+ * extract* (federated connection): the .hyper file produced by
+ * `buildDatasourceFromFile` is zipped directly into the .twbx.
+ *
+ * `build_from_plan` therefore requires the datasource to be built from a
+ * local file in the same call via `datasourceSpec.filePath`.  Two scenarios
+ * are rejected loudly:
+ *
+ * 1. **LUID-only (no `datasourceSpec`)** — the .hyper file is not available
+ *    on disk; embedding is impossible.  Binding to a pre-published datasource
+ *    via `datasourceLuid` alone produces a non-rendering workbook (error
+ *    400011 on Tableau Cloud).
+ *
+ * 2. **`datasourceSpec.sql` (query branch)** — `buildDatasourceFromQuery` does
+ *    not materialise a .hyper file that can be embedded; only a .tdsx is
+ *    produced.  Embedding is not possible on this path.
+ *
+ * In both cases the tool throws an actionable error rather than silently
+ * publishing a workbook that will fail to render.
  */
 
 import { z } from "zod";
@@ -85,7 +108,13 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
       description:
         "Takes a DashboardPlan JSON object (produced by design_dashboard) and builds a " +
         ".twbx workbook with all planned worksheets plus a tiled dashboard, then publishes " +
-        "it to Tableau Cloud. Returns { workbookLuid, url }.",
+        "it to Tableau Cloud. Returns { workbookLuid, url }.\n\n" +
+        "IMPORTANT: Rendering a dashboard on Tableau Cloud requires embedding the source " +
+        "extract directly in the workbook (federated connection). This is only possible " +
+        "when the datasource is built from a local file in the same call via " +
+        "`datasourceSpec.filePath`. Supplying only a pre-published `datasourceLuid` " +
+        "(no `datasourceSpec`) or using `datasourceSpec.sql` will cause the tool to " +
+        "throw an actionable error rather than publish a non-rendering workbook.",
       inputSchema: {
         plan: z
           .record(z.string(), z.unknown())
@@ -111,37 +140,57 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
       // Step 1c: R-5 — re-validate audience invariants (defense in depth)
       assertAudienceInvariants(plan);
 
-      // E2E-2: if a datasourceSpec is provided, build + publish the datasource first.
-      let datasourceLuid = plan.datasourceLuid;
-      let newDatasourceLuid: string | undefined;
-      if (plan.datasourceSpec) {
-        const spec = plan.datasourceSpec;
-        const dsProjectId = await ctx.rest.resolveProjectId(plan.projectName);
-        let tdsxPath: string;
-        if (spec.filePath) {
-          ({ tdsxPath } = await ctx.sidecar.buildDatasourceFromFile({
-            name: spec.datasourceName,
-            filePath: spec.filePath,
-            fileType: spec.fileType,
-            excelSheet: spec.excelSheet,
-            jsonPath: spec.jsonPath,
-          }));
-        } else {
-          ({ tdsxPath } = await ctx.sidecar.buildDatasourceFromQuery({
-            connection: spec.connection ?? {},
-            sql: spec.sql ?? "",
-            name: spec.datasourceName,
-          }));
-        }
-        const ds = await ctx.rest.publishDatasource(
-          tdsxPath,
-          spec.datasourceName,
-          dsProjectId,
-          overwrite,
+      // ---------------------------------------------------------------------------
+      // E2E-2: Build + publish the datasource when a datasourceSpec is provided.
+      // ---------------------------------------------------------------------------
+      // Rendering a dashboard on Tableau Cloud requires embedding the .hyper
+      // extract directly in the .twbx (federated connection, self-contained).
+      // Only `datasourceSpec.filePath` yields a hyperPath that can be embedded.
+      //
+      // Two non-embeddable scenarios are rejected loudly:
+      //   • LUID-only (no datasourceSpec): the source extract is not on disk.
+      //   • datasourceSpec.sql: buildDatasourceFromQuery produces no hyperPath.
+      // ---------------------------------------------------------------------------
+
+      if (!plan.datasourceSpec) {
+        throw new Error(
+          "build_from_plan: rendering a dashboard requires building the datasource in the same " +
+            "call (provide `datasourceSpec` with a `filePath`) so the extract can be embedded " +
+            "into the workbook. Binding to a pre-published datasource via `datasourceLuid` alone " +
+            "produces a non-rendering workbook (Tableau Cloud error 400011). " +
+            "Add `datasourceSpec.filePath` to supply the source file.",
         );
-        datasourceLuid = ds.id;
-        newDatasourceLuid = ds.id;
       }
+
+      const spec = plan.datasourceSpec;
+
+      if (!spec.filePath) {
+        // sql/query branch — buildDatasourceFromQuery does not produce a .hyper extract.
+        throw new Error(
+          "build_from_plan: rendering a dashboard requires an embeddable extract. " +
+            "The `datasourceSpec.sql` (query) path does not produce a .hyper file that can be " +
+            "embedded in the workbook. Use `datasourceSpec.filePath` to supply a local CSV, " +
+            "Excel, JSON, or Parquet file so the extract can be built and embedded.",
+        );
+      }
+
+      const dsProjectId = await ctx.rest.resolveProjectId(plan.projectName);
+      const { tdsxPath, hyperPath } = await ctx.sidecar.buildDatasourceFromFile({
+        name: spec.datasourceName,
+        filePath: spec.filePath,
+        fileType: spec.fileType,
+        excelSheet: spec.excelSheet,
+        jsonPath: spec.jsonPath,
+      });
+
+      const ds = await ctx.rest.publishDatasource(
+        tdsxPath,
+        spec.datasourceName,
+        dsProjectId,
+        overwrite,
+      );
+      const datasourceLuid = ds.id;
+      const newDatasourceLuid: string = ds.id;
 
       // Resolve the datasource's contentUrl (needed to bind the workbook)
       const { contentUrl } = await ctx.rest.getDatasource(datasourceLuid);
@@ -149,7 +198,10 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
       // Determine canvas dimensions from the audience constraints
       const constraints = AUDIENCE_CONSTRAINTS[plan.audience];
 
-      // Build the .twbx with dashboard via the sidecar
+      // Build the .twbx with the embedded extract via the sidecar.
+      // Passing hyperPath uses the federated-connection path in server.py
+      // (/workbook/dashboard → build_embedded_twbx) so the workbook renders
+      // on Tableau Cloud without a separately published datasource binding.
       const { twbxPath } = await ctx.sidecar.buildDashboardWorkbook({
         datasourceName: plan.datasourceName,
         datasourceContentUrl: contentUrl,
@@ -166,6 +218,7 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         dashboardLayout: plan.dashboardLayout as "tiled_vertical" | "tiled_horizontal",
         canvasWidth: constraints.canvasWidth,
         canvasHeight: constraints.canvasHeight,
+        hyperPath,
       });
 
       // Publish to Tableau Cloud
@@ -180,7 +233,7 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
       return toolResult(`Published workbook "${plan.workbookName}" → ${url}`, {
         workbookLuid: id,
         url,
-        ...(newDatasourceLuid !== undefined ? { datasourceLuid: newDatasourceLuid } : {}),
+        datasourceLuid: newDatasourceLuid,
       });
     },
   );

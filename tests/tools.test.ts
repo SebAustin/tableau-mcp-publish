@@ -46,7 +46,10 @@ function makeCtx() {
     buildDatasourceFromQuery: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/x.tdsx" }),
     buildDatasourceFromTable: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/t.tdsx" }),
     buildStarterWorkbook: vi.fn().mockResolvedValue({ twbxPath: "/tmp/w.twbx" }),
-    buildDatasourceFromFile: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/f.tdsx" }),
+    // Returns both tdsxPath and hyperPath (the embedded-extract path required by build_from_plan).
+    buildDatasourceFromFile: vi
+      .fn()
+      .mockResolvedValue({ tdsxPath: "/tmp/f.tdsx", hyperPath: "/tmp/f.hyper" }),
     buildDashboardWorkbook: vi.fn().mockResolvedValue({ twbxPath: "/tmp/d.twbx" }),
   };
   return { config: cfg, rest, sidecar };
@@ -338,7 +341,30 @@ describe("design_dashboard (M5)", () => {
 });
 
 describe("build_from_plan (M6)", () => {
+  // basePlan always includes datasourceSpec.filePath: build_from_plan requires an
+  // embeddable extract (hyperPath) which is only produced by the filePath branch.
   const basePlan = {
+    schemaVersion: 1,
+    kind: "plan",
+    workbookName: "Test WB",
+    datasourceLuid: "DS",
+    datasourceName: "Sales",
+    projectName: "Sales",
+    audience: "analyst",
+    rationale: "test",
+    dashboardLayout: "tiled_vertical",
+    sheets: [
+      { title: "Rev by Region", markType: "bar", cols: ["region"], rows: [], measures: ["revenue"] },
+    ],
+    datasourceSpec: {
+      datasourceName: "Sales DS",
+      filePath: "/data/sales.csv",
+      fileType: "csv",
+    },
+  };
+
+  // basePlanLuidOnly has no datasourceSpec — used to test the loud-fail path.
+  const basePlanLuidOnly = {
     schemaVersion: 1,
     kind: "plan",
     workbookName: "Test WB",
@@ -355,18 +381,19 @@ describe("build_from_plan (M6)", () => {
 
   it("builds dashboard workbook and publishes", async () => {
     const res = await invoke("build_from_plan", { plan: basePlan });
-    expect(ctx.rest.getDatasource).toHaveBeenCalledWith("DS");
+    expect(ctx.sidecar.buildDatasourceFromFile).toHaveBeenCalled();
     expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalled();
     expect(ctx.rest.publishWorkbook).toHaveBeenCalledWith("/tmp/d.twbx", "Test WB", "PID", false);
     expect(res.structuredContent).toMatchObject({ workbookLuid: "WB" });
   });
 
-  // E2E-1: exactly 1× /workbook/dashboard sidecar call, 1× publishWorkbook, 0× publishDatasource
-  it("E2E-1: calls sidecar dashboard once, publishWorkbook once, publishDatasource zero times when no spec", async () => {
+  // E2E-1: datasourceSpec.filePath path — 1× buildDatasourceFromFile, 1× /workbook/dashboard,
+  //         1× publishWorkbook, 1× publishDatasource
+  it("E2E-1: calls sidecar dashboard once, publishWorkbook once, publishDatasource once (filePath spec)", async () => {
     await invoke("build_from_plan", { plan: basePlan });
     expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledTimes(1);
     expect(ctx.rest.publishWorkbook).toHaveBeenCalledTimes(1);
-    expect(ctx.rest.publishDatasource).not.toHaveBeenCalled();
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledTimes(1);
   });
 
   // E2E-1: canvasWidth/canvasHeight are derived from audience and forwarded to sidecar
@@ -377,10 +404,10 @@ describe("build_from_plan (M6)", () => {
     );
   });
 
-  // E2E-2: datasourceSpec.filePath → file build first, datasourceLuid in result
-  it("E2E-2: with datasourceSpec.filePath, builds datasource first and returns datasourceLuid", async () => {
+  // E2E-2: datasourceSpec.filePath → hyperPath threaded through to buildDashboardWorkbook
+  it("E2E-2: with datasourceSpec.filePath, threads hyperPath from buildDatasourceFromFile into buildDashboardWorkbook", async () => {
     const planWithSpec = {
-      ...basePlan,
+      ...basePlanLuidOnly,
       datasourceSpec: {
         datasourceName: "New Sales DS",
         filePath: "/data/sales.csv",
@@ -396,8 +423,38 @@ describe("build_from_plan (M6)", () => {
     expect(ctx.rest.publishDatasource).toHaveBeenCalledTimes(1);
     // workbook build must still happen
     expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledTimes(1);
+    // buildDashboardWorkbook must receive the hyperPath from buildDatasourceFromFile
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+      expect.objectContaining({ hyperPath: "/tmp/f.hyper" }),
+    );
     // result must include datasourceLuid
     expect(res.structuredContent).toMatchObject({ workbookLuid: "WB", datasourceLuid: "DS" });
+  });
+
+  // no-embeddable-extract branch: LUID-only (no datasourceSpec) → loud actionable error
+  it("LUID-only (no datasourceSpec): throws actionable error about missing embeddable extract", async () => {
+    await expect(
+      invoke("build_from_plan", { plan: basePlanLuidOnly }),
+    ).rejects.toThrow(/datasourceSpec.*filePath|filePath.*datasourceSpec|embed/i);
+    expect(ctx.sidecar.buildDashboardWorkbook).not.toHaveBeenCalled();
+    expect(ctx.rest.publishWorkbook).not.toHaveBeenCalled();
+  });
+
+  // no-embeddable-extract branch: datasourceSpec.sql (no filePath) → loud actionable error
+  it("datasourceSpec.sql (no filePath): throws actionable error about missing embeddable extract", async () => {
+    const planWithSqlSpec = {
+      ...basePlanLuidOnly,
+      datasourceSpec: {
+        datasourceName: "SQL DS",
+        sql: "SELECT region, SUM(revenue) FROM sales GROUP BY region",
+        connection: { type: "postgres", host: "db.example.com" },
+      },
+    };
+    await expect(
+      invoke("build_from_plan", { plan: planWithSqlSpec }),
+    ).rejects.toThrow(/sql.*filePath|filePath.*sql|embed/i);
+    expect(ctx.sidecar.buildDashboardWorkbook).not.toHaveBeenCalled();
+    expect(ctx.rest.publishWorkbook).not.toHaveBeenCalled();
   });
 
   it("throws when plan has invalid schemaVersion", async () => {

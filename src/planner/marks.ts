@@ -222,12 +222,72 @@ function annotateHighCardinality(sheet: RawSheet, fields: FieldClassification[])
 // Public API
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Descriptive sheet title derivation
+// ---------------------------------------------------------------------------
+
+/**
+ * Produce a human-readable sheet title from the bound shelf fields.
+ *
+ * Priority:
+ *   1. measure + dimension → "Measure by Dimension" (e.g. "Revenue by Region")
+ *   2. measure + temporal  → "Measure over Time"
+ *   3. measure only        → the measure name (KPI title)
+ *   4. dimension only      → the dimension name
+ *   5. clause fallback     → first 40 chars of the clause, title-cased
+ *   6. numeric fallback    → "${baseTitle} ${idx+1}"
+ */
+function deriveSheetTitle(
+  clause: string,
+  shelves: Pick<RawSheet, "cols" | "rows" | "measures">,
+  fields: FieldClassification[],
+  baseTitle: string,
+  clauseIdx: number,
+): string {
+  const firstMeasure = shelves.measures[0];
+  const allDims = [...shelves.cols, ...shelves.rows];
+  const firstDim = allDims[0];
+
+  const toLabel = (name: string): string =>
+    name
+      .replace(/[_-]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+
+  if (firstMeasure && firstDim) {
+    const fc = fields.find((f) => f.name === firstDim);
+    const isTemporal = fc?.role === "temporal" || fc?.tags.includes("temporal");
+    return isTemporal
+      ? `${toLabel(firstMeasure)} over Time`
+      : `${toLabel(firstMeasure)} by ${toLabel(firstDim)}`;
+  }
+  if (firstMeasure) {
+    return toLabel(firstMeasure);
+  }
+  if (firstDim) {
+    return toLabel(firstDim);
+  }
+  // Clause-text fallback: trim, strip punctuation, title-case
+  const clauseLabel = clause
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .slice(0, 40)
+    .trim();
+  if (clauseLabel.length > 0) return clauseLabel;
+  return `${baseTitle} ${clauseIdx + 1}`;
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 /**
  * Apply the BI_DESIGN §6 keyword heuristic to produce raw SheetSpec candidates.
  *
  * @param text           The businessQuestion or directions string.
  * @param fields         Classified field list (from classifyFields()).
- * @param baseTitle      Prefix for auto-generated sheet titles.
+ * @param baseTitle      Prefix for numeric-fallback auto-generated sheet titles.
  */
 export function applyMarkHeuristic(
   text: string,
@@ -251,7 +311,7 @@ export function applyMarkHeuristic(
 
     const shelves = assignShelves(markType, fields);
     const rawSheet: RawSheet = {
-      title: `${baseTitle} ${clauseIdx + 1}`,
+      title: deriveSheetTitle(clause, shelves, fields, baseTitle, clauseIdx),
       markType,
       ...shelves,
       rationale: gapAnnotation,
@@ -270,7 +330,7 @@ export function applyMarkHeuristic(
   if (sheets.length === 0) {
     const shelves = assignShelves("bar", fields);
     const defaultSheet: RawSheet = {
-      title: `${baseTitle} 1`,
+      title: deriveSheetTitle("", shelves, fields, baseTitle, 0),
       markType: "bar",
       ...shelves,
     };

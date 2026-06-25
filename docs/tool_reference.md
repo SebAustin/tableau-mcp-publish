@@ -242,41 +242,67 @@ The `plan` object is wrapped inside `{ plan: <DashboardPlan|ClarifyingQuestions>
 ## `build_from_plan`
 
 The **only side-effecting tool in the prompt-driven authoring set**. Consumes a `DashboardPlan`
-produced by `design_dashboard`, builds a `.twbx` with all worksheets tiled inside a `<dashboard>`
-element, and publishes it to Tableau Cloud.
+produced by `design_dashboard`, builds a self-contained `.twbx` with all worksheets tiled inside a
+`<dashboard>` element, and publishes it to Tableau Cloud.
 
-Optionally builds and publishes a new datasource first when the plan carries a `datasourceSpec`.
+The workbook embeds the `.hyper` extract directly (federated connection). This makes it
+self-contained and directly renderable on Tableau Cloud. A separately-published governed datasource
+(`.tdsx`) is also created as an independent artifact.
+
+### Embedded-extract requirement
+
+Tableau Cloud renders a workbook only when all datasource bindings can be resolved at publish time.
+The only reliable path is embedding the `.hyper` extract directly in the `.twbx` (federated
+connection). For this to work, `build_from_plan` requires the datasource to be materialized from a
+local file in the same call.
+
+**Two scenarios are rejected with an actionable error before any sidecar or REST work begins:**
+
+| Scenario | Error |
+|---|---|
+| Plan has no `datasourceSpec` (LUID-only) | The `.hyper` file is not available on disk; embedding is impossible. Binding via `datasourceLuid` alone produces a non-rendering workbook (Tableau Cloud error 400011). |
+| `datasourceSpec.sql` (query branch) | `buildDatasourceFromQuery` produces a `.tdsx` but no standalone `.hyper` path; embedding is not possible on this path. |
+
+**The only supported path is `datasourceSpec.filePath`** — a local CSV, JSON, JSONL, Excel, or
+Parquet file that the sidecar can materialize into both a `.tdsx` (published as the governed
+datasource) and a `.hyper` (embedded in the workbook).
 
 ### Parameters
 
 | Param | Type | Required | Default | Notes |
 |---|---|---|---|---|
-| `plan` | `DashboardPlan` (object) | yes | — | The object returned in `design_dashboard`'s `plan` field. Must have `schemaVersion: 1` and `kind: "plan"`. |
-| `overwrite` | boolean | no | `false` | Overwrite an existing workbook (and datasource if created) with the same name. |
+| `plan` | `DashboardPlan` (object) | yes | — | The object returned in `design_dashboard`'s `plan` field. Must have `schemaVersion: 1` and `kind: "plan"`. Must include `datasourceSpec.filePath`. |
+| `overwrite` | boolean | no | `false` | Overwrite an existing workbook (and datasource) with the same name. |
 
 ### Returns
 
-`{ workbookLuid: string, url: string, datasourceLuid?: string }`
+`{ workbookLuid: string, url: string, datasourceLuid: string }`
 
-`datasourceLuid` is present only when a new datasource was created as part of this call (i.e. the plan included a `datasourceSpec`).
+`datasourceLuid` is always present because a new datasource is always created (the `filePath` path
+always creates one).
 
 ### Execution sequence
 
 1. Parse and schema-validate the plan (`schemaVersion: 1` guard).
 2. Reject any plan whose sheet fields still contain placeholder tokens (`<measure>`, `<dimension>`).
 3. Re-validate per-sheet audience invariants (mark types, measure counts, dimension counts).
-4. If `plan.datasourceSpec` is present: build and publish the datasource first, capture the new LUID.
-5. Resolve the datasource's `contentUrl` via REST.
-6. Call the sidecar `/workbook/dashboard` to build the `.twbx` (canvas size derived from `plan.audience`).
-7. Publish the workbook and return `{ workbookLuid, url, datasourceLuid? }`.
+4. Reject if `plan.datasourceSpec` is absent (LUID-only) — throws actionable error.
+5. Reject if `plan.datasourceSpec.filePath` is absent (SQL branch) — throws actionable error.
+6. Call the sidecar `/datasource/from-file` to build the `.hyper` extract and `.tdsx`.
+7. Publish the `.tdsx` to Tableau Cloud as the governed datasource; capture `datasourceLuid`.
+8. Resolve the datasource's `contentUrl` via REST.
+9. Call the sidecar `/workbook/dashboard` with `hyperPath` to build the embedded-extract `.twbx`
+   (canvas size derived from `plan.audience`).
+10. Publish the workbook and return `{ workbookLuid, url, datasourceLuid }`.
 
 ### Guardrails
 
+- Missing `datasourceSpec` or missing `datasourceSpec.filePath` throws before any sidecar or REST call.
 - Placeholder tokens (`<measure>`, `<dimension>`) in any sheet field throw before any sidecar or REST call.
 - Audience invariant violations (disallowed mark type, too many measures or dimensions) throw before publishing.
 - `plan.projectName` must resolve to an existing project; the server never auto-creates projects.
 - `overwrite` defaults to `false`; passing `overwrite: true` is required to replace existing content.
 
-> *"Build and publish the dashboard plan the agent just generated."*
+> *"From `sales.parquet`, build and publish the dashboard plan the agent just generated."*
 
 > *"Publish the revised plan with overwrite enabled — the workbook already exists."*

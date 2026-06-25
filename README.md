@@ -89,8 +89,10 @@ create_datasource_from_file(
 
 `design_dashboard` is a **pure planner**: it turns a business question, audience, and optional
 field hints into a `DashboardPlan` JSON object. It never publishes anything.
-`build_from_plan` is the **only side-effecting tool**: it consumes the plan, builds a `.twbx`
-with worksheets and a tiled `<dashboard>`, and publishes to Cloud.
+`build_from_plan` is the **only side-effecting tool**: it consumes the plan, builds a
+self-contained `.twbx` with the source data embedded (federated `.hyper` extract), worksheets, and
+a tiled `<dashboard>`, and publishes to Cloud. It also publishes the governed `.tdsx` datasource
+as a separate artifact. Both artifacts are returned in the response.
 
 The split is deliberate. The agent can show the plan to the user, accept edits, then build —
 without re-running an expensive publish on every refinement.
@@ -101,13 +103,16 @@ without re-running an expensive publish on every refinement.
 
 The agent calls:
 
-1. `create_datasource_from_file` with `filePath="sales.parquet"`, `projectName="Analytics"` →
-   returns `{ datasourceLuid, url }`.
-2. `design_dashboard` with `mode="autonomous"`, `audience="exec"`,
-   `businessQuestion="How is revenue trending by region?"`, the datasource LUID, and
-   `fieldHints` obtained from `@tableau/mcp-server` → returns a `DashboardPlan` (≤3 sheets,
-   KPI lead, bar + line).
-3. `build_from_plan` with the plan → publishes the `.twbx`, returns `{ workbookLuid, url }`.
+1. `design_dashboard` with `mode="autonomous"`, `audience="exec"`,
+   `businessQuestion="How is revenue trending by region?"`, and `fieldHints` from
+   `@tableau/mcp-server` → returns a `DashboardPlan` (≤3 sheets, KPI lead, bar + line). Add
+   `datasourceSpec.filePath="sales.parquet"` to the plan before calling `build_from_plan`.
+2. `build_from_plan` with the plan → builds the `.hyper` extract, publishes a governed `.tdsx`
+   datasource, then publishes a self-contained `.twbx` workbook with the extract embedded
+   (federated connection) → returns `{ workbookLuid, url, datasourceLuid }`.
+
+Two tool calls. A governed datasource and a dashboard workbook, both live on Cloud. The workbook
+is self-contained and renders immediately — it carries its own copy of the data.
 
 ### Dashboard modes
 
@@ -141,7 +146,7 @@ conversation state between calls; the agent supplies the full context on each ca
 | `create_datasource_from_file` | CSV / JSON / JSONL / Excel / Parquet → `.tdsx` → publish |
 | `create_starter_workbook` | published datasource + NL sheet specs → `.twbx` → publish |
 | `design_dashboard` | business question + audience → `DashboardPlan` (no publish) |
-| `build_from_plan` | `DashboardPlan` → `.twbx` with dashboard → publish to Cloud |
+| `build_from_plan` | `DashboardPlan` (requires `datasourceSpec.filePath`) → self-contained `.twbx` (embedded extract) + governed `.tdsx` → publish both to Cloud |
 | `publish_datasource` | publish an existing `.tdsx`/`.hyper` file |
 | `publish_workbook` | publish an existing `.twb`/`.twbx` file |
 | `list_projects` / `create_project` | project management |

@@ -25,6 +25,13 @@ sets:
 file → governed Hyper extract → published Cloud datasource + workbook, with no Desktop required.
 That path has no equivalent in the official server.
 
+The datasource and the dashboard workbook are **two independent artifacts**. The `.tdsx` is
+published to Cloud as a governed, reusable datasource. The dashboard workbook (`.twbx`) produced
+by `build_from_plan` embeds its own copy of the `.hyper` extract (federated connection), making it
+self-contained and directly renderable on Tableau Cloud without the workbook needing to bind to the
+published datasource at render time. Both artifacts share the same source extract but are published
+separately.
+
 ## Capability comparison
 
 | Capability | Official `@tableau/mcp-server` (v2.18.x) | `tableau-mcp-publish` (this, 14 tools) |
@@ -40,9 +47,9 @@ That path has no equivalent in the official server.
 | Create a published datasource from a CSV / records | — | ✅ `create_datasource_from_table` |
 | Create a published datasource from a file (CSV / JSON / JSONL / Excel / Parquet) | — | ✅ `create_datasource_from_file` |
 | Build a `.hyper` extract (headless, server-side) | — | ✅ Hyper API sidecar |
-| Generate a workbook (`.twb`/`.twbx`) and publish to Cloud | — | ✅ `create_starter_workbook` |
+| Generate a workbook (`.twb`/`.twbx`) and publish to Cloud | — | ✅ `create_starter_workbook` (sqlproxy binding) |
 | Prompt-driven dashboard planning | — | ✅ `design_dashboard` |
-| Publish a dashboard plan to Cloud | — | ✅ `build_from_plan` |
+| Publish a dashboard plan to Cloud (self-contained `.twbx`, embedded extract) | — | ✅ `build_from_plan` |
 | Publish an existing `.tdsx` / `.hyper` / `.twb` / `.twbx` file | — | ✅ `publish_datasource` / `publish_workbook` |
 | Create projects / manage permissions | — | ✅ `create_project`, `set_permissions` |
 

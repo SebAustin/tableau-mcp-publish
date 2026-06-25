@@ -92,6 +92,11 @@ class DashboardWorkbookRequest(BaseModel):
     dashboard_layout: str = Field(default="tiled_vertical", alias="dashboardLayout")
     canvas_width: int = Field(default=1000, alias="canvasWidth")
     canvas_height: int = Field(default=800, alias="canvasHeight")
+    # When provided, the workbook embeds the .hyper extract directly (federated
+    # connection) instead of referencing a published datasource via sqlproxy.
+    # This is the self-contained path that renders on Tableau Cloud without a
+    # prior publish_datasource step.
+    hyper_path: str | None = Field(default=None, alias="hyperPath")
 
 
 class FileRequest(BaseModel):
@@ -147,7 +152,15 @@ def workbook_starter(req: WorkbookRequest) -> dict[str, str]:
 
 @app.post("/workbook/dashboard")
 def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
-    """Build a .twbx with a <dashboard> block tiling all sheets."""
+    """Build a .twbx with a <dashboard> block tiling all sheets.
+
+    When ``hyperPath`` is provided the workbook embeds the .hyper extract
+    directly (federated connection, self-contained) so it renders on Tableau
+    Cloud without a separately published datasource.
+
+    When ``hyperPath`` is absent the workbook references the published
+    datasource via sqlproxy (legacy path, kept for backward compatibility).
+    """
     allowed_layouts = {"tiled_vertical", "tiled_horizontal"}
     if req.dashboard_layout not in allowed_layouts:
         raise HTTPException(
@@ -161,18 +174,37 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
     sheet_titles = [str(s["title"]) for s in sheets]
     dashboards = [{"name": "Dashboard 1", "titles": sheet_titles}]
 
-    twbx_path = twb_builder.build_starter_twbx(
-        datasource_name=req.datasource_name,
-        datasource_content_url=req.datasource_content_url,
-        site=req.site,
-        sheets=sheets,
-        out_path=_out("twbx"),
-        server_url=req.server_url,
-        dashboards=dashboards,
-        dashboard_layout=req.dashboard_layout,
-        canvas_width=req.canvas_width,
-        canvas_height=req.canvas_height,
-    )
+    if req.hyper_path:
+        hyper_file = Path(req.hyper_path)
+        if not hyper_file.is_file():
+            raise HTTPException(
+                status_code=400,
+                detail=f"hyperPath not found or not a file: {req.hyper_path!r}. "
+                "Build the extract first via /datasource/from-file.",
+            )
+        twbx_path = twb_builder.build_embedded_twbx(
+            datasource_name=req.datasource_name,
+            hyper_path=hyper_file,
+            sheets=sheets,
+            out_path=_out("twbx"),
+            dashboards=dashboards,
+            dashboard_layout=req.dashboard_layout,
+            canvas_width=req.canvas_width,
+            canvas_height=req.canvas_height,
+        )
+    else:
+        twbx_path = twb_builder.build_starter_twbx(
+            datasource_name=req.datasource_name,
+            datasource_content_url=req.datasource_content_url,
+            site=req.site,
+            sheets=sheets,
+            out_path=_out("twbx"),
+            server_url=req.server_url,
+            dashboards=dashboards,
+            dashboard_layout=req.dashboard_layout,
+            canvas_width=req.canvas_width,
+            canvas_height=req.canvas_height,
+        )
     return {"path": str(twbx_path)}
 
 
@@ -189,11 +221,18 @@ class ColumnInfo(BaseModel):
 
 
 class FileResult(BaseModel):
-    """Response body for /datasource/from-file."""
+    """Response body for /datasource/from-file.
+
+    ``path`` is the .tdsx path (published datasource archive).
+    ``hyper_path`` is the raw .hyper extract path; pass it as ``hyperPath``
+    to /workbook/dashboard so the workbook embeds the extract directly.
+    ``columns`` are the real column descriptors from the file schema.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
 
     path: str
+    hyper_path: str = Field(alias="hyperPath")
     columns: list[ColumnInfo]
 
 
@@ -234,5 +273,6 @@ def datasource_from_file(req: FileRequest) -> FileResult:
     tdsx_path = tds_builder.hyper_to_tdsx(hyper_path, req.name, _out("tdsx"))
     return FileResult(
         path=str(tdsx_path),
+        hyperPath=str(hyper_path),
         columns=[ColumnInfo(name=c["name"], dataType=c["dataType"]) for c in columns],
     )

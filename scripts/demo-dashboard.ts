@@ -58,7 +58,7 @@ async function main(): Promise<void> {
 
     // Step 1: Build and publish the datasource from the CSV file.
     console.log(`Building a datasource from ${csvPath}…`);
-    const { tdsxPath, columns } = await sidecar.buildDatasourceFromFile({
+    const { tdsxPath, columns, hyperPath } = await sidecar.buildDatasourceFromFile({
       name: datasourceName,
       filePath: csvPath,
       fileType: "csv",
@@ -97,8 +97,12 @@ async function main(): Promise<void> {
     }
 
     // Step 3: Build the .twbx with dashboard via the sidecar.
+    // Pass hyperPath so the workbook embeds the extract directly (federated
+    // connection) instead of referencing the published datasource via sqlproxy.
+    // This is the approach used by all 7 reference workbooks and is required
+    // for Tableau Cloud to render the worksheets without error 400011.
     const constraints = AUDIENCE_CONSTRAINTS[audience];
-    console.log("Building dashboard workbook…");
+    console.log("Building dashboard workbook (embedded extract)…");
     const { twbxPath } = await sidecar.buildDashboardWorkbook({
       datasourceName,
       datasourceContentUrl: contentUrl,
@@ -115,6 +119,7 @@ async function main(): Promise<void> {
       dashboardLayout: plan.dashboardLayout as "tiled_vertical" | "tiled_horizontal",
       canvasWidth: constraints.canvasWidth,
       canvasHeight: constraints.canvasHeight,
+      hyperPath,
     });
 
     // Step 4: Publish the workbook.

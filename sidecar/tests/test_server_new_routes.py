@@ -1,9 +1,10 @@
 """HTTP-level tests for the two new sidecar routes (PLAN §9.1, REQUIREMENTS DB-1/PA-1).
 
 Covers:
-  /workbook/dashboard  — happy path, token guard, bad layout (400), zero canvas (400)
-  /datasource/from-file — happy path, token guard, unknown extension (400), bad fileType (400),
-                          oversize file (400, PA-1)
+  /workbook/dashboard  — happy path (sqlproxy + embedded-extract), token guard,
+                         bad layout (400), zero canvas (400), missing hyperPath (400)
+  /datasource/from-file — happy path (including hyperPath in response), token guard,
+                          unknown extension (400), bad fileType (400), oversize file (400, PA-1)
 """
 
 from __future__ import annotations
@@ -157,9 +158,15 @@ def test_datasource_from_file_csv_returns_tdsx(tmp_path: Path) -> None:
         json={"name": "TestDS", "filePath": str(csv), "fileType": "csv"},
     )
     assert res.status_code == 200
-    path = res.json()["path"]
+    body = res.json()
+    path = body["path"]
     assert path.endswith(".tdsx"), f"Expected .tdsx, got {path!r}"
     assert zipfile.is_zipfile(path)
+    # hyperPath is required for the embedded-extract dashboard path.
+    assert "hyperPath" in body, "Response must include 'hyperPath'"
+    assert body["hyperPath"].endswith(".hyper"), (
+        f"hyperPath must end with .hyper (got {body['hyperPath']!r})"
+    )
 
 
 def test_datasource_from_file_parquet_returns_tdsx(tmp_path: Path) -> None:
@@ -360,3 +367,69 @@ def test_datasource_from_file_rejects_oversized_file(tmp_path: Path) -> None:
     body = res.json()
     assert "detail" in body
     assert "size limit" in body["detail"]
+
+
+# ===========================================================================
+# /workbook/dashboard — embedded-extract path (hyperPath provided)
+# ===========================================================================
+
+
+def test_workbook_dashboard_embedded_happy_path(tmp_path: Path) -> None:
+    """POST /workbook/dashboard with hyperPath → 200, .twbx with embedded .hyper."""
+    import xml.etree.ElementTree as ET
+
+    # Build a real .hyper extract first.
+    csv = tmp_path / "data.csv"
+    csv.write_text("Region,Revenue\nWest,100\nEast,200\n")
+    ds_res = client.post(
+        "/datasource/from-file",
+        json={"name": "EmbeddedDS", "filePath": str(csv), "fileType": "csv"},
+    )
+    assert ds_res.status_code == 200
+    hyper_path = ds_res.json()["hyperPath"]
+    assert hyper_path and hyper_path.endswith(".hyper"), (
+        f"Expected a .hyper path in response, got {hyper_path!r}"
+    )
+
+    payload = {
+        **_WORKBOOK_BASE,
+        "datasourceName": "EmbeddedDS",
+        "hyperPath": hyper_path,
+        "dashboardLayout": "tiled_vertical",
+    }
+    res = client.post("/workbook/dashboard", json=payload)
+    assert res.status_code == 200, res.text
+    path = res.json()["path"]
+    assert path.endswith(".twbx")
+    assert zipfile.is_zipfile(path)
+
+    # Verify the zip contains Data/*.hyper
+    with zipfile.ZipFile(path) as archive:
+        names = archive.namelist()
+        hyper_entries = [n for n in names if n.startswith("Data/") and n.endswith(".hyper")]
+        assert len(hyper_entries) == 1, (
+            f"Expected exactly one Data/*.hyper entry, got {hyper_entries}"
+        )
+        # The .twb must use a federated datasource, not sqlproxy
+        twb_files = [n for n in names if n.endswith(".twb")]
+        assert len(twb_files) == 1
+        root = ET.fromstring(archive.read(twb_files[0]))
+
+    assert root.find(".//connection[@class='sqlproxy']") is None, (
+        "sqlproxy must NOT appear when hyperPath is provided"
+    )
+    assert root.find(".//connection[@class='federated']") is not None, (
+        "federated connection must be present in the embedded workbook"
+    )
+
+
+def test_workbook_dashboard_embedded_rejects_missing_hyper_path(tmp_path: Path) -> None:
+    """POST /workbook/dashboard with a non-existent hyperPath must return 400."""
+    payload = {
+        **_WORKBOOK_BASE,
+        "hyperPath": str(tmp_path / "ghost.hyper"),
+    }
+    res = client.post("/workbook/dashboard", json=payload)
+    assert res.status_code == 400
+    body = res.json()
+    assert "detail" in body

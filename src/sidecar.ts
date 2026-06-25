@@ -25,6 +25,13 @@ export interface ColumnInfo {
 export interface FileResult extends BuildResult {
   /** Real columns from the file schema — use these as fieldHints for the planner. */
   columns: ColumnInfo[];
+  /**
+   * Path to the raw .hyper extract on disk.
+   * Pass this as `hyperPath` to `buildDashboardWorkbook` so the published
+   * workbook embeds the extract directly (federated connection) instead of
+   * referencing a separately published datasource via sqlproxy.
+   */
+  hyperPath: string;
 }
 
 export interface QueryArgs {
@@ -90,6 +97,16 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
   canvasWidth?: number;
   /** Canvas height in pixels. */
   canvasHeight?: number;
+  /**
+   * Path to the .hyper extract returned by `buildDatasourceFromFile`.
+   *
+   * When provided, the workbook embeds the extract directly (federated
+   * connection, self-contained .twbx) so Tableau Cloud can render it
+   * without needing a separately published datasource binding.
+   *
+   * Omit only when falling back to the legacy sqlproxy reference path.
+   */
+  hyperPath?: string;
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -315,7 +332,9 @@ export class AuthoringSidecar {
     return (await res.body.json()) as T;
   }
 
-  async buildDatasourceFromFile(args: FileArgs): Promise<{ tdsxPath: string; columns: ColumnInfo[] }> {
+  async buildDatasourceFromFile(
+    args: FileArgs,
+  ): Promise<{ tdsxPath: string; columns: ColumnInfo[]; hyperPath: string }> {
     const payload: Record<string, unknown> = {
       name: args.name,
       filePath: args.filePath,
@@ -325,7 +344,7 @@ export class AuthoringSidecar {
     if (args.jsonPath) payload["jsonPath"] = args.jsonPath;
 
     const result = await this.post<FileResult>("/datasource/from-file", payload);
-    return { tdsxPath: result.path, columns: result.columns };
+    return { tdsxPath: result.path, columns: result.columns, hyperPath: result.hyperPath };
   }
 
   async buildDatasourceFromQuery(args: QueryArgs): Promise<{ tdsxPath: string }> {
@@ -360,6 +379,11 @@ export class AuthoringSidecar {
       canvasWidth: args.canvasWidth ?? 1000,
       canvasHeight: args.canvasHeight ?? 800,
     };
+    // Embed the extract directly when available — this is the path that
+    // renders on Tableau Cloud (federated connection, self-contained .twbx).
+    if (args.hyperPath) {
+      payload["hyperPath"] = args.hyperPath;
+    }
     const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };
   }

@@ -198,6 +198,60 @@ def _build_worksheet(
     return worksheet
 
 
+def _build_worksheet_cards(parent: ET.Element) -> None:
+    """Populate ``<cards>`` with the shelf cards Tableau Cloud requires for render.
+
+    Tableau Cloud's render engine checks for "visual representation" by looking
+    for the ``columns``, ``rows``, and ``marks`` shelf cards in the worksheet
+    window.  An empty ``<cards/>`` is XSD-valid but causes error 400011
+    ("has no visual representation") at publish time.
+
+    The canonical structure mirrors what Tableau Desktop writes for every
+    worksheet (reference: cmtoomey fully-documented TWB gist, confirmed against
+    the ``Window-WorksheetWindow-G`` group in twb_2026.1.0.xsd):
+
+    .. code-block:: xml
+
+        <cards>
+          <edge name="left">
+            <strip size="160">
+              <card type="pages" />
+              <card type="filters" />
+              <card type="marks" />
+            </strip>
+          </edge>
+          <edge name="top">
+            <strip size="2147483647">
+              <card type="columns" />
+            </strip>
+            <strip size="2147483647">
+              <card type="rows" />
+            </strip>
+          </edge>
+        </cards>
+
+    The ``size`` attribute on ``<strip>`` is required by the XSD (``Strip-G``
+    mandates ``size: xs:int use="required"``).  ``2147483647`` (INT_MAX) is the
+    value Tableau Desktop writes for the Columns/Rows shelf strips, and ``160``
+    for the left-edge strip.
+    """
+    cards = ET.SubElement(parent, "cards")
+
+    # Left edge: pages, filters, marks cards
+    left = ET.SubElement(cards, "edge", {"name": "left"})
+    left_strip = ET.SubElement(left, "strip", {"size": "160"})
+    ET.SubElement(left_strip, "card", {"type": "pages"})
+    ET.SubElement(left_strip, "card", {"type": "filters"})
+    ET.SubElement(left_strip, "card", {"type": "marks"})
+
+    # Top edge: columns shelf, then rows shelf (separate strips per Tableau Desktop output)
+    top = ET.SubElement(cards, "edge", {"name": "top"})
+    cols_strip = ET.SubElement(top, "strip", {"size": "2147483647"})
+    ET.SubElement(cols_strip, "card", {"type": "columns"})
+    rows_strip = ET.SubElement(top, "strip", {"size": "2147483647"})
+    ET.SubElement(rows_strip, "card", {"type": "rows"})
+
+
 def _server_host(server_url: str) -> str:
     if not server_url:
         return ""
@@ -423,9 +477,12 @@ def build_twb_xml(
     # re-baselined for schema-valid output (XSD A2)
     windows = ET.SubElement(workbook, "windows")
     for i, sheet in enumerate(sheets):
-        # Worksheet window: requires <cards/> then <simple-id>
+        # Worksheet window: populated <cards> is required by Tableau Cloud's
+        # render engine (empty <cards/> causes error 400011 "no visual
+        # representation").  See _build_worksheet_cards() for the canonical
+        # structure.  XSD requires Cards-G → VisualDoc-G → SimpleIdentifierForThisWindow-G.
         win = ET.SubElement(windows, "window", {"class": "worksheet", "name": str(sheet["title"])})
-        ET.SubElement(win, "cards")
+        _build_worksheet_cards(win)
         # Window simple-id offset: 20000 + sheet index to avoid collision
         ET.SubElement(win, "simple-id", {"uuid": _quuid(20000 + i + 1)})
 

@@ -116,12 +116,52 @@ def test_worksheet_has_simple_id() -> None:
 
 
 def test_window_has_cards() -> None:
-    """Each worksheet <window> must have a <cards/> child (XSD required)."""
+    """Each worksheet <window> must have a <cards> child with shelf content.
+
+    An empty <cards/> is XSD-valid but Tableau Cloud raises error 400011
+    ("has no visual representation") at publish time.  The cards element
+    must contain the columns, rows, and marks shelf cards so the render engine
+    can confirm the sheet has a visual.
+    """
     xml = twb_builder.build_twb_xml("DS", "ds", "site", SHEETS)
     root = ET.fromstring(xml)
     for win in root.findall(".//windows/window[@class='worksheet']"):
-        assert win.find("cards") is not None, (
-            f"window '{win.get('name')}' missing <cards/>"
+        cards = win.find("cards")
+        assert cards is not None, (
+            f"window '{win.get('name')}' missing <cards>"
+        )
+        # Must not be empty — Tableau Cloud requires shelf cards for render
+        assert len(list(cards)) > 0, (
+            f"window '{win.get('name')}' has empty <cards/> — Tableau Cloud will "
+            "reject this with 'no visual representation' (error 400011)"
+        )
+
+
+def test_window_cards_has_columns_rows_marks() -> None:
+    """Worksheet window <cards> must include columns, rows, and marks shelf cards.
+
+    These three cards are what Tableau Cloud's render engine checks to confirm
+    a worksheet has a visual representation.  Missing them causes error 400011.
+    Reference: cmtoomey fully-documented TWB gist + tableau/tableau-document-schemas XSD.
+    """
+    xml = twb_builder.build_twb_xml("DS", "ds", "site", SHEETS)
+    root = ET.fromstring(xml)
+    for win in root.findall(".//windows/window[@class='worksheet']"):
+        card_types = {c.get("type") for c in win.findall(".//card")}
+        for required in ("columns", "rows", "marks"):
+            assert required in card_types, (
+                f"window '{win.get('name')}' missing card type='{required}' "
+                f"in <cards> — present: {card_types}"
+            )
+
+
+def test_window_cards_strip_has_size_attribute() -> None:
+    """Each <strip> in <cards> must have a size attribute (XSD Strip-G: size required)."""
+    xml = twb_builder.build_twb_xml("DS", "ds", "site", SHEETS)
+    root = ET.fromstring(xml)
+    for strip in root.findall(".//windows/window/cards/edge/strip"):
+        assert strip.get("size") is not None, (
+            "<strip> is missing required 'size' attribute (XSD Strip-G)"
         )
 
 

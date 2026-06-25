@@ -58,11 +58,14 @@ async function main(): Promise<void> {
 
     // Step 1: Build and publish the datasource from the CSV file.
     console.log(`Building a datasource from ${csvPath}…`);
-    const { tdsxPath } = await sidecar.buildDatasourceFromFile({
+    const { tdsxPath, columns } = await sidecar.buildDatasourceFromFile({
       name: datasourceName,
       filePath: csvPath,
       fileType: "csv",
     });
+    console.log(
+      `Datasource built — real columns: ${columns.map((c) => `${c.name}(${c.dataType})`).join(", ")}`,
+    );
     const projectId = await rest.resolveProjectId(projectName);
     const ds = await rest.publishDatasource(tdsxPath, datasourceName, projectId, true);
     console.log(`Datasource published → ${ds.url}`);
@@ -73,18 +76,14 @@ async function main(): Promise<void> {
     }
 
     // Step 2: Design the dashboard plan (autonomous mode, analyst audience).
+    // Use the REAL columns returned by the sidecar so the planner only binds
+    // fields that actually exist in the datasource.
     console.log("Designing dashboard plan (autonomous, analyst audience)…");
     const plan = generatePlan({
       mode: "autonomous",
       audience,
-      businessQuestion: "Show top customers by revenue and how revenue trends over time",
-      fieldHints: [
-        { name: "customer_name", dataType: "string" },
-        { name: "revenue", dataType: "number" },
-        { name: "order_date", dataType: "date" },
-        { name: "region", dataType: "string" },
-        { name: "order_id", dataType: "string" },
-      ],
+      businessQuestion: "Show revenue by customer and revenue by region",
+      fieldHints: columns,
       datasourceLuid: ds.id,
       datasourceName,
       projectName,

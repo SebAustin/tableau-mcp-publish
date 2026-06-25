@@ -60,3 +60,62 @@ def test_records_to_dataframe() -> None:
     df = hyper_builder.records_to_dataframe([{"a": 1, "b": "x"}, {"a": 2, "b": "y"}])
     assert list(df.columns) == ["a", "b"]
     assert len(df) == 2
+
+
+# ---------------------------------------------------------------------------
+# dtype_to_category — pure unit tests (no file I/O needed)
+# ---------------------------------------------------------------------------
+
+
+def test_dtype_to_category_integer() -> None:
+    """int64 and uint32 dtypes map to 'number'."""
+    assert hyper_builder.dtype_to_category(pd.Series([1, 2, 3]).dtype) == "number"
+    assert hyper_builder.dtype_to_category(pd.array([1, 2], dtype="uint32").dtype) == "number"
+
+
+def test_dtype_to_category_float() -> None:
+    """float64 dtype maps to 'number'."""
+    assert hyper_builder.dtype_to_category(pd.Series([1.0, 2.5]).dtype) == "number"
+
+
+def test_dtype_to_category_string() -> None:
+    """object dtype (string columns) maps to 'string'."""
+    assert hyper_builder.dtype_to_category(pd.Series(["a", "b"]).dtype) == "string"
+
+
+def test_dtype_to_category_bool() -> None:
+    """bool dtype maps to 'boolean'."""
+    assert hyper_builder.dtype_to_category(pd.Series([True, False]).dtype) == "boolean"
+
+
+def test_dtype_to_category_datetime() -> None:
+    """datetime64 dtype maps to 'date'."""
+    assert hyper_builder.dtype_to_category(pd.to_datetime(["2024-01-01"]).dtype) == "date"
+
+
+# ---------------------------------------------------------------------------
+# dataframe_columns — integration of dtype_to_category over a DataFrame
+# ---------------------------------------------------------------------------
+
+
+def test_dataframe_columns_mixed_types() -> None:
+    """dataframe_columns returns correct name/dataType for each column."""
+    df = pd.DataFrame(
+        {
+            "region": ["West", "East"],
+            "customer": ["Acme", "Globex"],
+            "revenue": [128400, 98200],
+        }
+    )
+    cols = hyper_builder.dataframe_columns(df)
+    assert [c["name"] for c in cols] == ["region", "customer", "revenue"]
+    assert cols[0]["dataType"] == "string"
+    assert cols[1]["dataType"] == "string"
+    assert cols[2]["dataType"] == "number"
+
+
+def test_dataframe_columns_preserves_order() -> None:
+    """Column order in the output matches the DataFrame column order."""
+    df = pd.DataFrame({"z": [1], "a": ["x"], "m": [True]})
+    names = [c["name"] for c in hyper_builder.dataframe_columns(df)]
+    assert names == ["z", "a", "m"]

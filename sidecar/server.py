@@ -176,9 +176,35 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
     return {"path": str(twbx_path)}
 
 
+class ColumnInfo(BaseModel):
+    """A single column descriptor returned by the file-ingest route.
+
+    Uses camelCase ``dataType`` to match the TypeScript ``ColumnInfo`` interface.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    dataType: str  # noqa: N815 — intentional camelCase to match the TS client contract
+
+
+class FileResult(BaseModel):
+    """Response body for /datasource/from-file."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    path: str
+    columns: list[ColumnInfo]
+
+
 @app.post("/datasource/from-file")
-def datasource_from_file(req: FileRequest) -> dict[str, str]:
-    """Build a .tdsx from a local file (csv, json, jsonl, xlsx, xls, parquet)."""
+def datasource_from_file(req: FileRequest) -> FileResult:
+    """Build a .tdsx from a local file (csv, json, jsonl, xlsx, xls, parquet).
+
+    The response includes ``columns``: a list of ``{name, dataType}`` descriptors
+    derived from the file's real schema so callers can bind worksheets to actual
+    field names rather than guessing.
+    """
     file_type = req.file_type
     if file_type is None:
         # Infer from extension.
@@ -203,6 +229,10 @@ def datasource_from_file(req: FileRequest) -> dict[str, str]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    columns = hyper_builder.dataframe_columns(df)
     hyper_path = hyper_builder.dataframe_to_hyper(df, _out("hyper"))
     tdsx_path = tds_builder.hyper_to_tdsx(hyper_path, req.name, _out("tdsx"))
-    return {"path": str(tdsx_path)}
+    return FileResult(
+        path=str(tdsx_path),
+        columns=[ColumnInfo(name=c["name"], dataType=c["dataType"]) for c in columns],
+    )

@@ -30,6 +30,51 @@ DEFAULT_MAX_ROWS = 1_000_000
 #: Rejects files before any parsing begins (PA-1).
 MAX_FILE_BYTES = 500 * 1024 * 1024  # 500 MB
 
+
+def dtype_to_category(dtype: Any) -> str:
+    """Map a pandas dtype to a coarse, planner-friendly category string.
+
+    Returns one of: ``"number"``, ``"date"``, ``"boolean"``, ``"string"``.
+
+    The mapping is intentionally coarse so the planner can build worksheets
+    using only the information it needs (mark type, shelf placement) without
+    knowing Tableau's exact internal type names.
+
+    Args:
+        dtype: A pandas dtype object (e.g. ``dtype('int64')``).  The mapping
+            is performed on the string representation, so any object with a
+            meaningful ``str()`` works.
+
+    Returns:
+        A planner-friendly category string: one of ``"number"``, ``"date"``,
+        ``"boolean"``, or ``"string"``.
+    """
+    dtype_str = str(dtype).lower()
+    if dtype_str.startswith(("int", "uint", "float")):
+        return "number"
+    if dtype_str.startswith(("datetime", "timedelta")):
+        return "date"
+    if dtype_str == "bool":
+        return "boolean"
+    return "string"
+
+
+def dataframe_columns(df: pd.DataFrame) -> list[dict[str, str]]:
+    """Return the column schema of *df* as a list of ``{name, dataType}`` dicts.
+
+    ``dataType`` is derived from :func:`dtype_to_category` — one of
+    ``"number"``, ``"date"``, ``"boolean"``, ``"string"``.
+
+    Args:
+        df: Any pandas DataFrame.
+
+    Returns:
+        A list of ``{"name": <column name>, "dataType": <category>}`` dicts,
+        one per column, preserving the original column order.
+    """
+    return [{"name": str(col), "dataType": dtype_to_category(df[col].dtype)} for col in df.columns]
+
+
 # Tableau's convention for a single-table extract.
 EXTRACT_SCHEMA = "Extract"
 EXTRACT_TABLE = "Extract"

@@ -10,6 +10,23 @@ export interface BuildResult {
   path: string;
 }
 
+/** A single column descriptor returned by the file-ingest sidecar route. */
+export interface ColumnInfo {
+  /** Column name as it appears in the source file. */
+  name: string;
+  /**
+   * Coarse planner-friendly data type category.
+   * One of: "number" | "date" | "boolean" | "string".
+   */
+  dataType: string;
+}
+
+/** Response shape from /datasource/from-file (superset of BuildResult). */
+export interface FileResult extends BuildResult {
+  /** Real columns from the file schema — use these as fieldHints for the planner. */
+  columns: ColumnInfo[];
+}
+
 export interface QueryArgs {
   connection: Record<string, unknown>;
   sql: string;
@@ -298,7 +315,7 @@ export class AuthoringSidecar {
     return (await res.body.json()) as T;
   }
 
-  async buildDatasourceFromFile(args: FileArgs): Promise<{ tdsxPath: string }> {
+  async buildDatasourceFromFile(args: FileArgs): Promise<{ tdsxPath: string; columns: ColumnInfo[] }> {
     const payload: Record<string, unknown> = {
       name: args.name,
       filePath: args.filePath,
@@ -307,8 +324,8 @@ export class AuthoringSidecar {
     if (args.excelSheet !== undefined) payload["excelSheet"] = args.excelSheet;
     if (args.jsonPath) payload["jsonPath"] = args.jsonPath;
 
-    const { path } = await this.post<BuildResult>("/datasource/from-file", payload);
-    return { tdsxPath: path };
+    const result = await this.post<FileResult>("/datasource/from-file", payload);
+    return { tdsxPath: result.path, columns: result.columns };
   }
 
   async buildDatasourceFromQuery(args: QueryArgs): Promise<{ tdsxPath: string }> {

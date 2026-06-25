@@ -281,6 +281,61 @@ def test_datasource_from_file_token_guard_passes_with_correct_header(
     assert res.status_code == 200
 
 
+# ===========================================================================
+# /datasource/from-file — columns schema in response
+# ===========================================================================
+
+
+def test_datasource_from_file_csv_returns_columns(tmp_path: Path) -> None:
+    """POST /datasource/from-file must include 'columns' with correct names and categories."""
+    csv = tmp_path / "data.csv"
+    csv.write_text("region,customer,revenue\nWest,Acme,128400\nEast,Globex,98200\n")
+    res = client.post(
+        "/datasource/from-file",
+        json={"name": "TestDS", "filePath": str(csv), "fileType": "csv"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert "columns" in body, "Response missing 'columns' key"
+    cols = {c["name"]: c["dataType"] for c in body["columns"]}
+    assert cols == {"region": "string", "customer": "string", "revenue": "number"}, (
+        f"Unexpected columns mapping: {cols}"
+    )
+
+
+def test_datasource_from_file_parquet_returns_columns(tmp_path: Path) -> None:
+    """Parquet ingest must include 'columns' with correct dtype categories."""
+    p = tmp_path / "data.parquet"
+    pd.DataFrame({"id": [1, 2], "label": ["a", "b"], "score": [1.5, 2.5]}).to_parquet(str(p))
+    res = client.post(
+        "/datasource/from-file",
+        json={"name": "PqDS", "filePath": str(p), "fileType": "parquet"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert "columns" in body
+    cols = {c["name"]: c["dataType"] for c in body["columns"]}
+    assert cols["id"] == "number"
+    assert cols["label"] == "string"
+    assert cols["score"] == "number"
+
+
+def test_datasource_from_file_xlsx_returns_columns(tmp_path: Path) -> None:
+    """Excel ingest must include 'columns' with correct dtype categories."""
+    p = tmp_path / "data.xlsx"
+    pd.DataFrame({"x": [10, 20], "y": ["p", "q"]}).to_excel(str(p), index=False)
+    res = client.post(
+        "/datasource/from-file",
+        json={"name": "XlDS", "filePath": str(p), "fileType": "xlsx"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert "columns" in body
+    cols = {c["name"]: c["dataType"] for c in body["columns"]}
+    assert cols["x"] == "number"
+    assert cols["y"] == "string"
+
+
 def test_datasource_from_file_rejects_oversized_file(tmp_path: Path) -> None:
     """An oversized file must return 400 with a 'size limit' message, not a 500 (PA-1).
 

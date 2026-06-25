@@ -20,8 +20,11 @@ const ConfigSchema = z.object({
   apiVersion: z.string().default("3.28"),
   /** Loopback host for the Python authoring sidecar. */
   sidecarHost: z.string().default("127.0.0.1"),
-  /** Loopback port for the Python authoring sidecar. */
-  sidecarPort: z.coerce.number().int().positive().default(8899),
+  /**
+   * Loopback port for the Python authoring sidecar.
+   * When absent the sidecar picks a free ephemeral port automatically.
+   */
+  sidecarPort: z.coerce.number().int().positive().optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

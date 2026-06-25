@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { createServer } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -76,6 +77,39 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
 
 const HEALTH_TIMEOUT_MS = 30_000;
 const HEALTH_POLL_MS = 250;
+/** Maximum spawn attempts when auto-selecting an ephemeral port (not used for explicit ports). */
+const MAX_START_ATTEMPTS = 3;
+
+/**
+ * Ask the OS for a free port on `host` by binding to port 0, then releasing it.
+ *
+ * Binds to the same host the sidecar will use so the probe reflects the
+ * correct network interface's availability.
+ *
+ * @param host - Loopback or interface address to probe (e.g. "127.0.0.1").
+ * @returns Resolves to a positive integer port number that was free at call time.
+ */
+export function getFreePort(host: string): Promise<number> {
+  return new Promise<number>((resolve, reject) => {
+    const server = createServer();
+    server.listen({ host, port: 0 }, () => {
+      const addr = server.address();
+      if (!addr || typeof addr === "string") {
+        server.close(() => reject(new Error("Could not determine free port")));
+        return;
+      }
+      const port = addr.port;
+      server.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(port);
+        }
+      });
+    });
+    server.on("error", (err) => reject(err));
+  });
+}
 
 /** Resolve the bundled sidecar directory relative to this module (works in src/ and dist/). */
 function sidecarDir(): string {
@@ -95,20 +129,64 @@ export class AuthoringSidecar {
   private proc?: ChildProcess;
   private token = "";
   private stderr = "";
+  /** The port actually used by the running child process (0 until start() resolves). */
+  private actualPort = 0;
 
+  /**
+   * @param host - Loopback host for uvicorn (default "127.0.0.1").
+   * @param port - Explicit port to bind. When `undefined` the sidecar picks a
+   *   free ephemeral port automatically and retries up to `MAX_START_ATTEMPTS`
+   *   times if the chosen port turns out to be taken. An explicit port is never
+   *   retried — a bind failure is surfaced immediately so the caller can
+   *   diagnose the conflict.
+   * @param cwd - Working directory for the `uv run uvicorn` child process.
+   */
   constructor(
     private readonly host: string = "127.0.0.1",
-    private readonly port: number = 8899,
+    private readonly port: number | undefined = undefined,
     private readonly cwd: string = sidecarDir(),
   ) {}
 
   private get baseUrl(): string {
-    return `http://${this.host}:${this.port}`;
+    return `http://${this.host}:${this.actualPort}`;
   }
 
   async start(): Promise<void> {
     if (this.proc) return;
+
+    const autoSelect = this.port === undefined;
+    const maxAttempts = autoSelect ? MAX_START_ATTEMPTS : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const resolvedPort = autoSelect ? await getFreePort(this.host) : (this.port as number);
+      const result = await this._tryStart(resolvedPort);
+      if (result === "ok") return;
+
+      const { error, isBindError } = result;
+
+      if (autoSelect && isBindError && attempt < maxAttempts) {
+        // The ephemeral port was taken between probe and bind; clean up and retry.
+        await this._killProc();
+        continue;
+      }
+
+      // Explicit port bind failure → fail loudly. Also exhausted retries.
+      await this._killProc();
+      throw error;
+    }
+  }
+
+  /**
+   * Attempt to spawn uvicorn on `port`.
+   *
+   * @returns `"ok"` on success, or an object describing the failure.
+   */
+  private async _tryStart(
+    port: number,
+  ): Promise<"ok" | { error: Error; isBindError: boolean }> {
     this.token = randomBytes(24).toString("hex");
+    this.actualPort = port;
+    this.stderr = "";
 
     this.proc = spawn(
       "uv",
@@ -121,7 +199,7 @@ export class AuthoringSidecar {
         "--host",
         this.host,
         "--port",
-        String(this.port),
+        String(port),
         "--log-level",
         "warning",
       ],
@@ -148,15 +226,43 @@ export class AuthoringSidecar {
     const deadline = Date.now() + HEALTH_TIMEOUT_MS;
     while (Date.now() < deadline) {
       if (exited) {
-        throw new Error(`Sidecar process exited during startup.\n${this.stderr.trim()}`);
+        const isBindError = this._isBindError(this.stderr);
+        return {
+          error: new Error(`Sidecar process exited during startup.\n${this.stderr.trim()}`),
+          isBindError,
+        };
       }
-      if (await this.healthy()) return;
+      if (await this.healthy()) return "ok";
       await sleep(HEALTH_POLL_MS);
     }
-    await this.stop();
-    throw new Error(
-      `Sidecar did not become healthy within ${HEALTH_TIMEOUT_MS}ms.\n${this.stderr.trim()}`,
+
+    // Health-check timed out — not a bind error, just a slow/broken startup.
+    return {
+      error: new Error(
+        `Sidecar did not become healthy within ${HEALTH_TIMEOUT_MS}ms.\n${this.stderr.trim()}`,
+      ),
+      isBindError: false,
+    };
+  }
+
+  /** Returns true when stderr contains a port-already-in-use signal. */
+  private _isBindError(stderr: string): boolean {
+    const lower = stderr.toLowerCase();
+    return (
+      lower.includes("address already in use") ||
+      lower.includes("errno 48") ||
+      lower.includes("error while attempting to bind")
     );
+  }
+
+  private async _killProc(): Promise<void> {
+    if (!this.proc) return;
+    const proc = this.proc;
+    this.proc = undefined;
+    this.actualPort = 0;
+    if (!proc.killed) proc.kill("SIGTERM");
+    // Give the OS a moment to release the port before the next attempt.
+    await sleep(50);
   }
 
   private async healthy(): Promise<boolean> {
@@ -245,6 +351,7 @@ export class AuthoringSidecar {
     if (!this.proc) return;
     const proc = this.proc;
     this.proc = undefined;
+    this.actualPort = 0;
     if (!proc.killed) proc.kill("SIGTERM");
   }
 }

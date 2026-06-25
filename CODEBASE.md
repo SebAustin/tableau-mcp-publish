@@ -15,7 +15,7 @@ The system has two layers:
 
 | Layer | Technology | Version |
 |---|---|---|
-| TypeScript MCP server | Node.js | ≥20 (tested on 22, 24, 26) |
+| TypeScript MCP server | Node.js | ≥ 22.7.5 (tested on 22, 24, 26) |
 | Language | TypeScript | 5.7.2 |
 | Module system | ESM (`"type": "module"`, `moduleResolution: NodeNext`) | — |
 | MCP SDK | `@modelcontextprotocol/sdk` | 1.29.0 |
@@ -24,7 +24,7 @@ The system has two layers:
 | Test runner | Vitest | 2.1.8 |
 | Linter | ESLint 9 + `typescript-eslint` | 9.17.0 / 8.18.2 |
 | Python sidecar | Python | 3.12.x (uv-pinned; 3.12/3.13 both tested in CI) |
-| Web framework | FastAPI | 0.115.6 |
+| Web framework | FastAPI | 0.121.0 |
 | ASGI server | uvicorn[standard] | 0.32.0 |
 | Validation | Pydantic v2 | 2.9.2 |
 | Hyper extract | tableauhyperapi | 0.0.21408 |
@@ -48,14 +48,14 @@ npm install
 npm run build         # tsc -> dist/
 npm run lint          # eslint .
 npm run typecheck     # tsc --noEmit
-npm test              # vitest run (28 tests)
+npm test              # vitest run (87 tests)
 
 # Python sidecar
 cd sidecar
 uv sync --all-extras  # create .venv with dev + connectors
 uv run ruff check .   # lint
 uv run mypy --strict . # type check
-uv run pytest -q      # 18 tests
+uv run pytest -q      # 114 tests
 
 # Full CI gate (equivalent to GitHub Actions)
 make ci               # build + lint + test + sidecar-lint + sidecar-typecheck + sidecar-test
@@ -70,10 +70,17 @@ The `make ci` target does **not** run `npm run typecheck` separately; the `build
 ```
 tableau-mcp-publish/
 ├── src/
-│   ├── index.ts              # Entry point — registers all tools, signs in, spawns sidecar, starts stdio transport
+│   ├── index.ts              # Entry point — registers all 14 tools, signs in, spawns sidecar, starts stdio transport
 │   ├── config.ts             # Zod schema for env-based config (SERVER, SITE_NAME, PAT_NAME, PAT_VALUE…)
 │   ├── restClient.ts         # TableauRestClient: signIn/signOut, publish (single + chunked), CRUD, permissions
 │   ├── sidecar.ts            # AuthoringSidecar: spawns uv/uvicorn, health-polls, posts to /datasource/*, /workbook/*
+│   ├── planner/              # Deterministic BI planner (no LLM calls)
+│   │   ├── schema.ts         # DashboardPlan Zod types
+│   │   ├── fields.ts         # Field-role inference from column hints
+│   │   ├── marks.ts          # Mark-type selection logic
+│   │   ├── audience.ts       # Audience → canvas size + sheet-count clamps
+│   │   ├── questions.ts      # Interview-mode clarifying-question generation
+│   │   └── plan.ts           # planDashboard() entry point
 │   └── tools/
 │       ├── context.ts        # ToolContext interface + toolResult() helper
 │       ├── projects.ts       # list_projects, create_project
@@ -81,24 +88,38 @@ tableau-mcp-publish/
 │       ├── permissions.ts    # set_permissions (allowlist + elevated gate)
 │       ├── createDatasourceFromQuery.ts  # create_datasource_from_query
 │       ├── createDatasourceFromTable.ts  # create_datasource_from_table
+│       ├── createDatasourceFromFile.ts   # create_datasource_from_file (csv/json/jsonl/xlsx/parquet)
 │       ├── createStarterWorkbook.ts      # create_starter_workbook
+│       ├── designDashboard.ts            # design_dashboard (autonomous/interview/interview_followup/directed)
+│       ├── buildFromPlan.ts              # build_from_plan (DashboardPlan → embedded .twbx → publish)
 │       ├── publishDatasource.ts          # publish_datasource (pre-built file)
 │       └── publishWorkbook.ts            # publish_workbook (pre-built file)
 ├── tests/
-│   ├── restClient.test.ts    # Unit: chunk math, strategy boundary, signIn, publish, resolveProjectId
-│   ├── secrets.test.ts       # PAT-never-logged assertions
-│   └── tools.test.ts         # Integration: all 14 tools via FakeServer + mock ctx
+│   ├── restClient.test.ts      # Unit: chunk math, strategy boundary, signIn, publish, resolveProjectId (11 tests)
+│   ├── secrets.test.ts         # PAT-never-logged assertions (3 tests)
+│   ├── sidecar.test.ts         # AuthoringSidecar: startup, health, build calls (7 tests)
+│   ├── sidecar-columns.test.ts # Column-schema pass-through from /datasource/from-file (3 tests)
+│   ├── planner.test.ts         # planDashboard(): autonomous/interview/directed × audiences (29 tests)
+│   └── tools.test.ts           # Integration: all 14 tools via FakeServer + mock ctx (34 tests)
 ├── sidecar/
-│   ├── server.py             # FastAPI app — token guard, /health, /datasource/from-query, /datasource/from-table, /workbook/starter
-│   ├── hyper_builder.py      # DataFrame/SQL/CSV -> .hyper extract (pantab + tableauhyperapi)
-│   ├── tds_builder.py        # .hyper -> .tdsx (hand-built TDS XML + zip)
-│   ├── twb_builder.py        # build_twb_xml() / build_starter_twbx() — worksheets only, no dashboard block
+│   ├── server.py             # FastAPI app — token guard, /health, /datasource/from-query,
+│   │                         #   /datasource/from-table, /datasource/from-file, /workbook/starter,
+│   │                         #   /workbook/dashboard
+│   ├── hyper_builder.py      # DataFrame/SQL/CSV/JSON/XLSX/Parquet → .hyper extract (pantab + tableauhyperapi)
+│   ├── tds_builder.py        # .hyper → .tdsx (hand-built TDS XML + zip)
+│   ├── twb_builder.py        # build_twb_xml() / build_starter_twbx() / build_embedded_twb_xml() /
+│   │                         #   build_embedded_twbx() — worksheets + optional <dashboards> block
 │   ├── pyproject.toml        # uv project config, ruff/mypy/pytest settings
 │   └── tests/
-│       ├── test_hyper_builder.py  # 5 tests: round-trip, column roles, CSV, max_rows
-│       ├── test_tds_builder.py    # 3 tests: zip structure, dbname path, column roles
-│       ├── test_twb_builder.py    # 5 tests: datasource reference, worksheets, mark classes, default site, zip
-│       └── test_server.py         # 5 tests: health, from-table, 400 guard, workbook starter, token guard
+│       ├── test_hyper_builder.py        # 12 tests: round-trip, column roles, CSV, max_rows, records_to_df
+│       ├── test_hyper_builder_formats.py# 16 tests: csv/json/jsonl/xlsx/parquet format round-trips, byte cap
+│       ├── test_tds_builder.py          # 3 tests: zip structure, dbname path, column roles
+│       ├── test_twb_builder.py          # 13 tests: datasource ref, worksheets, mark classes, A2 structural pins
+│       ├── test_twb_dashboard.py        # 21 tests: zone count/names, geometry invariants, canvas size, regression
+│       ├── test_twb_embedded.py         # 16 tests: federated datasource, field refs, zip structure, XSD gate
+│       ├── test_twb_schema_validation.py# 4 tests: XSD-valid output + XXE-safe parser guard
+│       ├── test_server.py               # 5 tests: health, from-table, 400 guard, workbook starter, token guard
+│       └── test_server_new_routes.py    # 24 tests: /datasource/from-file (5 formats), /workbook/dashboard
 ├── Makefile                  # CI gate: build lint test sidecar-lint sidecar-typecheck sidecar-test
 ├── package.json
 ├── tsconfig.json             # strict, NodeNext, rootDir=src, outDir=dist
@@ -130,7 +151,9 @@ AI agent (Claude / Cursor / etc.)
   │ v3.28       │       │  /health              │
   │             │       │  /datasource/from-query│
   └─────────────┘       │  /datasource/from-table│
+                        │  /datasource/from-file│
                         │  /workbook/starter    │
+                        │  /workbook/dashboard  │
                         │                       │
                         │  hyper_builder.py     │
                         │   pandas + pantab     │
@@ -222,22 +245,30 @@ as FUTURE-ONLY.
 
 ## Tests
 
-### TypeScript (Vitest) — 28 tests
+### TypeScript (Vitest) — 87 tests
 
 | File | Count | What it tests |
 |---|---|---|
 | `tests/restClient.test.ts` | 11 | `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single publish, chunked publish (3 chunks, 3 PUTs + 1 finalize), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known |
 | `tests/secrets.test.ts` | 3 | PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT |
-| `tests/tools.test.ts` | 14 | All 14 tools registered with description+schemas; `create_datasource_from_query` wiring; `create_starter_workbook` wiring; guardrails: delete needs confirm, delete refuses Default project, `set_permissions` elevated gate, allowlist rejection, valid caps; `create_datasource_from_table` requires csvPath/records |
+| `tests/sidecar.test.ts` | 7 | AuthoringSidecar: startup health-poll, buildDatasource, buildStarterWorkbook, buildDashboardWorkbook call wiring |
+| `tests/sidecar-columns.test.ts` | 3 | Column schema pass-through from `/datasource/from-file` response |
+| `tests/planner.test.ts` | 29 | `planDashboard()` autonomous/interview/interview_followup/directed × exec/analyst/operational audiences; field inference; mark-type constraints; question count |
+| `tests/tools.test.ts` | 34 | All 14 tools registered with description+schemas; full wiring for `create_datasource_from_query`, `create_starter_workbook`, `design_dashboard`, `build_from_plan`; guardrails: delete confirm, delete refuses Default project, `set_permissions` elevated gate, allowlist rejection, valid caps; `create_datasource_from_table` input validation; `create_datasource_from_file` unsupported extension (0 sidecar calls) |
 
-### Python (pytest) — 18 tests
+### Python (pytest) — 114 tests
 
 | File | Count | What it tests |
 |---|---|---|
-| `sidecar/tests/test_hyper_builder.py` | 5 | Hyper round-trip (row count + types), column roles, CSV source, max_rows cap, records_to_dataframe |
+| `sidecar/tests/test_hyper_builder.py` | 12 | Hyper round-trip (row count + types), column roles, CSV source, max_rows cap, records_to_dataframe, read_hyper_columns |
+| `sidecar/tests/test_hyper_builder_formats.py` | 16 | csv/json/jsonl/xlsx/parquet format round-trips; byte cap; `file_to_dataframe` unsupported type error; Excel sheet by index/name |
 | `sidecar/tests/test_tds_builder.py` | 3 | `.tdsx` zip structure (`.tds` + `Data/*.hyper`), dbname path matches, column roles |
-| `sidecar/tests/test_twb_builder.py` | 5 | Published datasource reference (sqlproxy/repository-location), one worksheet per sheet spec, mark class per type, default site path, starter `.twbx` is a valid zip |
+| `sidecar/tests/test_twb_builder.py` | 13 | Published datasource reference (sqlproxy/repository-location), one worksheet per sheet spec, mark class per type, default site path, starter `.twbx` is a valid zip; A2 structural pins (simple-id, cards, viewpoint, aggregation, style, explain-data) |
+| `sidecar/tests/test_twb_dashboard.py` | 21 | Zone count/names match sheets; worksheet zones have `name` and no `type`; tiling geometry (Σ==100000, no overlap, distinct offsets); canvas size element; default-None regression (byte-identical + no `<dashboards>`) |
+| `sidecar/tests/test_twb_embedded.py` | 16 | Federated datasource (not sqlproxy); hyper named-connection; field references use `[federated.*]`; zip contains `Data/*.hyper`; XSD gate (with and without dashboard); FileNotFoundError on missing extract |
+| `sidecar/tests/test_twb_schema_validation.py` | 4 | Official TWB XSD gates sqlproxy + embedded output; XXE-safe parser guard; malformed-XML rejection |
 | `sidecar/tests/test_server.py` | 5 | Health endpoint, from-table (records) returns `.tdsx`, from-table requires input (400), workbook starter returns `.twbx`, token guard blocks/passes |
+| `sidecar/tests/test_server_new_routes.py` | 24 | `/datasource/from-file` for all 5 formats returns valid `.tdsx`; `/workbook/dashboard` returns valid `.twbx` with embedded extract |
 
 Run commands: `npm test` (TS) and `cd sidecar && uv run pytest -q` (Python).
 
@@ -265,9 +296,9 @@ Run commands: `npm test` (TS) and `cd sidecar && uv run pytest -q` (Python).
 
 2. **No `typecheck` step in `make ci`.** The Makefile runs `build` (which emits JS and catches type errors), but a standalone `typecheck` (`tsc --noEmit`) step is absent from the `ci` target. In practice, `tsc` errors block `build`, so this is not a real gap, but a dedicated `typecheck` step would catch import-only type errors without producing artifacts.
 
-3. **`twb_builder.py` emits worksheets only — no dashboard block.** The current `build_twb_xml()` produces `<workbook><datasources>…</datasources><worksheets>…</worksheets><windows>…</windows></workbook>`. There is no `<dashboards>` element. Tableau opens the workbook in the first worksheet view. A prompt-driven dashboard feature requires extending `twb_builder.py`.
+3. ~~**`twb_builder.py` emits worksheets only — no dashboard block.**~~ **Shipped.** `build_twb_xml()` / `build_embedded_twb_xml()` now emit an optional `<dashboards>` + `<viewpoints>` block; `build_from_plan` drives the embedded-extract path end-to-end.
 
-4. **File-format support is CSV-only** for the `from-table` / `from-query` paths. Parquet, JSON, and other formats would require new branches in `hyper_builder.query_to_dataframe()`.
+4. ~~**File-format support is CSV-only.**~~ **Shipped.** `create_datasource_from_file` (`/datasource/from-file`) accepts csv, json, jsonl, xlsx, and parquet via `hyper_builder.file_to_dataframe()`.
 
 5. **`getDatasource` has a fallback list-all-datasources** when `contentUrl` is missing from the GET response (`src/restClient.ts:401–416`). This is correct but can be slow on large sites and is a fragility point if `contentUrl` is reliably missing.
 
@@ -275,117 +306,27 @@ Run commands: `npm test` (TS) and `cd sidecar && uv run pytest -q` (Python).
 
 ---
 
-## Extension Points for Prompt-Driven Authoring
-
-### 1. Datasource from file or SQL query (unified prompt-driven path)
-
-The two existing tools already cover the two sub-cases:
-
-| Sub-case | Existing tool | Sidecar route | Python function |
-|---|---|---|---|
-| SQL / connection | `create_datasource_from_query` | `POST /datasource/from-query` | `hyper_builder.query_to_dataframe()` → `dataframe_to_hyper()` → `tds_builder.hyper_to_tdsx()` |
-| CSV / records | `create_datasource_from_table` | `POST /datasource/from-table` | same chain |
-
-A new unified tool `create_datasource` could accept either a `filePath` (with type inference) or a `connection`+`sql` and dispatch internally to the appropriate sidecar route — or could merge into a single sidecar route that accepts a discriminated-union body.
-
-**Adding Parquet/JSON file support** touches:
-- `sidecar/hyper_builder.py` — `query_to_dataframe()` at line 99: add `elif ctype == "parquet": df = pd.read_parquet(...)` and `elif ctype == "json": df = pd.read_json(...)`. No other files change.
-- `src/tools/createDatasourceFromTable.ts` — the `csvPath` parameter would be renamed or the schema extended to accept `filePath` + optional `fileType` discriminator.
-- `sidecar/server.py` — `TableRequest` model would gain `file_path` / `file_type` fields.
-
-No changes needed to `tds_builder.py`, `twb_builder.py`, or `restClient.ts`.
-
-### 2. Dashboard workbook authoring
-
-**Current state of `twb_builder.py`:**
-
-`build_twb_xml()` (line 138) generates:
-```xml
-<workbook source-build="2024.1.0" version="18.1">
-  <datasources>
-    <datasource caption="…" name="sqlproxy.X" version="18.1" inline="true">
-      <repository-location id="X" path="/t/site/datasources" revision="1.0" site="site" />
-      <connection class="sqlproxy" dbname="X" channel="https" directory="/dataserver" port="443" server="host" />
-      <column … />  <!-- one per referenced field -->
-    </datasource>
-  </datasources>
-  <worksheets>
-    <worksheet name="Sheet Title">
-      <table>
-        <view>…datasource reference + datasource-dependencies…</view>
-        <rows>…</rows>
-        <cols>…</cols>
-        <panes><pane><mark class="Bar" /></pane></panes>
-      </table>
-    </worksheet>
-  </worksheets>
-  <windows>
-    <window class="worksheet" name="Sheet Title" />
-  </windows>
-</workbook>
-```
-
-**There is no `<dashboards>` block.** The workbook opens in the first worksheet. To add real dashboard layout, `build_twb_xml()` needs a new section emitted after `<worksheets>`:
-
-```xml
-<dashboards>
-  <dashboard name="Dashboard 1">
-    <size maxheight="768" maxwidth="1024" minheight="768" minwidth="1024" />
-    <zones>
-      <zone h="100000" id="1" type="layout-basic" w="100000" x="0" y="0">
-        <zone h="50000" id="2" name="Sheet 1 Title" type="worksheet" w="100000" x="0" y="0" />
-        <zone h="50000" id="3" name="Sheet 2 Title" type="worksheet" w="100000" x="0" y="50000" />
-      </zone>
-    </zones>
-  </dashboard>
-</dashboards>
-```
-
-The exact functions to extend in `sidecar/twb_builder.py`:
-
-- **`build_twb_xml()`** (line 138): add an optional `dashboards: list[dict]` parameter; after the `windows` block, call a new `_build_dashboard()` helper and append the resulting `ET.Element` to `workbook`.
-- **`_build_dashboard()`** (new function): accept a dashboard spec (name, size, list of zone placements referencing worksheet titles by name) and build the `<dashboard><size /><zones>…</zones></dashboard>` XML.
-- **`build_starter_twbx()`** (line 223): accept and forward `dashboards` to `build_twb_xml()`.
-
-On the sidecar API boundary (`sidecar/server.py`):
-- `WorkbookRequest` model: add optional `dashboards: list[DashboardModel] = []` field.
-- The `workbook_starter` route: pass `dashboards` through to `twb_builder.build_starter_twbx()`.
-
-On the TypeScript side:
-- `src/sidecar.ts` `WorkbookArgs` interface: add `dashboards?: DashboardSpec[]`.
-- `src/sidecar.ts` `buildStarterWorkbook()`: pass through.
-- `src/tools/createStarterWorkbook.ts`: extend the `inputSchema` with an optional `dashboards` zod array; wire into the sidecar call.
-
-### 3. BI analyst planning / interview / audience logic
-
-**Recommendation: keep planning entirely in MCP tool return values; do not embed LLM calls in the server.**
-
-This MCP server runs as a subprocess with stdio. It has no LLM client, no streaming, and no session memory. The "analyst interview" loop — asking clarifying questions, accumulating context, generating a visualization plan — is fundamentally an agent workflow, not a tool call. Embedding it in the server would require either a second LLM client (coupling, cost) or a complex stateful session mechanism alien to the MCP protocol.
-
-The right decomposition:
-
-1. Add a new **`plan_dashboard`** tool (or extend `create_starter_workbook`) that accepts a `prompt: string`, `audience: enum(exec|analyst|ops|…)`, and `mode: enum(autonomous|interview|direct)`. The tool's handler runs a lightweight deterministic planning step (field selection heuristics from the datasource's column list, audience-driven size/mark-type defaults) and returns a **structured plan** object: `{ clarifyingQuestions: string[] | null, sheets: SheetSpec[], dashboardLayout: DashboardSpec, rationale: string }`.
-2. In `interview` mode the tool returns `clarifyingQuestions` and an incomplete plan; the agent presents the questions to the user, collects answers, and calls the tool again with the updated prompt.
-3. The agent (Claude, Cursor, etc.) is the interviewer and the LLM. The MCP tool is the structured-output engine and the publisher.
-
-This approach requires:
-- A new `src/tools/planDashboard.ts` (or augmented `createStarterWorkbook.ts`).
-- A new sidecar route or TypeScript-only planning logic (no Python required if the plan is purely structural).
-- The `audience` parameter shapes defaults: exec = text/KPI marks, fewer sheets, large fonts; analyst = bar/line, dense, multi-sheet; ops = table/text, live-refresh emphasis.
-
 ---
 
 ## Regression-Guard Tests That Must Keep Passing
 
-All 46 tests must stay green on `make ci` (modulo the `.cursor/` lint issue which predates the feature):
+All 201 tests must stay green on `make ci`:
 
-**TypeScript (28 tests — `npm test`):**
+**TypeScript (87 tests — `npm test`):**
 - `tests/restClient.test.ts`: `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single-request publish, 3-chunk upload (3 PUTs + 1 finalize POST), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known.
 - `tests/secrets.test.ts`: PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT.
-- `tests/tools.test.ts`: 14-tool registration count, all tool names present, `create_datasource_from_query` full wiring, `create_starter_workbook` wiring, all guardrails (delete confirm, delete Default refusal, elevated-capability gate, allowlist rejection), `create_datasource_from_table` input validation.
+- `tests/sidecar.test.ts`: AuthoringSidecar startup, health-poll, build* call wiring.
+- `tests/sidecar-columns.test.ts`: column schema pass-through from `/datasource/from-file`.
+- `tests/planner.test.ts`: `planDashboard()` autonomous/interview/directed × all audiences; field inference; mark constraints; question count.
+- `tests/tools.test.ts`: 14-tool registration count, all tool names present, `create_datasource_from_query` full wiring, `create_starter_workbook` wiring, `design_dashboard` wiring, `build_from_plan` wiring; all guardrails (delete confirm, delete Default refusal, elevated-capability gate, allowlist rejection), `create_datasource_from_table` input validation, `create_datasource_from_file` unsupported extension.
 
-**Python (18 tests — `cd sidecar && uv run pytest -q`):**
-- `sidecar/tests/test_hyper_builder.py`: hyper round-trip row count + all column types, column role assignment, CSV source read, max_rows cap, records_to_dataframe.
+**Python (114 tests — `cd sidecar && uv run pytest -q`):**
+- `sidecar/tests/test_hyper_builder.py`: hyper round-trip row count + all column types, column role assignment, CSV source read, max_rows cap, records_to_dataframe, read_hyper_columns.
+- `sidecar/tests/test_hyper_builder_formats.py`: csv/json/jsonl/xlsx/parquet round-trips; byte cap; unsupported type error; Excel sheet by index/name.
 - `sidecar/tests/test_tds_builder.py`: `.tdsx` zip has exactly one `.tds` and one `Data/*.hyper`, dbname path format, column role attributes.
-- `sidecar/tests/test_twb_builder.py`: sqlproxy datasource reference present, repository-location attributes, one worksheet per sheet spec with correct datasource-dependencies, mark class mapping (bar/line/text), default site path, `.twbx` is a valid zip containing a parseable `<workbook>`.
+- `sidecar/tests/test_twb_builder.py`: sqlproxy datasource reference present, repository-location attributes, one worksheet per sheet spec with correct datasource-dependencies, mark class mapping (bar/line/text), default site path, `.twbx` is a valid zip containing a parseable `<workbook>`; A2 structural pins (simple-id, cards with shelf content, viewpoint, aggregation, style, explain-data).
+- `sidecar/tests/test_twb_dashboard.py`: zone count/names match sheets; worksheet zones have `name` and no `type`/`type-v2`; tiling geometry invariants (Σ==100000, no overlap, distinct offsets); canvas size element matches inputs; default-None regression (byte-identical, no `<dashboards>`).
+- `sidecar/tests/test_twb_embedded.py`: federated datasource (not sqlproxy); hyper named-connection; `[federated.*]` field references in rows/cols; zip contains `Data/*.hyper`; XSD gate (with and without dashboard); FileNotFoundError on missing extract.
+- `sidecar/tests/test_twb_schema_validation.py`: official TWB XSD gates sqlproxy and embedded output; XXE-safe parser config; malformed-XML rejected by schema.
 - `sidecar/tests/test_server.py`: health returns `{"status":"ok"}`, from-table (records) produces a valid `.tdsx` zip, from-table without input returns 400, workbook starter produces `.twbx`, token guard blocks requests without header and passes with matching header.
+- `sidecar/tests/test_server_new_routes.py`: `/datasource/from-file` for all 5 formats returns valid `.tdsx`; `/workbook/dashboard` returns valid `.twbx` with embedded extract.

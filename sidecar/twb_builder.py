@@ -27,7 +27,7 @@ Key structural requirements imposed by the XSD:
 - ``<table>`` sequence: ``<view>``, ``<style/>``, ``<panes>``, ``<rows>``, ``<cols>``.
 - ``<worksheet>`` must have ``<simple-id uuid="..."/>`` after ``<table>``.
 - ``<windows>`` sequence: worksheets windows with ``<cards/>`` then ``<simple-id>``;
-  dashboard windows with ``<viewpoints/>``, ``<active id="1"/>``, ``<simple-id>``.
+  dashboard windows with ``<viewpoints/>``, ``<active id="-1"/>``, ``<simple-id>``.
 - Workbook child ordering: ``<datasources>``, ``<worksheets>``, ``<dashboards>``,
   ``<windows>``, then ``<explain-data>`` (required).
 """
@@ -444,9 +444,10 @@ def build_twb_xml(
     ``<datasources>`` → ``<worksheets>`` → ``<dashboards>`` (if any)
     → ``<windows>`` → ``<explain-data>`` (required).
 
-    When ``dashboards`` is ``None`` (default), the output is byte-identical to
-    the pre-feature version with respect to determinism: both calls with no
-    ``dashboards`` kwarg and with ``dashboards=None`` produce identical XML.
+    When ``dashboards`` is ``None`` (default), both calls with no ``dashboards``
+    kwarg and with an explicit ``dashboards=None`` produce byte-identical XML
+    (a determinism guard — not a byte-snapshot comparison against the pre-feature
+    version; the worksheet/window structure was re-baselined for schema validity).
     """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
@@ -523,8 +524,8 @@ def build_twb_xml(
 
     # --- Optional dashboard block (BEFORE <windows> per XSD) ----------------
     # XSD workbook sequence: Worksheets → Dashboards → Windows → explain-data
-    # When ``dashboards`` is None (default), the output is byte-identical to the
-    # pre-feature version — existing twb tests continue to pass unchanged.
+    # When ``dashboards`` is None (default), both call forms (no kwarg and explicit
+    # None) produce byte-identical XML — a determinism guard, not a pre-feature snapshot.
     if dashboards:
         for db_index, db in enumerate(dashboards):
             db_name = str(db.get("name", "Dashboard 1"))
@@ -602,9 +603,10 @@ def build_starter_twbx(
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource.
 
-    When ``dashboards`` is ``None`` (default) the output is identical to the
-    pre-feature version.  Pass a non-None list to include a ``<dashboards>``
-    block and a dashboard window entry.
+    When ``dashboards`` is ``None`` (default), the two call forms (no kwarg and
+    explicit ``None``) produce byte-identical output (determinism guard).
+    Pass a non-None list to include a ``<dashboards>`` block and a dashboard
+    window entry.
     """
     twb_xml = build_twb_xml(
         datasource_name,

@@ -303,6 +303,55 @@ def test_embedded_twbx_with_dashboard_has_correct_zone_count(
     )
 
 
+def test_embedded_dashboard_window_viewpoints_match_sheets(hyper_file: Path) -> None:
+    """Dashboard window must emit exactly one <viewpoint name="..."> per sheet title.
+
+    Root cause of error 400011 "Dashboard references sheet '…' which has no visual
+    representation": an empty <viewpoints/> tells Tableau Cloud there are no visuals
+    on the dashboard even when the worksheets themselves render correctly.  Each sheet
+    title listed in the dashboard's zone set must appear as a <viewpoint name="…"> child
+    of <viewpoints> in the dashboard <window>.
+
+    This is the keystone regression guard for the embedded-extract builder: if
+    <viewpoints> is accidentally emptied (or the loop that populates it is removed),
+    this test turns RED before any live publish is attempted.
+    """
+    sheet_titles = [str(s["title"]) for s in SHEETS_2]
+    columns = hyper_builder.read_hyper_columns(hyper_file)
+    xml_str = twb_builder.build_embedded_twb_xml(
+        "Sales DS",
+        hyper_file.name,
+        columns,
+        SHEETS_2,
+        dashboards=DASHBOARDS,
+    )
+    root = ET.fromstring(xml_str)
+
+    dashboard_windows = root.findall(".//windows/window[@class='dashboard']")
+    assert len(dashboard_windows) == 1, (
+        f"Expected 1 dashboard window, got {len(dashboard_windows)}"
+    )
+    win = dashboard_windows[0]
+
+    viewpoints_el = win.find("viewpoints")
+    assert viewpoints_el is not None, (
+        "Dashboard window missing <viewpoints> — an empty or absent <viewpoints> "
+        "causes Tableau Cloud error 400011 'no visual representation'"
+    )
+
+    viewpoint_names = [vp.get("name") for vp in viewpoints_el.findall("viewpoint")]
+    assert len(viewpoint_names) == len(sheet_titles), (
+        f"Expected {len(sheet_titles)} <viewpoint> elements (one per sheet), "
+        f"got {len(viewpoint_names)}: {viewpoint_names!r}"
+    )
+    for title in sheet_titles:
+        assert title in viewpoint_names, (
+            f"Sheet '{title}' has no corresponding <viewpoint name='{title}'> in the "
+            "dashboard window <viewpoints> — Tableau Cloud will reject the dashboard "
+            "with error 400011 'has no visual representation'"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@ client and talks to Tableau Cloud over HTTPS. It spawns a Python sidecar over lo
 
 ## Prerequisites
 
-- Node 22+ and `npm`.
+- Node ≥ 22.7.5 and `npm`.
 - Python 3.12–3.13 and [`uv`](https://docs.astral.sh/uv/) (the server spawns `uv run` for the sidecar).
 - A Tableau Cloud/Server site and a Personal Access Token (`PAT_NAME` / `PAT_VALUE`).
 
@@ -93,12 +93,12 @@ Runs side by side with the official `tableau` server on the same PAT.
 
 | Tool | Description |
 |------|-------------|
-| `create_project` | Create a Tableau project |
 | `list_projects` | List all projects on the site |
-| `list_datasources` | List published datasources |
-| `list_workbooks` | List published workbooks |
-| `set_datasource_permissions` | Set project-level permissions on a datasource |
-| `set_workbook_permissions` | Set project-level permissions on a workbook |
+| `create_project` | Create a Tableau project |
+| `list_content` | List published datasources or workbooks |
+| `refresh_datasource` | Trigger a background refresh of a published datasource |
+| `delete_content` | Delete a published datasource or workbook |
+| `set_permissions` | Set project-level permissions on a content item |
 
 ## Python sidecar — new deps in this release
 
@@ -195,7 +195,7 @@ will report a sidecar startup error. Kill the existing sidecar process first:
 ## Deployment-readiness checklist
 
 - [x] Config via environment; no secrets in code; `.env` gitignored; `.env.example` provided.
-- [x] CI green on both layers (75 TS + 71 Python) across the version matrix.
+- [x] CI green on both layers (87 TS + 114 Python) across the version matrix.
 - [x] All 14 tools compile into `dist/` (`npm run build` clean, zero TS errors).
 - [x] Headless tests for the authoring + publish paths; mocked REST (no PAT in CI).
 - [x] Graceful shutdown (sign out + stop sidecar) on SIGINT/SIGTERM.

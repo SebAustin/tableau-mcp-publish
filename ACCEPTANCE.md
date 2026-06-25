@@ -102,9 +102,9 @@ stateless BI planner (`src/planner/*`), multi-format file ingest, and real dashb
 
 | Layer | Command | Result |
 |---|---|---|
-| TypeScript | `npm run build` / `npm run lint` / `npm test` | build clean · lint 0 · **75 tests pass** |
-| Python sidecar | `uv run ruff check .` / `mypy --strict .` / `pytest -q` | ruff clean · mypy clean · **71 tests pass** |
-| Full gate | `make ci` | **exit 0** — 146 tests total, independently re-run by the solution-verifier |
+| TypeScript | `npm run build` / `npm run lint` / `npm test` | build clean · lint 0 · **87 tests pass** |
+| Python sidecar | `uv run ruff check .` / `mypy --strict .` / `pytest -q` | ruff clean · mypy clean · **114 tests pass** |
+| Full gate | `make ci` | **exit 0** — 201 tests total |
 | Security | prod `npm audit --omit=dev` | **0 vulnerabilities** |
 
 The full feature gate was run as the last step of the build loop and again, independently, by the
@@ -117,7 +117,7 @@ solution-verifier (verdict **SOLID**, solution-rubric 5.00/5.00).
 | PA-1 | File ingest round-trips for csv/json/jsonl/xlsx/parquet | ✅ | `sidecar/tests/test_hyper_builder_formats.py`; `/datasource/from-file` route → valid `.tdsx` per format (`test_server_new_routes.py`) |
 | PA-2 | Unsupported extension errors **before** any sidecar call (0 calls) | ✅ | `tests/tools.test.ts` (spy asserts 0 sidecar calls); `test_file_to_dataframe_unsupported_type` |
 | PA-3 | Excel sheet selectable by index / name | ✅ | `test_file_to_dataframe_xlsx_sheet_by_index/name` |
-| DB-1 | `<dashboard>` with one `<zone type="worksheet">` per sheet, names match | ✅ | `test_twb_dashboard.py`, `test_server_new_routes.py` |
+| DB-1 | `<dashboard>` with one `<zone name="…">` (NO `type` attribute) per sheet, names match | ✅ | `test_twb_dashboard.py`, `test_server_new_routes.py` |
 | DB-2 | Zone geometry: distinct offsets, full coverage Σ==100000, zero overlap (n∈[1,8]) | ✅ | `_tile_zones` unit tests (`test_twb_dashboard.py`) |
 | DB-3 | `build_from_plan` → sidecar dashboard build + publish flow | ✅ | `tests/tools.test.ts` E2E-1 (call-count asserts) |
 | MA-1 | Autonomous exec → ≤3 sheets, marks ⊂ {bar,line,text}, KPI (text) first | ✅ | `tests/planner.test.ts` (reproduced by verifier) |
@@ -127,14 +127,13 @@ solution-verifier (verdict **SOLID**, solution-rubric 5.00/5.00).
 | MB-2 | `interview_followup` → DashboardPlan with non-empty rationale | ✅ | `tests/planner.test.ts` |
 | MC-1 | Directed exact string (audience analyst) → 2 sheets `[text, bar]` | ✅ | `tests/planner.test.ts` |
 | MC-2 | Directed **without** `directions` → validation error | ✅ | guard in `src/tools/designDashboard.ts`; rewritten test asserts `/directions/` |
-| E2E-1 | `build_from_plan` (no datasource spec) → 1× dashboard build, 1× publishWorkbook, 0× publishDatasource; audience-derived canvas | ✅ | `tests/tools.test.ts` (mocked sidecar+REST) |
+| E2E-1 | `build_from_plan` with `datasourceSpec.filePath` → 1× buildDatasourceFromFile, 1× dashboard build, 1× publishWorkbook, 1× publishDatasource; audience-derived canvas; LUID-only or SQL-only spec → actionable error | ✅ | `tests/tools.test.ts` (mocked sidecar+REST) |
 | E2E-2 | `build_from_plan` with `datasourceSpec.filePath` → datasource built first, `datasourceLuid` returned | ✅ | `tests/tools.test.ts` |
-| E2E-3 | Live: published workbook has a rendered dashboard tab on Cloud | ⏳ **gated** | Runnable via `npm run demo:dashboard` (authorized outward action — see below). Not yet captured. |
+| E2E-3 | Live: published workbook has a rendered dashboard tab on Cloud | ✅ **closed** | `npm run demo:dashboard` executed 2026-06-25 — workbook https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2420435 renders on Cloud. See E2E-3 CLOSED section below. |
 | CI-1 | New tests pass on Node 22/24/26 + Python 3.12/3.13 | ✅ (configured) | `.github/workflows/ci.yml` matrix; green locally |
 | CI-2 | build/lint/ruff/mypy --strict clean after new modules | ✅ | `make ci` exit 0 |
 
-**16/17 headless criteria pass. E2E-3 (live render) is the only gated criterion** — it is an
-outward write to a real Tableau site and is intentionally left for an explicit, authorized run.
+**18/18 criteria pass.** E2E-3 (live dashboard render) was executed 2026-06-25 and is confirmed. Gate: 87 TS + 114 Python = 201 tests.
 
 ## Security (added surface)
 

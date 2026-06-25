@@ -265,3 +265,59 @@ to a **published** datasource, and diff our worksheet/pane/window structure agai
 missing element (likely pane `<encodings>` and/or worksheet view metadata) — then iterate once more
 against the Dev site. Datasource authoring is fully shippable today; dashboard-workbook render is the
 remaining last mile.
+
+---
+
+# E2E-3 CLOSED — dashboard renders on Tableau Cloud (2026-06-25)
+
+**The gated live demo now publishes BOTH a datasource and a rendering dashboard workbook to Cloud.**
+
+```
+$ npm run demo:dashboard
+Datasource built — real columns: region(string), customer(string), revenue(number)
+Datasource published → https://10ax.online.tableau.com/#/site/sebaustin/datasources/25936416
+Plan generated: 2 sheet(s), layout=tiled_horizontal
+Building dashboard workbook (embedded extract)…
+Workbook published → https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2420435
+```
+
+| Artifact | URL |
+|---|---|
+| Datasource | https://10ax.online.tableau.com/#/site/sebaustin/datasources/25936416 |
+| Dashboard workbook | https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2420435 |
+
+## Root cause & fix chain (each step necessary, verified live)
+
+The persistent `400011 "Dashboard references sheet 'Sheet 1' which has no visual representation"`
+had a layered cause. Diffing against 7 real reference workbooks the user provided, plus a decisive
+worksheet-only publish (which succeeded — isolating the bug to the dashboard wrapper), produced:
+
+1. **Embed the extract.** The workbook now embeds the `.hyper` via a `federated` connection (a
+   self-contained `.twbx`) instead of referencing the published datasource via `sqlproxy`, which
+   Tableau Cloud would not render. The governed published datasource is still created separately.
+2. **`<viewpoints>` per sheet (the keystone).** The dashboard window emitted an empty `<viewpoints/>`.
+   "Viewpoint" is Tableau's term for a sheet's visual on a dashboard, so an empty list literally means
+   "no visual representation." Now a `<viewpoint name="…"><zoom type="entire-view"/></viewpoint>` is
+   emitted per sheet — in **both** the sqlproxy and embedded builders.
+3. **`layout-flow` zones.** Worksheet zones now nest inside a `type-v2="layout-flow"` container (each
+   with a `<layout-cache>`), with a `<style>` child on `<dashboard>` — matching real dashboards.
+4. **Real-column binding + populated `<cards>`.** Worksheets bind to the datasource's actual columns,
+   and worksheet windows carry a populated `<cards>` structure.
+
+## Reached the shipped tool, not just the demo
+
+`build_from_plan` (the MCP tool an agent calls) now threads the `.hyper` into the embedded-workbook
+build, producing the same rendering `.twbx`; the no-embeddable-extract paths (pre-published
+`datasourceLuid` only, or SQL query) fail loudly with an actionable error. Verified **SOLID (99.5/100)**.
+
+## Status
+
+All 18 prompt-driven success criteria are now met, **including E2E-3** (live dashboard render).
+Gate green: 87 TS + 114 Python = 201 tests. Also fixed this session: the stale-port-8899 startup crash
+(auto-free-port selection) and generic sheet titles (now descriptive, e.g. "Revenue by Region").
+
+## Cleanup note
+
+Several throwaway diagnostic workbooks were published during debugging ("Diag Single Worksheet",
+"Diag Named Dashboard") and one datasource per demo run. The keeper artifacts are the demo datasource +
+workbook above; the `Diag*` workbooks can be deleted from the site.

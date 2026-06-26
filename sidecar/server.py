@@ -262,7 +262,32 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
 
     sheets = [s.model_dump() for s in req.sheets]
     sheet_titles = [str(s["title"]) for s in sheets]
-    dashboards = [{"name": "Dashboard 1", "titles": sheet_titles}]
+
+    # Build the dashboard spec, threading optional Slice 3B fields through.
+    # ``layout_grammar`` is serialised from the Pydantic model; we normalise it
+    # to a plain dict so _build_dashboard can access it via .get().
+    layout_grammar_dict: dict[str, object] | None = None
+    if req.layout_grammar is not None:
+        layout_grammar_dict = {
+            "kind": req.layout_grammar.kind,
+            "kpi_tile_titles": req.layout_grammar.kpi_tile_titles,
+            "chart_titles": req.layout_grammar.chart_titles,
+        }
+
+    text_zones_list: list[dict[str, str]] | None = None
+    if req.text_zones:
+        text_zones_list = [{"text": tz.text, "position": tz.position} for tz in req.text_zones]
+
+    dashboards = [
+        {
+            "name": "Dashboard 1",
+            "titles": sheet_titles,
+            "title": req.dashboard_title,
+            "subtitle": req.dashboard_subtitle,
+            "text_zones": text_zones_list,
+            "layout_grammar": layout_grammar_dict,
+        }
+    ]
 
     if req.hyper_path:
         hyper_file = Path(req.hyper_path)

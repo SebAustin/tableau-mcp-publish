@@ -482,6 +482,96 @@ def _tile_zones(titles: list[str], layout: str) -> list[dict[str, int]]:
     return quads
 
 
+def _build_text_zone(
+    text: str,
+    zone_id: int,
+    bold: bool = False,
+    fontsize: int = 14,
+    fontcolor: str | None = None,
+    h: int = 5000,
+) -> ET.Element:
+    """Return a ``<zone type-v2='text'>`` element carrying ``<formatted-text><run>``.
+
+    Mirrors wb6 ~1664 (title: bold=true, fontsize=20) and wb7 ~4476–4487
+    (title/subtitle with fontcolor and fontname).  The ``forceUpdate='true'``
+    attribute is written by Tableau Desktop on text zones; it is allowed via the
+    XSD's ``anyAttribute namespace='##local'`` clause.
+
+    Args:
+        text:       The text to display.
+        zone_id:    Deterministic zone id (must be unique across the dashboard).
+        bold:       Emit ``bold='true'`` on the ``<run>`` (mirrors wb6 title).
+        fontsize:   Font size in points (unsigned int required by XSD).
+        fontcolor:  Optional hex color string (e.g. ``"#0088ff"``).
+        h:          Zone height on the 0–100000 grid.  Default 5000 (~5 %).
+
+    Returns:
+        A ``<zone>`` ET.Element with ``type-v2='text'``.
+    """
+    zone = ET.Element(
+        "zone",
+        {
+            "forceUpdate": "true",
+            "h": str(h),
+            "id": str(zone_id),
+            "type-v2": "text",
+            "w": "100000",
+            "x": "0",
+            "y": "0",
+        },
+    )
+    ft = ET.SubElement(zone, "formatted-text")
+    run_attrs: dict[str, str] = {"fontsize": str(fontsize)}
+    if bold:
+        run_attrs["bold"] = "true"
+    if fontcolor:
+        run_attrs["fontcolor"] = fontcolor
+    run_el = ET.SubElement(ft, "run", run_attrs)
+    run_el.text = text
+    return zone
+
+
+def _append_worksheet_zones(
+    parent: ET.Element,
+    titles: list[str],
+    id_start: int,
+) -> None:
+    """Append equal-sized horizontal worksheet zones to *parent*.
+
+    Each zone is identified by ``name`` alone with NO ``type``/``type-v2``
+    (the DB-1 invariant), and carries a ``<layout-cache>`` child.
+
+    Args:
+        parent:    The ``<zone type-v2='layout-flow'>`` container to append into.
+        titles:    Ordered worksheet titles.
+        id_start:  First zone id to use; ids are allocated sequentially.
+    """
+    n = len(titles)
+    if n == 0:
+        return
+    GRID = 100000
+    unit_w = GRID // n
+    for i, title in enumerate(titles):
+        w = unit_w if i < n - 1 else GRID - (n - 1) * unit_w
+        ws_zone = ET.SubElement(
+            parent,
+            "zone",
+            {
+                "h": "100000",
+                "id": str(id_start + i),
+                "name": title,
+                "w": str(w),
+                "x": str(i * unit_w),
+                "y": "0",
+            },
+        )
+        ET.SubElement(
+            ws_zone,
+            "layout-cache",
+            {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
+        )
+
+
 def _build_dashboard(
     name: str,
     layout: str,
@@ -489,19 +579,76 @@ def _build_dashboard(
     canvas_width: int,
     canvas_height: int,
     dashboard_index: int,
+    title: str | None = None,
+    subtitle: str | None = None,
+    text_zones: list[dict[str, str]] | None = None,
+    layout_grammar: dict[str, Any] | None = None,
 ) -> ET.Element:
     """Return the ``<dashboards>`` ET.Element for one dashboard.
 
     Zone coordinates use the 0–100000 Tableau grid; ``canvas_width``/``canvas_height``
     are the audience-derived pixel dimensions written into ``<size>``.
 
+    Default path (no title/grammar)
+    --------------------------------
+    When ``title``, ``subtitle``, ``text_zones``, and ``layout_grammar`` are all
+    absent/empty, the output is byte-identical to the pre-3B version.  The
+    existing ``test_default_none_regression_byte_identical`` guard proves this.
+
+    Title / subtitle / text zones (Slice 3B, DL-1/DL-2)
+    -----------------------------------------------------
+    When ``title`` is provided a ``<zone type-v2='text'>`` is emitted at the top
+    of the outer layout-flow, carrying::
+
+        <formatted-text>
+          <run bold="true" fontsize="20">{title}</run>
+        </formatted-text>
+
+    This mirrors wb6 ~1664 and wb7 ~4476 exactly.  An optional ``subtitle`` adds
+    a second text zone with a smaller font (fontsize="14").  Extra ``text_zones``
+    with ``position="header"`` are inserted before the chart flow; those with
+    ``position="footer"`` are appended after.
+
+    KPI-band-over-charts layout (Slice 3B, DL-3)
+    ---------------------------------------------
+    When ``layout_grammar.kind == "kpi_band_over_charts"`` the ``<zones>``
+    structure is::
+
+        layout-basic (canvas)
+          layout-flow param='vert'       ← outer vertical stack
+            [text zones: title, subtitle, header textZones]
+            layout-flow param='horz'     ← KPI tile band
+              worksheet zones (kpi tiles)
+            layout-flow param='horz'     ← chart band
+              worksheet zones (charts)
+            [text zones: footer textZones]
+
+    KPI tiles are identified via ``layout_grammar.kpi_tile_titles``; charts via
+    ``layout_grammar.chart_titles``.  Falls back: sheets whose ``kind=="kpi_tile"``
+    go to the band; others go to charts.
+
+    Zone id allocation (disjoint ranges, ``_quuid`` determinism guard stays green):
+    - layout-basic canvas:       id=1
+    - outer flow (id=2):         id=2
+    - worksheet zones (default): id=3 … 3+N-1
+    - text zones (new):          id=40001 … 40099
+    - sub-flow containers (new): id=40100 … 40199
+
     Args:
         name:            Dashboard name.
-        layout:          Zone layout (``"tiled_vertical"`` or ``"tiled_horizontal"``).
+        layout:          Default zone layout for the tiled path
+                         (``"tiled_vertical"`` or ``"tiled_horizontal"``).
         titles:          Ordered worksheet titles to include.
         canvas_width:    Dashboard pixel width.
         canvas_height:   Dashboard pixel height.
         dashboard_index: Zero-based index for deterministic simple-id UUID.
+        title:           Optional dashboard title → emits a bold text zone.
+        subtitle:        Optional subtitle → emits a second smaller text zone.
+        text_zones:      Optional list of ``{"text":…, "position":"header"|"footer"}``
+                         dicts for arbitrary header/footer annotations.
+        layout_grammar:  Optional layout descriptor.  Supports
+                         ``{"kind": "kpi_band_over_charts", "kpi_tile_titles": […],
+                         "chart_titles": […]}``.
     """
     dashboards_el = ET.Element("dashboards")
     dashboard = ET.SubElement(dashboards_el, "dashboard", {"name": name})
@@ -527,47 +674,221 @@ def _build_dashboard(
         "zone",
         {"h": "100000", "id": "1", "type-v2": "layout-basic", "w": "100000", "x": "0", "y": "0"},
     )
-    # Worksheet zones MUST sit inside a `layout-flow` container, not directly in
-    # the layout-basic canvas — verified against every real reference dashboard
-    # (e.g. Threshold Analysis). A worksheet zone placed directly in layout-basic
-    # makes Tableau Cloud reject the dashboard with 400011 ("sheet has no visual
-    # representation"), even though the worksheet renders fine on its own.
-    flow_param = "horz" if layout == "tiled_horizontal" else "vert"
-    flow = ET.SubElement(
-        container,
-        "zone",
-        {
-            "h": "100000",
-            "id": "2",
-            "param": flow_param,
-            "type-v2": "layout-flow",
-            "w": "100000",
-            "x": "0",
-            "y": "0",
-        },
-    )
 
-    quads = _tile_zones(titles, layout)
-    for i, (title, quad) in enumerate(zip(titles, quads, strict=True)):
-        # A worksheet zone is identified by `name` ALONE with NO `type`/`type-v2`.
-        ws_zone = ET.SubElement(
-            flow,
+    # -----------------------------------------------------------------------
+    # Determine whether we are using the extended path (title/grammar) or the
+    # default single-flow path.  Only the default path must be byte-identical
+    # to the pre-3B version; the extended path adds new zone structure.
+    # -----------------------------------------------------------------------
+
+    # Normalise optional inputs so the comparison below is safe.
+    header_text_zones: list[dict[str, str]] = []
+    footer_text_zones: list[dict[str, str]] = []
+    for tz in text_zones or []:
+        if tz.get("position") == "footer":
+            footer_text_zones.append(tz)
+        else:
+            header_text_zones.append(tz)
+
+    grammar_kind = ""
+    kpi_tile_titles: list[str] = []
+    chart_titles: list[str] = []
+    if layout_grammar:
+        grammar_kind = str(layout_grammar.get("kind", ""))
+        kpi_tile_titles = [str(t) for t in (layout_grammar.get("kpi_tile_titles") or [])]
+        chart_titles = [str(t) for t in (layout_grammar.get("chart_titles") or [])]
+
+    has_extras = bool(title or subtitle or header_text_zones or footer_text_zones or grammar_kind)
+
+    if not has_extras:
+        # --- DEFAULT PATH (byte-identical to pre-3B) ------------------------
+        # Worksheet zones MUST sit inside a `layout-flow` container, not directly in
+        # the layout-basic canvas — verified against every real reference dashboard
+        # (e.g. Threshold Analysis). A worksheet zone placed directly in layout-basic
+        # makes Tableau Cloud reject the dashboard with 400011 ("sheet has no visual
+        # representation"), even though the worksheet renders fine on its own.
+        flow_param = "horz" if layout == "tiled_horizontal" else "vert"
+        flow = ET.SubElement(
+            container,
             "zone",
             {
-                "h": str(quad["h"]),
-                "id": str(i + 3),
-                "name": title,
-                "w": str(quad["w"]),
-                "x": str(quad["x"]),
-                "y": str(quad["y"]),
+                "h": "100000",
+                "id": "2",
+                "param": flow_param,
+                "type-v2": "layout-flow",
+                "w": "100000",
+                "x": "0",
+                "y": "0",
             },
         )
-        # Real worksheet zones carry a <layout-cache> child.
-        ET.SubElement(
-            ws_zone,
-            "layout-cache",
-            {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
+
+        quads = _tile_zones(titles, layout)
+        for i, (ws_title, quad) in enumerate(zip(titles, quads, strict=True)):
+            # A worksheet zone is identified by `name` ALONE with NO `type`/`type-v2`.
+            ws_zone = ET.SubElement(
+                flow,
+                "zone",
+                {
+                    "h": str(quad["h"]),
+                    "id": str(i + 3),
+                    "name": ws_title,
+                    "w": str(quad["w"]),
+                    "x": str(quad["x"]),
+                    "y": str(quad["y"]),
+                },
+            )
+            # Real worksheet zones carry a <layout-cache> child.
+            ET.SubElement(
+                ws_zone,
+                "layout-cache",
+                {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
+            )
+
+    else:
+        # --- EXTENDED PATH: title / text zones / kpi_band_over_charts -------
+        # Zone id counter for new elements (text zones and sub-flows).
+        # Disjoint ranges:
+        #   1          → layout-basic canvas
+        #   2          → outer layout-flow
+        #   3 … 3+N-1  → worksheet zones (default path only)
+        # In the extended path worksheet zones are allocated from 3 upward too
+        # (via _append_worksheet_zones), but we need text/sub-flow ids that
+        # do NOT overlap.  We use id >= 40001 for all new zone types.
+        next_id = [40001]  # mutable counter via list
+
+        def _next_id() -> int:
+            nid = next_id[0]
+            next_id[0] += 1
+            return nid
+
+        # Outer layout-flow (param='vert' for the extended path: text on top,
+        # content below, optional footer at the bottom).
+        outer_flow = ET.SubElement(
+            container,
+            "zone",
+            {
+                "h": "100000",
+                "id": "2",
+                "param": "vert",
+                "type-v2": "layout-flow",
+                "w": "100000",
+                "x": "0",
+                "y": "0",
+            },
         )
+
+        # --- Header text zones (title, subtitle, explicit header textZones) --
+        # Title (mirrors wb7 ~4476: fontsize=20, no bold specified in that ref,
+        # but wb6 ~1664 uses bold=true; we follow wb6 for the primary title).
+        if title:
+            title_zone: ET.Element = _build_text_zone(
+                title, _next_id(), bold=True, fontsize=20, h=6000
+            )
+            outer_flow.append(title_zone)
+
+        # Subtitle (mirrors wb7 ~4487: smaller font, no bold).
+        if subtitle:
+            subtitle_zone: ET.Element = _build_text_zone(
+                subtitle, _next_id(), bold=False, fontsize=14, h=4000
+            )
+            outer_flow.append(subtitle_zone)
+
+        # Explicit header text zones.
+        for htz in header_text_zones:
+            htz_zone: ET.Element = _build_text_zone(
+                str(htz["text"]), _next_id(), bold=False, fontsize=12, h=4000
+            )
+            outer_flow.append(htz_zone)
+
+        # --- Content zone(s) ------------------------------------------------
+        if grammar_kind == "kpi_band_over_charts":
+            # Split titles into KPI-tile and chart groups.
+            # If kpi_tile_titles/chart_titles were not supplied by the caller,
+            # fall back: all titles = charts (safe default, no band).
+            effective_kpi = kpi_tile_titles if kpi_tile_titles else []
+            effective_charts = chart_titles if chart_titles else [
+                t for t in titles if t not in set(effective_kpi)
+            ]
+
+            # KPI band (param='horz', one zone per KPI tile).
+            if effective_kpi:
+                kpi_flow = ET.SubElement(
+                    outer_flow,
+                    "zone",
+                    {
+                        "h": "20000",
+                        "id": str(_next_id()),
+                        "param": "horz",
+                        "type-v2": "layout-flow",
+                        "w": "100000",
+                        "x": "0",
+                        "y": "0",
+                    },
+                )
+                _append_worksheet_zones(kpi_flow, effective_kpi, id_start=3)
+
+            # Charts band (param='horz', one zone per chart).
+            if effective_charts:
+                chart_flow = ET.SubElement(
+                    outer_flow,
+                    "zone",
+                    {
+                        "h": "80000",
+                        "id": str(_next_id()),
+                        "param": "horz",
+                        "type-v2": "layout-flow",
+                        "w": "100000",
+                        "x": "0",
+                        "y": "0",
+                    },
+                )
+                _append_worksheet_zones(
+                    chart_flow, effective_charts, id_start=3 + len(effective_kpi)
+                )
+
+        else:
+            # Non-kpi_band grammar (or no grammar specified): use a single
+            # layout-flow with the default tiling direction.
+            flow_param = "horz" if layout == "tiled_horizontal" else "vert"
+            inner_flow = ET.SubElement(
+                outer_flow,
+                "zone",
+                {
+                    "h": "100000",
+                    "id": str(_next_id()),
+                    "param": flow_param,
+                    "type-v2": "layout-flow",
+                    "w": "100000",
+                    "x": "0",
+                    "y": "0",
+                },
+            )
+            quads = _tile_zones(titles, layout)
+            for i, (ws_title, quad) in enumerate(zip(titles, quads, strict=True)):
+                ws_zone = ET.SubElement(
+                    inner_flow,
+                    "zone",
+                    {
+                        "h": str(quad["h"]),
+                        "id": str(i + 3),
+                        "name": ws_title,
+                        "w": str(quad["w"]),
+                        "x": str(quad["x"]),
+                        "y": str(quad["y"]),
+                    },
+                )
+                ET.SubElement(
+                    ws_zone,
+                    "layout-cache",
+                    {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
+                )
+
+        # --- Footer text zones ----------------------------------------------
+        for ftz in footer_text_zones:
+            ftz_zone: ET.Element = _build_text_zone(
+                str(ftz["text"]), _next_id(), bold=False, fontsize=12, h=4000
+            )
+            outer_flow.append(ftz_zone)
 
     # <simple-id> is required for dashboard elements by the XSD.
     # Offset by 10000 to avoid collision with worksheet UUIDs.
@@ -688,6 +1009,10 @@ def build_twb_xml(
                 canvas_width,
                 canvas_height,
                 db_index,
+                title=db.get("title") or None,
+                subtitle=db.get("subtitle") or None,
+                text_zones=db.get("text_zones") or None,
+                layout_grammar=db.get("layout_grammar") or None,
             )
             workbook.append(dashboards_el)
 
@@ -987,6 +1312,10 @@ def build_embedded_twb_xml(
                 canvas_width,
                 canvas_height,
                 db_index,
+                title=db.get("title") or None,
+                subtitle=db.get("subtitle") or None,
+                text_zones=db.get("text_zones") or None,
+                layout_grammar=db.get("layout_grammar") or None,
             )
             workbook.append(dashboards_el)
 

@@ -57,7 +57,7 @@ _REMOTE_TYPE: dict[str, str] = {
     "datetime": "135",
 }
 
-_MARK_CLASS = {"bar": "Bar", "line": "Line", "text": "Text", "map": "Map"}
+_MARK_CLASS = {"bar": "Bar", "line": "Line", "text": "Text", "map": "Map", "scatter": "Circle"}
 
 
 def _slug(value: str) -> str:
@@ -134,6 +134,27 @@ def _ds_internal_name(content_key: str) -> str:
     return f"sqlproxy.{safe}"
 
 
+def _color_column_instance(ds_internal: str, color: dict[str, Any]) -> str:
+    """Return the fully-qualified column reference for a color encoding.
+
+    Mirrors wb1 ~3538-3540 and ~3776 for three ``kind`` variants:
+
+    - ``"measure_names"`` → ``[:Measure Names]`` (Tableau virtual field)
+    - ``"dimension"``     → ``_dim_instance(field)``
+    - ``"measure"``       → ``_measure_instance(field)``
+    """
+    field = str(color["field"])
+    kind = str(color.get("kind", "dimension"))
+    ds_ref = f"[{ds_internal}]"
+    if kind == "measure_names":
+        instance = "[:Measure Names]"
+    elif kind == "measure":
+        instance = _measure_instance(field)
+    else:  # "dimension"
+        instance = _dim_instance(field)
+    return f"{ds_ref}.{instance}"
+
+
 def _build_worksheet(
     sheet: dict[str, Any],
     ds_caption: str,
@@ -161,6 +182,27 @@ def _build_worksheet(
           <simple-id uuid="..."/>           ← required by XSD
         </worksheet>
 
+    Rich encodings (Slice 3A)
+    -------------------------
+    color
+        When ``sheet["color"]`` is present (``{field, kind}``), a
+        ``<color column='...'>`` element is emitted inside ``<encodings>``
+        in the pane.  Mirrors wb1 ~3538-3540.
+
+    scatter
+        When ``mark_type == "scatter"`` (or ``sheet["scatter"]`` is present),
+        the mark class is ``Circle``; ``scatter.x`` is placed on ``<cols>``
+        and ``scatter.y`` on ``<rows>`` via ``_measure_instance``.  Optional
+        ``scatter.breakdown`` dimension is added as a color encoding.
+        Mirrors wb1 ~3815.
+
+    kpi_tile
+        When ``sheet["kind"] == "kpi_tile"``, a ``Text`` mark (class
+        ``Automatic`` per wb1 KPI sheets) is emitted with one ``<text>``
+        encoding per measure listed in ``kpi.primaryMeasure`` (required),
+        ``kpi.comparisonMeasure`` (optional), and ``kpi.deltaMeasure``
+        (optional).  Mirrors wb1 ~3388-3398.
+
     Args:
         sheet:        Sheet spec dict.
         ds_caption:   Human-readable datasource caption.
@@ -169,9 +211,21 @@ def _build_worksheet(
     """
     title = str(sheet["title"])
     mark_type = str(sheet.get("mark_type", "bar")).lower()
+    sheet_kind = str(sheet.get("kind", "chart"))
     cols_dims = [str(c) for c in sheet.get("cols", [])]
     rows_dims = [str(r) for r in sheet.get("rows", [])]
     measures = [str(m) for m in sheet.get("measures", [])]
+
+    # --- Scatter spec ------------------------------------------------------
+    scatter = sheet.get("scatter")  # optional {x, y, breakdown?}
+    is_scatter = mark_type == "scatter" or scatter is not None
+
+    # --- Color spec --------------------------------------------------------
+    color_spec = sheet.get("color")  # optional {field, kind}
+
+    # --- KPI tile spec -----------------------------------------------------
+    kpi_spec = sheet.get("kpi")  # optional {primaryMeasure, comparisonMeasure?, deltaMeasure?}
+    is_kpi_tile = sheet_kind == "kpi_tile"
 
     worksheet = ET.Element("worksheet", {"name": title})
     table = ET.SubElement(worksheet, "table")
@@ -179,14 +233,52 @@ def _build_worksheet(
     # --- <view> -------------------------------------------------------
     # Schema sequence: datasources → datasource-dependencies → aggregation
     view = ET.SubElement(table, "view")
-    datasources = ET.SubElement(view, "datasources")
+    datasources_el = ET.SubElement(view, "datasources")
     ET.SubElement(
-        datasources,
+        datasources_el,
         "datasource",
         {"caption": ds_caption, "name": ds_internal},
     )
     deps = ET.SubElement(view, "datasource-dependencies", {"datasource": ds_internal})
-    _add_dependency_columns(deps, cols_dims + rows_dims, measures)
+
+    # Collect dimension and measure fields for dependency declarations.
+    # Scatter: x/y measures on their respective shelves; breakdown (if any) as dimension.
+    dep_dims = list(cols_dims) + list(rows_dims)
+    dep_measures = list(measures)
+
+    if is_scatter and scatter:
+        scatter_x = str(scatter["x"])
+        scatter_y = str(scatter["y"])
+        scatter_breakdown = scatter.get("breakdown")
+        if scatter_x not in dep_measures:
+            dep_measures.append(scatter_x)
+        if scatter_y not in dep_measures:
+            dep_measures.append(scatter_y)
+        if scatter_breakdown and str(scatter_breakdown) not in dep_dims:
+            dep_dims.append(str(scatter_breakdown))
+    else:
+        scatter_x = ""
+        scatter_y = ""
+        scatter_breakdown = None
+
+    # Color field must appear in dependency declarations so Tableau resolves it.
+    if color_spec:
+        color_field = str(color_spec["field"])
+        color_kind = str(color_spec.get("kind", "dimension"))
+        if color_kind == "measure" and color_field not in dep_measures:
+            dep_measures.append(color_field)
+        elif color_kind == "dimension" and color_field not in dep_dims:
+            dep_dims.append(color_field)
+        # measure_names is a Tableau virtual field — no column declaration needed
+
+    # KPI tile: all measures go into dependency declarations.
+    if is_kpi_tile and kpi_spec:
+        for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
+            kpi_field = kpi_spec.get(kpi_field_key)
+            if kpi_field and str(kpi_field) not in dep_measures:
+                dep_measures.append(str(kpi_field))
+
+    _add_dependency_columns(deps, dep_dims, dep_measures)
     # <aggregation> is required by the XSD (last mandatory child of <view>)
     ET.SubElement(view, "aggregation", {"value": "true"})
 
@@ -198,18 +290,75 @@ def _build_worksheet(
     pane = ET.SubElement(panes, "pane")
     pane_view = ET.SubElement(pane, "view")
     ET.SubElement(pane_view, "breakdown", {"value": "auto"})
-    ET.SubElement(pane, "mark", {"class": _MARK_CLASS.get(mark_type, "Automatic")})
 
-    # For a text/table mark, place the first measure on the Text encoding so it renders.
+    # Determine mark class.
+    # KPI tiles use "Automatic" (mirrors wb1 Sales KPI / Customer KPI sheets
+    # at lines ~4946, ~3392 which have <mark class='Automatic'/>).
+    # Scatter maps to "Circle" via _MARK_CLASS.
+    if is_kpi_tile:
+        mark_class = "Automatic"
+    elif is_scatter:
+        mark_class = "Circle"
+    else:
+        mark_class = _MARK_CLASS.get(mark_type, "Automatic")
+    ET.SubElement(pane, "mark", {"class": mark_class})
+
+    # --- Encodings -----------------------------------------------------
+    # Collect all encoding elements to decide whether to emit <encodings>.
+    # Order: color first, then text entries (mirrors wb1 Pie pane at ~3775-3780).
     ds_ref = f"[{ds_internal}]"
-    if mark_type == "text" and measures:
-        encodings = ET.SubElement(pane, "encodings")
-        ET.SubElement(encodings, "text", {"column": f"{ds_ref}.{_measure_instance(measures[0])}"})
+    encoding_elements: list[tuple[str, str]] = []  # (tag, column_value)
+
+    # Color encoding (G-01)
+    # Emitted for: explicit color_spec, or scatter breakdown as color.
+    effective_color_spec = color_spec
+    if is_scatter and scatter_breakdown and not effective_color_spec:
+        effective_color_spec = {"field": str(scatter_breakdown), "kind": "dimension"}
+
+    if effective_color_spec:
+        col_val = _color_column_instance(ds_internal, effective_color_spec)
+        encoding_elements.append(("color", col_val))
+
+    # Text encoding(s)
+    if is_kpi_tile and kpi_spec:
+        # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397)
+        for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
+            kpi_field = kpi_spec.get(kpi_field_key)
+            if kpi_field:
+                encoding_elements.append(
+                    ("text", f"{ds_ref}.{_measure_instance(str(kpi_field))}")
+                )
+    elif mark_type == "text" and measures and not is_kpi_tile:
+        # Plain text mark: single-measure text encoding (original behaviour)
+        encoding_elements.append(("text", f"{ds_ref}.{_measure_instance(measures[0])}"))
+
+    if encoding_elements:
+        encodings_el = ET.SubElement(pane, "encodings")
+        for tag, col_val in encoding_elements:
+            ET.SubElement(encodings_el, tag, {"column": col_val})
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
-    cols_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in cols_dims]
-    rows_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in rows_dims]
-    rows_exprs += [f"{ds_ref}.{_measure_instance(f)}" for f in measures]
+    if is_scatter and scatter:
+        # Scatter: x measure on cols, y measure on rows (mirrors wb1 ~3848-3849
+        # which show a dual-measure axis expression on cols/rows).
+        # For a simple scatter: single x measure on cols, single y measure on rows.
+        cols_exprs = [f"{ds_ref}.{_measure_instance(scatter_x)}"]
+        rows_exprs = [f"{ds_ref}.{_measure_instance(scatter_y)}"]
+        # If there are explicit dim shelves too, prepend them.
+        for f in cols_dims:
+            expr = f"{ds_ref}.{_dim_instance(f)}"
+            if expr not in cols_exprs:
+                cols_exprs.insert(0, expr)
+        for f in rows_dims:
+            expr = f"{ds_ref}.{_dim_instance(f)}"
+            if expr not in rows_exprs:
+                rows_exprs.insert(0, expr)
+    else:
+        cols_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in cols_dims]
+        rows_exprs = [f"{ds_ref}.{_dim_instance(f)}" for f in rows_dims]
+        if not is_kpi_tile:
+            rows_exprs += [f"{ds_ref}.{_measure_instance(f)}" for f in measures]
+
     ET.SubElement(table, "rows").text = " / ".join(rows_exprs)
     ET.SubElement(table, "cols").text = " / ".join(cols_exprs)
 

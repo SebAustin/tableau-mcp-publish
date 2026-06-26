@@ -10,6 +10,7 @@ export default tseslint.config(
       "sidecar/**",
       "coverage/**",
       ".cursor/**",
+      ".remember/**",
     ],
   },
   eslint.configs.recommended,

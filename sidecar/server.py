@@ -61,6 +61,56 @@ class TableRequest(BaseModel):
     records: list[dict[str, Any]] | None = None
 
 
+# ---------------------------------------------------------------------------
+# Phase-1 optional encoding sub-models (Slice 2: carry end-to-end).
+# These just need to PARSE and survive model_dump().
+# Slice 3 will consume them in the builder.
+# ---------------------------------------------------------------------------
+
+
+class SheetColorModel(BaseModel):
+    """Color encoding for a worksheet (mirrors schema.ts SheetColor)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    field: str
+    kind: str  # "dimension" | "measure_names" | "measure"
+
+
+class SheetKpiModel(BaseModel):
+    """KPI tile configuration (mirrors schema.ts SheetKpi)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    primary_measure: str = Field(alias="primaryMeasure")
+    comparison_measure: str | None = Field(default=None, alias="comparisonMeasure")
+    delta_measure: str | None = Field(default=None, alias="deltaMeasure")
+    delta_is_positive_good: bool | None = Field(default=None, alias="deltaIsPositiveGood")
+    sparkline_field: str | None = Field(default=None, alias="sparklineField")
+    value_prefix: str | None = Field(default=None, alias="valuePrefix")
+    value_suffix: str | None = Field(default=None, alias="valueSuffix")
+
+
+class SheetScatterModel(BaseModel):
+    """Scatter-plot axis binding (mirrors schema.ts SheetScatter)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    x: str
+    y: str
+    breakdown: str | None = None
+
+
+class SheetGeoModel(BaseModel):
+    """Geographic / filled-map encoding (mirrors schema.ts SheetGeo)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    geo_field: str = Field(alias="geoField")
+    geo_role: str = Field(alias="geoRole")  # "state" | "country" | "city" | "zipcode"
+    color_measure: str | None = Field(default=None, alias="colorMeasure")
+
+
 class SheetModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -69,6 +119,13 @@ class SheetModel(BaseModel):
     rows: list[str] = []
     cols: list[str] = []
     measures: list[str] = []
+    # Phase-1 optional encoding fields (Slice 2: carry end-to-end).
+    # Consumed by the builder in Slice 3.
+    kind: str | None = None  # "chart" | "kpi_tile"
+    color: SheetColorModel | None = None
+    kpi: SheetKpiModel | None = None
+    scatter: SheetScatterModel | None = None
+    geo: SheetGeoModel | None = None
 
 
 class WorkbookRequest(BaseModel):
@@ -79,6 +136,30 @@ class WorkbookRequest(BaseModel):
     site: str = ""
     server_url: str = Field(default="", alias="serverUrl")
     sheets: list[SheetModel]
+
+
+# ---------------------------------------------------------------------------
+# Dashboard-level text-zone and layout-grammar sub-models
+# ---------------------------------------------------------------------------
+
+
+class TextZoneModel(BaseModel):
+    """A text zone to render in the dashboard (mirrors schema.ts TextZone)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    text: str
+    position: str  # "header" | "footer"
+
+
+class LayoutGrammarModel(BaseModel):
+    """Layout grammar for the dashboard canvas (mirrors schema.ts LayoutGrammar)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    kind: str  # "kpi_band_over_charts" | "tiled_vertical" | "tiled_horizontal"
+    kpi_tile_titles: list[str] | None = Field(default=None, alias="kpiTileTitles")
+    chart_titles: list[str] | None = Field(default=None, alias="chartTitles")
 
 
 class DashboardWorkbookRequest(BaseModel):
@@ -97,6 +178,12 @@ class DashboardWorkbookRequest(BaseModel):
     # This is the self-contained path that renders on Tableau Cloud without a
     # prior publish_datasource step.
     hyper_path: str | None = Field(default=None, alias="hyperPath")
+    # Phase-1 optional dashboard-level fields (Slice 2: carry end-to-end).
+    # Consumed by the builder in Slice 3.
+    dashboard_title: str | None = Field(default=None, alias="dashboardTitle")
+    dashboard_subtitle: str | None = Field(default=None, alias="dashboardSubtitle")
+    text_zones: list[TextZoneModel] | None = Field(default=None, alias="textZones")
+    layout_grammar: LayoutGrammarModel | None = Field(default=None, alias="layoutGrammar")
 
 
 class FileRequest(BaseModel):

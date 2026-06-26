@@ -47,12 +47,58 @@ export interface TableArgs {
   records?: Array<Record<string, unknown>>;
 }
 
+// ---------------------------------------------------------------------------
+// SheetSpec sub-types (mirror planner/schema.ts — kept in sync manually)
+// ---------------------------------------------------------------------------
+
+/** Color encoding for a worksheet (dimension / measure-names / quantitative). */
+export interface SheetColor {
+  field: string;
+  kind: "dimension" | "measure_names" | "measure";
+}
+
+/** KPI tile encoding: primary + optional comparison/delta/sparkline. */
+export interface SheetKpi {
+  primaryMeasure: string;
+  comparisonMeasure?: string;
+  deltaMeasure?: string;
+  deltaIsPositiveGood?: boolean;
+  sparklineField?: string;
+  valuePrefix?: string;
+  valueSuffix?: string;
+}
+
+/** Scatter-plot axis binding (x / y measures, optional breakdown dimension). */
+export interface SheetScatter {
+  x: string;
+  y: string;
+  breakdown?: string;
+}
+
+/** Geographic / filled-map encoding. */
+export interface SheetGeo {
+  geoField: string;
+  geoRole: "state" | "country" | "city" | "zipcode";
+  colorMeasure?: string;
+}
+
 export interface SheetSpec {
   title: string;
   markType: string;
   rows: string[];
   cols: string[];
   measures: string[];
+  // --- Phase-1 optional encoding fields (Slice 2: carry end-to-end) ---
+  /** Sheet kind: "chart" (default) or "kpi_tile". */
+  kind?: "chart" | "kpi_tile";
+  /** Color encoding block. */
+  color?: SheetColor;
+  /** KPI tile configuration. */
+  kpi?: SheetKpi;
+  /** Scatter-plot axis binding. */
+  scatter?: SheetScatter;
+  /** Geographic encoding. */
+  geo?: SheetGeo;
 }
 
 export interface FileArgs {
@@ -95,6 +141,19 @@ export interface WorkbookArgs {
   sheets: SheetSpec[];
 }
 
+/** Text zone for dashboard header / footer (mirrors schema.ts TextZone). */
+export interface TextZone {
+  text: string;
+  position: "header" | "footer";
+}
+
+/** Layout grammar for the dashboard canvas (mirrors schema.ts LayoutGrammar). */
+export interface LayoutGrammar {
+  kind: "kpi_band_over_charts" | "tiled_vertical" | "tiled_horizontal";
+  kpiTileTitles?: string[];
+  chartTitles?: string[];
+}
+
 export interface DashboardWorkbookArgs extends WorkbookArgs {
   /** Sheet titles to include in the dashboard (subset or all of sheets[].title). */
   dashboardSheetTitles: string[];
@@ -114,6 +173,15 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
    * Omit only when falling back to the legacy sqlproxy reference path.
    */
   hyperPath?: string;
+  // --- Phase-1 optional dashboard-level fields (Slice 2: carry end-to-end) ---
+  /** Human-readable dashboard title rendered in the title text zone. */
+  dashboardTitle?: string;
+  /** Human-readable dashboard subtitle rendered below the title. */
+  dashboardSubtitle?: string;
+  /** Explicit text zones (header / footer). */
+  textZones?: TextZone[];
+  /** Structured layout grammar used by the builder to emit multi-zone XML. */
+  layoutGrammar?: LayoutGrammar;
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -392,6 +460,21 @@ export class AuthoringSidecar {
     // renders on Tableau Cloud (federated connection, self-contained .twbx).
     if (args.hyperPath) {
       payload["hyperPath"] = args.hyperPath;
+    }
+    // Phase-1 optional dashboard-level fields (Slice 2: carry end-to-end).
+    // Slice 3 will consume these in the builder; here we just forward them
+    // so the sidecar Pydantic models can parse and round-trip them.
+    if (args.dashboardTitle !== undefined) {
+      payload["dashboardTitle"] = args.dashboardTitle;
+    }
+    if (args.dashboardSubtitle !== undefined) {
+      payload["dashboardSubtitle"] = args.dashboardSubtitle;
+    }
+    if (args.textZones !== undefined) {
+      payload["textZones"] = args.textZones;
+    }
+    if (args.layoutGrammar !== undefined) {
+      payload["layoutGrammar"] = args.layoutGrammar;
     }
     const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };

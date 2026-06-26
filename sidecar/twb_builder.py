@@ -57,7 +57,22 @@ _REMOTE_TYPE: dict[str, str] = {
     "datetime": "135",
 }
 
-_MARK_CLASS = {"bar": "Bar", "line": "Line", "text": "Text", "map": "Map", "scatter": "Circle"}
+_MARK_CLASS = {
+    "bar": "Bar",
+    "line": "Line",
+    "text": "Text",
+    "map": "Map",
+    "scatter": "Circle",
+    "map_filled": "Automatic",
+}
+
+# Semantic-role strings for Tableau geo columns.  Mirrors wb1 ~2804 and wb1 ~542-560.
+_GEO_SEMANTIC_ROLE: dict[str, str] = {
+    "state": "[State].[Name]",
+    "country": "[Country].[ISO3166_2]",
+    "city": "[City].[Name]",
+    "zipcode": "[ZipCode].[Name]",
+}
 
 
 def _slug(value: str) -> str:
@@ -160,7 +175,7 @@ def _build_worksheet(
     ds_caption: str,
     ds_internal: str,
     sheet_index: int,
-) -> ET.Element:
+) -> ET.Element:  # noqa: C901 – intentionally long: one function per worksheet type
     """Build a schema-valid ``<worksheet>`` element.
 
     XSD-mandated structure (A2, re-baselined for schema-valid output):
@@ -203,6 +218,34 @@ def _build_worksheet(
         ``kpi.comparisonMeasure`` (optional), and ``kpi.deltaMeasure``
         (optional).  Mirrors wb1 ~3388-3398.
 
+    map_filled (choropleth) — Slice 3C
+        When ``mark_type == "map_filled"`` or ``sheet["geo"]`` is present:
+
+        - ``<mapsources><mapsource name='Tableau'/></mapsources>`` is added
+          to ``<view>`` before ``<datasource-dependencies>`` (mirrors wb1
+          ~4614-4616 "Sales Distribution by State").
+        - ``<rows>`` carries ``[{ds_internal}].[Latitude (generated)]``
+          and ``<cols>`` carries ``[{ds_internal}].[Longitude (generated)]``
+          — these are Tableau-generated virtual columns that appear on every
+          map worksheet (wb1 ~4850-4851); they are NOT column-instance
+          expressions and carry no prefix (``none:``/``sum:``).
+        - Two ``<pane>`` elements are emitted (mirrors wb1 ~4786-4821):
+
+          *Pane id='0'* (filled polygon layer):
+            - ``<mark class='Automatic' />``
+            - ``<encodings><lod .../><color .../><geometry .../></encodings>``
+              where ``lod`` and ``color`` reference the geo dimension
+              instance and the color-measure instance respectively, and
+              ``geometry`` references ``[{ds_internal}].[Geometry
+              (generated)]``.
+
+          *Pane id='1'* (LOD shadow layer):
+            - ``<mark class='Automatic' />``
+            - ``<encodings><lod column='...geo dim instance...'/></encodings>``
+
+        - The geo dimension and color measure are added to
+          ``<datasource-dependencies>``.
+
     Args:
         sheet:        Sheet spec dict.
         ds_caption:   Human-readable datasource caption.
@@ -227,11 +270,15 @@ def _build_worksheet(
     kpi_spec = sheet.get("kpi")  # optional {primaryMeasure, comparisonMeasure?, deltaMeasure?}
     is_kpi_tile = sheet_kind == "kpi_tile"
 
+    # --- Filled map (choropleth) spec --------------------------------------
+    geo_spec = sheet.get("geo")  # optional {geoField, geoRole, colorMeasure?}
+    is_map_filled = mark_type == "map_filled" or geo_spec is not None
+
     worksheet = ET.Element("worksheet", {"name": title})
     table = ET.SubElement(worksheet, "table")
 
     # --- <view> -------------------------------------------------------
-    # Schema sequence: datasources → datasource-dependencies → aggregation
+    # Schema sequence: datasources → (mapsources?) → datasource-dependencies → aggregation
     view = ET.SubElement(table, "view")
     datasources_el = ET.SubElement(view, "datasources")
     ET.SubElement(
@@ -239,6 +286,12 @@ def _build_worksheet(
         "datasource",
         {"caption": ds_caption, "name": ds_internal},
     )
+
+    # Filled map requires <mapsources> in <view> (mirrors wb1 ~4614-4616).
+    if is_map_filled:
+        mapsources_el = ET.SubElement(view, "mapsources")
+        ET.SubElement(mapsources_el, "mapsource", {"name": "Tableau"})
+
     deps = ET.SubElement(view, "datasource-dependencies", {"datasource": ds_internal})
 
     # Collect dimension and measure fields for dependency declarations.
@@ -278,6 +331,15 @@ def _build_worksheet(
             if kpi_field and str(kpi_field) not in dep_measures:
                 dep_measures.append(str(kpi_field))
 
+    # Filled map: geo dimension + color measure go into dependency declarations.
+    if is_map_filled and geo_spec:
+        geo_field = str(geo_spec["geoField"])
+        geo_color = geo_spec.get("colorMeasure")
+        if geo_field not in dep_dims:
+            dep_dims.append(geo_field)
+        if geo_color and str(geo_color) not in dep_measures:
+            dep_measures.append(str(geo_color))
+
     _add_dependency_columns(deps, dep_dims, dep_measures)
     # <aggregation> is required by the XSD (last mandatory child of <view>)
     ET.SubElement(view, "aggregation", {"value": "true"})
@@ -287,58 +349,125 @@ def _build_worksheet(
 
     # --- <panes> ------------------------------------------------------
     panes = ET.SubElement(table, "panes")
-    pane = ET.SubElement(panes, "pane")
-    pane_view = ET.SubElement(pane, "view")
-    ET.SubElement(pane_view, "breakdown", {"value": "auto"})
-
-    # Determine mark class.
-    # KPI tiles use "Automatic" (mirrors wb1 Sales KPI / Customer KPI sheets
-    # at lines ~4946, ~3392 which have <mark class='Automatic'/>).
-    # Scatter maps to "Circle" via _MARK_CLASS.
-    if is_kpi_tile:
-        mark_class = "Automatic"
-    elif is_scatter:
-        mark_class = "Circle"
-    else:
-        mark_class = _MARK_CLASS.get(mark_type, "Automatic")
-    ET.SubElement(pane, "mark", {"class": mark_class})
-
-    # --- Encodings -----------------------------------------------------
-    # Collect all encoding elements to decide whether to emit <encodings>.
-    # Order: color first, then text entries (mirrors wb1 Pie pane at ~3775-3780).
     ds_ref = f"[{ds_internal}]"
-    encoding_elements: list[tuple[str, str]] = []  # (tag, column_value)
 
-    # Color encoding (G-01)
-    # Emitted for: explicit color_spec, or scatter breakdown as color.
-    effective_color_spec = color_spec
-    if is_scatter and scatter_breakdown and not effective_color_spec:
-        effective_color_spec = {"field": str(scatter_breakdown), "kind": "dimension"}
+    if is_map_filled and geo_spec:
+        # Filled-map (choropleth) pane structure — mirrors wb1 ~4786-4848:
+        #
+        #   <pane id='1' ...>           ← LOD-only shadow layer
+        #     <view><breakdown/></view>
+        #     <mark class='Automatic'/>
+        #     <encodings><lod column='...geo dim instance...'/></encodings>
+        #   </pane>
+        #   <pane generated-title='...' id='0' ...>  ← filled polygon layer
+        #     <view><breakdown/></view>
+        #     <mark class='Automatic'/>
+        #     <encodings>
+        #       <lod    column='...geo dim instance...'/>
+        #       <color  column='...color measure instance...'/>   (if colorMeasure)
+        #       <geometry column='[ds].[Geometry (generated)]'/>
+        #     </encodings>
+        #   </pane>
+        #
+        # NOTE: wb1 emits pane id='1' before id='0', then a third pane id='2'
+        # for a Shape overlay.  We emit only the two core panes (id='1' and id='0')
+        # — the XSD does not mandate the overlay pane and omitting it keeps the
+        # structure minimal.
+        geo_field_name = str(geo_spec["geoField"])
+        geo_dim_col = f"{ds_ref}.{_dim_instance(geo_field_name)}"
+        geo_color_measure = geo_spec.get("colorMeasure")
+        geometry_col = f"{ds_ref}.[Geometry (generated)]"
 
-    if effective_color_spec:
-        col_val = _color_column_instance(ds_internal, effective_color_spec)
-        encoding_elements.append(("color", col_val))
+        # Pane id='1': LOD shadow (wb1 ~4786-4795)
+        pane_lod = ET.SubElement(
+            panes,
+            "pane",
+            {"id": "1", "selection-relaxation-option": "selection-relaxation-allow"},
+        )
+        pane_lod_view = ET.SubElement(pane_lod, "view")
+        ET.SubElement(pane_lod_view, "breakdown", {"value": "auto"})
+        ET.SubElement(pane_lod, "mark", {"class": "Automatic"})
+        enc_lod = ET.SubElement(pane_lod, "encodings")
+        ET.SubElement(enc_lod, "lod", {"column": geo_dim_col})
 
-    # Text encoding(s)
-    if is_kpi_tile and kpi_spec:
-        # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397)
-        for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
-            kpi_field = kpi_spec.get(kpi_field_key)
-            if kpi_field:
-                encoding_elements.append(
-                    ("text", f"{ds_ref}.{_measure_instance(str(kpi_field))}")
-                )
-    elif mark_type == "text" and measures and not is_kpi_tile:
-        # Plain text mark: single-measure text encoding (original behaviour)
-        encoding_elements.append(("text", f"{ds_ref}.{_measure_instance(measures[0])}"))
+        # Pane id='0': filled polygon layer (wb1 ~4796-4821)
+        pane_fill = ET.SubElement(
+            panes,
+            "pane",
+            {
+                "generated-title": geo_field_name,
+                "id": "0",
+                "selection-relaxation-option": "selection-relaxation-allow",
+            },
+        )
+        pane_fill_view = ET.SubElement(pane_fill, "view")
+        ET.SubElement(pane_fill_view, "breakdown", {"value": "auto"})
+        ET.SubElement(pane_fill, "mark", {"class": "Automatic"})
+        enc_fill = ET.SubElement(pane_fill, "encodings")
+        ET.SubElement(enc_fill, "lod", {"column": geo_dim_col})
+        if geo_color_measure:
+            color_col = f"{ds_ref}.{_measure_instance(str(geo_color_measure))}"
+            ET.SubElement(enc_fill, "color", {"column": color_col})
+        ET.SubElement(enc_fill, "geometry", {"column": geometry_col})
 
-    if encoding_elements:
-        encodings_el = ET.SubElement(pane, "encodings")
-        for tag, col_val in encoding_elements:
-            ET.SubElement(encodings_el, tag, {"column": col_val})
+    else:
+        pane = ET.SubElement(panes, "pane")
+        pane_view = ET.SubElement(pane, "view")
+        ET.SubElement(pane_view, "breakdown", {"value": "auto"})
+
+        # Determine mark class.
+        # KPI tiles use "Automatic" (mirrors wb1 Sales KPI / Customer KPI sheets
+        # at lines ~4946, ~3392 which have <mark class='Automatic'/>).
+        # Scatter maps to "Circle" via _MARK_CLASS.
+        if is_kpi_tile:
+            mark_class = "Automatic"
+        elif is_scatter:
+            mark_class = "Circle"
+        else:
+            mark_class = _MARK_CLASS.get(mark_type, "Automatic")
+        ET.SubElement(pane, "mark", {"class": mark_class})
+
+        # --- Encodings -------------------------------------------------
+        # Collect all encoding elements to decide whether to emit <encodings>.
+        # Order: color first, then text entries (mirrors wb1 Pie pane at ~3775-3780).
+        encoding_elements: list[tuple[str, str]] = []  # (tag, column_value)
+
+        # Color encoding (G-01)
+        # Emitted for: explicit color_spec, or scatter breakdown as color.
+        effective_color_spec = color_spec
+        if is_scatter and scatter_breakdown and not effective_color_spec:
+            effective_color_spec = {"field": str(scatter_breakdown), "kind": "dimension"}
+
+        if effective_color_spec:
+            col_val = _color_column_instance(ds_internal, effective_color_spec)
+            encoding_elements.append(("color", col_val))
+
+        # Text encoding(s)
+        if is_kpi_tile and kpi_spec:
+            # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397)
+            for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
+                kpi_field = kpi_spec.get(kpi_field_key)
+                if kpi_field:
+                    encoding_elements.append(
+                        ("text", f"{ds_ref}.{_measure_instance(str(kpi_field))}")
+                    )
+        elif mark_type == "text" and measures and not is_kpi_tile:
+            # Plain text mark: single-measure text encoding (original behaviour)
+            encoding_elements.append(("text", f"{ds_ref}.{_measure_instance(measures[0])}"))
+
+        if encoding_elements:
+            encodings_el = ET.SubElement(pane, "encodings")
+            for tag, col_val in encoding_elements:
+                ET.SubElement(encodings_el, tag, {"column": col_val})
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
-    if is_scatter and scatter:
+    if is_map_filled:
+        # Filled map: generated lat/long on rows/cols (mirrors wb1 ~4850-4851).
+        # These are Tableau virtual columns — NOT column-instance expressions;
+        # they carry no "none:" or "sum:" prefix and brackets are NOT doubled.
+        rows_exprs = [f"{ds_ref}.[Latitude (generated)]"]
+        cols_exprs = [f"{ds_ref}.[Longitude (generated)]"]
+    elif is_scatter and scatter:
         # Scatter: x measure on cols, y measure on rows (mirrors wb1 ~3848-3849
         # which show a dual-measure axis expression on cols/rows).
         # For a simple scatter: single x measure on cols, single y measure on rows.
@@ -964,8 +1093,10 @@ def build_twb_xml(
     ET.SubElement(datasource, "connection", conn_attrs)
 
     # Declare every referenced field once at the datasource level.
+    # Collect geo-role map from sheets to stamp semantic-role on geo columns.
     seen_dims: list[str] = []
     seen_measures: list[str] = []
+    sqlproxy_geo_role_map: dict[str, str] = {}
     for sheet in sheets:
         for field in [*sheet.get("cols", []), *sheet.get("rows", [])]:
             if str(field) not in seen_dims:
@@ -973,12 +1104,30 @@ def build_twb_xml(
         for field in sheet.get("measures", []):
             if str(field) not in seen_measures:
                 seen_measures.append(str(field))
+        g = sheet.get("geo")
+        if g:
+            geo_field = str(g["geoField"])
+            geo_role = str(g.get("geoRole", "state")).lower()
+            sqlproxy_geo_role_map[geo_field] = _GEO_SEMANTIC_ROLE.get(
+                geo_role, "[State].[Name]"
+            )
+            # Ensure the geo dimension is declared in the datasource.
+            if geo_field not in seen_dims:
+                seen_dims.append(geo_field)
+            # Ensure the color measure is declared if present.
+            geo_color = g.get("colorMeasure")
+            if geo_color and str(geo_color) not in seen_measures:
+                seen_measures.append(str(geo_color))
     for field in seen_dims:
-        ET.SubElement(
-            datasource,
-            "column",
-            {"datatype": "string", "name": f"[{field}]", "role": "dimension", "type": "nominal"},
-        )
+        dim_attrs: dict[str, str] = {
+            "datatype": "string",
+            "name": f"[{field}]",
+            "role": "dimension",
+            "type": "nominal",
+        }
+        if field in sqlproxy_geo_role_map:
+            dim_attrs["semantic-role"] = sqlproxy_geo_role_map[field]
+        ET.SubElement(datasource, "column", dim_attrs)
     for field in seen_measures:
         ET.SubElement(
             datasource,
@@ -1108,6 +1257,7 @@ def _build_federated_datasource(
     datasource_name: str,
     hyper_filename: str,
     columns: list[ColumnSpec],
+    geo_role_map: dict[str, str] | None = None,
 ) -> ET.Element:
     """Return a ``<datasource>`` ET.Element using a federated hyper connection.
 
@@ -1145,6 +1295,11 @@ def _build_federated_datasource(
         hyper_filename:   Basename of the .hyper file as stored in the zip
                           (e.g. ``"abc123.hyper"``).
         columns:          Column specs read back from the .hyper file.
+        geo_role_map:     Optional mapping of field name → semantic-role string
+                          (e.g. ``{"State": "[State].[Name]"}``).  When provided,
+                          any ``<column>`` whose name matches a key gets a
+                          ``semantic-role`` attribute stamped on it.  Mirrors
+                          wb1 ~2804 and the ``_GEO_SEMANTIC_ROLE`` lookup.
 
     Returns:
         An ET.Element for the ``<datasource>`` node.
@@ -1205,17 +1360,20 @@ def _build_federated_datasource(
         ET.SubElement(record, "local-type").text = col.datatype
 
     # --- top-level <column> declarations ------------------------------------
+    # Stamp semantic-role on any column whose name is in geo_role_map.
+    # This is how Tableau recognises geo dimensions for map rendering.
+    # Mirrors wb1 ~2804: semantic-role='[State].[Name]' on [State/Province].
+    resolved_geo_map: dict[str, str] = geo_role_map or {}
     for col in columns:
-        ET.SubElement(
-            ds,
-            "column",
-            {
-                "datatype": col.datatype,
-                "name": f"[{col.name}]",
-                "role": col.role,
-                "type": col.type,
-            },
-        )
+        col_attrs: dict[str, str] = {
+            "datatype": col.datatype,
+            "name": f"[{col.name}]",
+            "role": col.role,
+            "type": col.type,
+        }
+        if col.name in resolved_geo_map:
+            col_attrs["semantic-role"] = resolved_geo_map[col.name]
+        ET.SubElement(ds, "column", col_attrs)
 
     # --- <extract> block (marks the datasource as an embedded extract) ------
     # object-id is required by the XSD (xs:string use="required"); empty string
@@ -1286,9 +1444,28 @@ def build_embedded_twb_xml(
         {"source-build": SOURCE_BUILD, "version": TWB_VERSION},
     )
 
+    # --- Collect geo-role map from all sheets --------------------------------
+    # If any sheet carries a ``geo`` spec, thread the field→semantic-role
+    # mapping into the datasource builder so the correct column gets the
+    # ``semantic-role`` attribute.  Multiple sheets can reference the same
+    # geo field — last writer wins (they should all agree on the role).
+    geo_role_map: dict[str, str] = {}
+    for sheet in sheets:
+        g = sheet.get("geo")
+        if g:
+            geo_field = str(g["geoField"])
+            geo_role = str(g.get("geoRole", "state")).lower()
+            semantic_role = _GEO_SEMANTIC_ROLE.get(geo_role, "[State].[Name]")
+            geo_role_map[geo_field] = semantic_role
+
     # --- Datasource (federated / embedded extract) --------------------------
     datasources_el = ET.SubElement(workbook, "datasources")
-    ds_el = _build_federated_datasource(datasource_name, hyper_filename, columns)
+    ds_el = _build_federated_datasource(
+        datasource_name,
+        hyper_filename,
+        columns,
+        geo_role_map=geo_role_map if geo_role_map else None,
+    )
     datasources_el.append(ds_el)
 
     # --- Worksheets ---------------------------------------------------------

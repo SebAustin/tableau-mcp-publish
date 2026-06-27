@@ -3,11 +3,18 @@
  *
  * This is the entry point used by `design_dashboard`. It wires the pure
  * sub-functions together and enforces the schemaVersion guard.
+ *
+ * Phase-1 additions (Slice 4):
+ * - For exec audience: emit KPI strip (≤4 tiles) + chart sheets; set
+ *   layoutGrammar.kind="kpi_band_over_charts".
+ * - Derive dashboardTitle from the business question; dashboardSubtitle from
+ *   audience + implied period.
+ * - Populate color/geo/scatter on the relevant sheets.
  */
 
 import { classifyFields, usableFields } from "./fields.js";
 import type { FieldHint, FieldClassification } from "./fields.js";
-import { applyMarkHeuristic } from "./marks.js";
+import { applyMarkHeuristic, buildKpiStrip } from "./marks.js";
 import { applyAudienceClamps } from "./audience.js";
 import {
   assertSchemaVersion,
@@ -17,6 +24,7 @@ import {
   type DashboardLayout,
   type SheetSpec,
   type DatasourceSpec,
+  type LayoutGrammar,
   DashboardPlanSchema,
 } from "./schema.js";
 import { selectQuestions, type InterviewInput } from "./questions.js";
@@ -72,6 +80,42 @@ function deriveWorkbookName(
 }
 
 // ---------------------------------------------------------------------------
+// Derive dashboard title from business question
+// ---------------------------------------------------------------------------
+
+function deriveDashboardTitle(businessQuestion: string, audience: Audience): string {
+  const trimmed = businessQuestion.trim();
+  if (!trimmed) {
+    const label = audience.charAt(0).toUpperCase() + audience.slice(1);
+    return `${label} Dashboard`;
+  }
+  // Remove question marks, truncate to ~60 chars, title-case
+  const clean = trimmed
+    .replace(/[?!]+$/, "")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .slice(0, 60)
+    .trim();
+  return clean;
+}
+
+// ---------------------------------------------------------------------------
+// Derive dashboard subtitle
+// ---------------------------------------------------------------------------
+
+function deriveDashboardSubtitle(audience: Audience): string {
+  switch (audience) {
+    case "exec":
+      return "Executive Summary · Period-over-Period";
+    case "analyst":
+      return "Analyst Detail View";
+    case "operational":
+      return "Operational Dashboard";
+    case "mixed":
+      return "Summary Dashboard";
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Placeholder-sheet builder (no fieldHints supplied)
 // ---------------------------------------------------------------------------
 
@@ -87,6 +131,162 @@ function buildPlaceholderSheets(_audience: Audience): SheetSpec[] {
         "Field names are placeholders — supply fieldHints or edit before calling build_from_plan.",
     },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Phase-1: Exec KPI-band plan assembly
+//
+// For exec audience with real field hints, we produce:
+//   1. KPI strip (≤4 kpi_tile sheets) — the top band
+//   2. A color-encoded bar (Sales by Category or equivalent)
+//   3. A filled map (Sales by State) if a state field is present
+//   4. One additional chart (trend or scatter) if room remains
+// Then layoutGrammar = { kind: "kpi_band_over_charts" }
+// ---------------------------------------------------------------------------
+
+/** Max exec chart sheets below the KPI band (so total stays ≤ maxSheets). */
+const EXEC_MAX_CHARTS = 2;
+/** Max KPI tiles in the exec KPI strip. */
+const EXEC_MAX_KPI_TILES = 4;
+
+/**
+ * Build the exec KPI-band plan from classified fields + question text.
+ *
+ * The function returns a raw sheet list (before audience clamping) plus
+ * a proposed layoutGrammar. The caller is responsible for running
+ * applyAudienceClamps on the result.
+ *
+ * Rules:
+ * - KPI tiles first (≤4), binding CP/PP/Difference by name where present.
+ * - Below the KPI band: up to EXEC_MAX_CHARTS chart sheets.
+ *   • One color-encoded bar (primary measure by first low-card dimension).
+ *   • One map_filled if a state/geo field is present.
+ *   • If two chart slots remain and no map, a trend line instead.
+ */
+function buildExecKpiBandPlan(
+  allClassifications: FieldClassification[],
+  questionText: string,
+): { sheets: SheetSpec[]; layoutGrammar: LayoutGrammar } {
+  const usable = usableFields(allClassifications);
+  const measures = usable.filter((f) => f.role === "measure").map((f) => f.name);
+  const dims = usable.filter(
+    (f) => f.role === "dimension" && !f.tags.includes("temporal"),
+  );
+  const temporal = usable.find((f) => f.role === "temporal" || f.tags.includes("temporal"));
+  const geoField = usable.find(
+    (f) =>
+      f.role === "geographic" &&
+      f.tags.includes("geo_named") &&
+      f.geoRole !== undefined,
+  );
+
+  // 1. KPI strip
+  const kpiSheets: SheetSpec[] = buildKpiStrip(
+    measures,
+    allClassifications,
+    EXEC_MAX_KPI_TILES,
+  );
+
+  // 2. Chart sheets below the KPI band
+  const chartSheets: SheetSpec[] = [];
+
+  // 2a. Color-encoded bar: primary measure by the first low-card dimension,
+  // colored by a second dimension when one exists, otherwise by the measure
+  // itself (sequential color by magnitude) — so an exec bar is always encoded.
+  const primaryMeasure = measures[0];
+  const primaryDim = dims.find((d) => d.cardinalityHint === "low") ?? dims[0];
+  const colorDim =
+    dims.find((d) => d !== primaryDim && d.cardinalityHint === "low") ??
+    dims.find((d) => d !== primaryDim);
+
+  if (primaryMeasure && primaryDim) {
+    const barSheet: SheetSpec = {
+      title: `${toLabel(primaryMeasure)} by ${toLabel(primaryDim.name)}`,
+      markType: "bar",
+      cols: [primaryDim.name],
+      rows: [],
+      measures: [primaryMeasure],
+      color: colorDim
+        ? { field: colorDim.name, kind: "dimension" as const }
+        : { field: primaryMeasure, kind: "measure" as const },
+    };
+    chartSheets.push(barSheet);
+  }
+
+  // 2b. Filled map if a geo field is present
+  if (
+    geoField &&
+    geoField.geoRole !== undefined &&
+    primaryMeasure &&
+    chartSheets.length < EXEC_MAX_CHARTS
+  ) {
+    const mapSheet: SheetSpec = {
+      title: `${toLabel(primaryMeasure)} by ${toLabel(geoField.name)}`,
+      markType: "map_filled",
+      cols: [],
+      rows: [geoField.name],
+      measures: [primaryMeasure],
+      geo: {
+        geoField: geoField.name,
+        geoRole: geoField.geoRole,
+        colorMeasure: primaryMeasure,
+      },
+      color: { field: primaryMeasure, kind: "measure" as const },
+    };
+    chartSheets.push(mapSheet);
+  }
+
+  // 2c. Trend line if no map was added and a temporal field exists
+  if (temporal && primaryMeasure && chartSheets.length < EXEC_MAX_CHARTS) {
+    const trendSheet: SheetSpec = {
+      title: `${toLabel(primaryMeasure)} over Time`,
+      markType: "line",
+      cols: [temporal.name],
+      rows: [],
+      measures: [primaryMeasure],
+    };
+    chartSheets.push(trendSheet);
+  }
+
+  // If question text contains scatter/correlation hints, add scatter if room
+  const wantsScatter =
+    /\b(scatter|correlation|drives|relationship|vs\.?|plotted against)\b/i.test(questionText);
+  if (wantsScatter && measures.length >= 2 && chartSheets.length < EXEC_MAX_CHARTS) {
+    const x = measures[0]!;
+    const y = measures[1]!;
+    const scatterSheet: SheetSpec = {
+      title: `${toLabel(x)} vs ${toLabel(y)}`,
+      markType: "scatter",
+      cols: [],
+      rows: [],
+      measures: [x, y],
+      scatter: { x, y },
+    };
+    chartSheets.push(scatterSheet);
+  }
+
+  // Assemble final sheet list: KPI tiles first, then chart sheets
+  const allSheets: SheetSpec[] = [...kpiSheets, ...chartSheets];
+
+  // Build layoutGrammar
+  const layoutGrammar: LayoutGrammar = {
+    kind: "kpi_band_over_charts",
+    kpiTileTitles: kpiSheets.map((s) => s.title),
+    chartTitles: chartSheets.map((s) => s.title),
+  };
+
+  return { sheets: allSheets, layoutGrammar };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toLabel(name: string): string {
+  return name
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -136,25 +336,35 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     input.workbookName ?? deriveWorkbookName(questionText || datasourceName, audience);
 
   // Field classification
-  let classifications: FieldClassification[] = [];
+  let allClassifications: FieldClassification[] = [];
   let hasRealFields = false;
   if (fieldHints && fieldHints.length > 0) {
-    classifications = classifyFields(fieldHints);
+    allClassifications = classifyFields(fieldHints);
     hasRealFields = true;
   }
 
   // First available measure name for KPI insertion
   const firstMeasure = hasRealFields
-    ? (usableFields(classifications).find((f) => f.role === "measure")?.name ?? "")
+    ? (usableFields(allClassifications).find((f) => f.role === "measure")?.name ?? "")
     : "";
 
-  // Build raw sheets
+  // ---------------------------------------------------------------------------
+  // Phase-1: Exec audience with real fields → KPI-band plan
+  // ---------------------------------------------------------------------------
+
+  let layoutGrammarFromExec: LayoutGrammar | undefined;
+
   let rawSheets: SheetSpec[];
   if (!hasRealFields) {
     rawSheets = buildPlaceholderSheets(audience);
+  } else if (audience === "exec" && hasRealFields) {
+    // Use the exec KPI-band builder
+    const { sheets, layoutGrammar } = buildExecKpiBandPlan(allClassifications, questionText);
+    rawSheets = sheets;
+    layoutGrammarFromExec = layoutGrammar;
   } else if (!questionText) {
     // No question — produce one bar chart with default shelves
-    const usable = usableFields(classifications);
+    const usable = usableFields(allClassifications);
     const dim = usable.find(
       (f) =>
         f.role === "dimension" ||
@@ -172,7 +382,7 @@ export function generatePlan(input: PlanInput): DashboardPlan {
       },
     ];
   } else {
-    const rawFromHeuristic = applyMarkHeuristic(questionText, classifications, "Sheet");
+    const rawFromHeuristic = applyMarkHeuristic(questionText, allClassifications, "Sheet");
     // Convert RawSheet → SheetSpec (same shape, but SheetSpec is typed)
     rawSheets = rawFromHeuristic.map((s) => ({
       title: s.title,
@@ -181,10 +391,22 @@ export function generatePlan(input: PlanInput): DashboardPlan {
       rows: s.rows,
       measures: s.measures,
       rationale: s.rationale,
+      // Phase-1 optional encoding blocks
+      ...(s.kind !== undefined ? { kind: s.kind } : {}),
+      ...(s.color !== undefined ? { color: s.color } : {}),
+      ...(s.kpi !== undefined ? { kpi: s.kpi } : {}),
+      ...(s.scatter !== undefined ? { scatter: s.scatter } : {}),
+      ...(s.geo !== undefined ? { geo: s.geo } : {}),
     }));
   }
 
+  // ---------------------------------------------------------------------------
   // Audience clamps
+  // ---------------------------------------------------------------------------
+
+  // For exec, the KPI-band builder already places kpi_tile sheets first and
+  // chart sheets after. We pass firstMeasure so stepEnsureKpiLead is satisfied
+  // by the leading text mark (kpi_tile has markType="text").
   const { sheets, dashboardLayout: rawLayout } = applyAudienceClamps(
     rawSheets,
     audience,
@@ -198,6 +420,27 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     sheets.length,
     rawLayout,
   );
+
+  // ---------------------------------------------------------------------------
+  // Phase-1: Dashboard title + subtitle + layoutGrammar
+  // ---------------------------------------------------------------------------
+
+  const dashboardTitle = deriveDashboardTitle(questionText || datasourceName, audience);
+  const dashboardSubtitle = deriveDashboardSubtitle(audience);
+
+  // layoutGrammar: use the exec-specific one if we built it, otherwise derive
+  // from the dashboardLayout for other audiences.
+  let layoutGrammar: LayoutGrammar | undefined;
+  if (layoutGrammarFromExec !== undefined && audience === "exec") {
+    // Rebuild titles from the clamped sheets for accuracy
+    const kpiTileSheets = sheets.filter((s) => s.kind === "kpi_tile");
+    const chartSheetsAfterClamp = sheets.filter((s) => s.kind !== "kpi_tile");
+    layoutGrammar = {
+      kind: "kpi_band_over_charts",
+      kpiTileTitles: kpiTileSheets.map((s) => s.title),
+      chartTitles: chartSheetsAfterClamp.map((s) => s.title),
+    };
+  }
 
   // Build rationale
   const rationaleLines: string[] = [AUDIENCE_NOTES[audience]];
@@ -221,6 +464,10 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     dashboardLayout,
     sheets,
     ...(datasourceSpec ? { datasourceSpec } : {}),
+    // Phase-1 optional fields
+    dashboardTitle,
+    dashboardSubtitle,
+    ...(layoutGrammar !== undefined ? { layoutGrammar } : {}),
   });
 
   return plan;

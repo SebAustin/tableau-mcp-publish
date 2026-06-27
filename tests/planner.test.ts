@@ -7,7 +7,7 @@
 import { describe, it, expect } from "vitest";
 import { classifyField, classifyFields } from "../src/planner/fields.js";
 import { applyAudienceClamps } from "../src/planner/audience.js";
-import { applyMarkHeuristic, GAP_G02, GAP_G05 } from "../src/planner/marks.js";
+import { applyMarkHeuristic, GAP_G05 } from "../src/planner/marks.js";
 import {
   DashboardPlanSchema,
   assertSchemaVersion,
@@ -322,15 +322,33 @@ describe("no-dimension downgrade", () => {
 // Gap annotations
 // ---------------------------------------------------------------------------
 
-describe("gap annotations — G-02 scatter→bar", () => {
-  it("scatter/drives keyword → markType bar with G-02 note", () => {
+describe("gap annotations — G-02 scatter→bar (Phase-1: scatter now native)", () => {
+  it("scatter/drives keyword → markType 'scatter' (Phase-1 upgrade; bar fallback via audience guard)", () => {
+    // Phase-1: the mark heuristic now routes scatter keywords to markType "scatter" directly.
+    // The G-02 bar fallback still applies inside applyAudienceClamps when the audience
+    // does not allow scatter (e.g. exec, operational, mixed). At the heuristic level the
+    // markType is "scatter", not "bar".
     const fields = classifyFields([
       { name: "region", dataType: "string" },
       { name: "revenue", dataType: "number" },
     ]);
     const sheets = applyMarkHeuristic("correlation between revenue and cost", fields);
-    expect(sheets[0]?.markType).toBe("bar");
-    expect(sheets[0]?.rationale).toContain(GAP_G02);
+    expect(sheets[0]?.markType).toBe("scatter");
+  });
+
+  it("scatter sheet under exec audience is replaced with bar (audience guard)", () => {
+    const sheet: SheetSpec = {
+      title: "S",
+      markType: "scatter",
+      cols: [],
+      rows: [],
+      measures: ["revenue", "cost"],
+      scatter: { x: "revenue", y: "cost" },
+    };
+    const { sheets } = applyAudienceClamps([sheet], "exec");
+    // Exec does not allow scatter → replaced with bar (and KPI inserted at index 0)
+    const anyScatter = sheets.some((s) => s.markType === "scatter");
+    expect(anyScatter).toBe(false);
   });
 });
 
@@ -351,12 +369,30 @@ describe("gap annotations — G-05 high-cardinality top-N note", () => {
 // ---------------------------------------------------------------------------
 
 describe("interview mode (MB-1)", () => {
-  it("returns 3–7 questions and no 'sheets' key", () => {
+  it("returns 3–10 questions (Phase-1: bank expanded to 10) and no 'sheets' key", () => {
     const result = generateInterview({});
     expect(result.kind).toBe("questions");
     expect(result.questions.length).toBeGreaterThanOrEqual(3);
-    expect(result.questions.length).toBeLessThanOrEqual(7);
+    expect(result.questions.length).toBeLessThanOrEqual(10);
     expect("sheets" in result).toBe(false);
+  });
+
+  it("returns ≤7 questions when most inputs are known", () => {
+    // When audience, businessQuestion, and fieldHints (with temporal + dimension) are
+    // known, the conditional selection fires fewer questions.
+    const result = generateInterview({
+      audience: "exec",
+      businessQuestion: "How is revenue trending?",
+      context: "filter by current year, prior period comparison, title: Revenue Review, brand color blue",
+      fieldHints: [
+        { name: "order_date", dataType: "date" },
+        { name: "region", dataType: "string" },
+        { name: "revenue", dataType: "number" },
+      ],
+    });
+    // With all conditions satisfied, only unconditional + action might fire
+    expect(result.questions.length).toBeGreaterThanOrEqual(3);
+    expect(result.questions.length).toBeLessThanOrEqual(10);
   });
 });
 

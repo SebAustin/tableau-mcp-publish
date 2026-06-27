@@ -7,10 +7,16 @@
  *
  * Field inference (fields.ts) must run first; this module receives
  * `FieldClassification[]` rather than raw FieldHints.
+ *
+ * Phase-1 additions (Slice 4):
+ * - scatter keyword → markType "scatter" (not the G-02 bar fallback)
+ * - map keywords + geo field → markType "map_filled" with geo binding
+ * - buildKpiStrip() helper: emits kpi_tile sheets from primary measures
  */
 
-import type { FieldClassification, FieldRole } from "./fields.js";
-import type { MarkType } from "./schema.js";
+import type { FieldClassification, FieldRole, GeoRole } from "./fields.js";
+import { findPeriodPair } from "./fields.js";
+import type { MarkType, SheetKind } from "./schema.js";
 
 // ---------------------------------------------------------------------------
 // Gap annotation strings (BI_DESIGN §2.3) — referenced by tests
@@ -26,13 +32,19 @@ export const GAP_G05 =
   "High-cardinality dimension — apply Top 10 filter in Tableau Desktop: right-click field > Filter > Top > By field.";
 
 // ---------------------------------------------------------------------------
-// §6 — Priority-ordered keyword→markType table
+// §6 — Priority-ordered keyword→markType table (Phase-1 update)
+//
+// Priority 5 (map) is now evaluated properly → map_filled when geo field present
+// Priority 6 (scatter/drives) now routes to "scatter" instead of the G-02 bar fallback
 // ---------------------------------------------------------------------------
+
+type RichMarkType = MarkType; // "bar"|"line"|"text"|"map"|"scatter"|"map_filled"
 
 interface MarkRule {
   priority: number;
   regex: RegExp;
-  markType: MarkType;
+  markType: RichMarkType;
+  /** For the old scatter-as-bar path (G-02) — still used when no measure pair. */
   gapAnnotation?: string;
 }
 
@@ -64,14 +76,13 @@ const MARK_RULES: MarkRule[] = [
     priority: 5,
     regex:
       /\b(map|geography|geographic|location|where|by country|by state|by city|by region \(on map\)|spatial)\b/i,
-    markType: "map",
+    markType: "map_filled", // Phase-1: upgraded from "map" when geo field present
   },
   {
     priority: 6,
     regex:
       /\b(correlation|scatter|relationship between|drives|impact of|x vs y|plotted against)\b/i,
-    markType: "bar",
-    gapAnnotation: GAP_G02,
+    markType: "scatter", // Phase-1: upgraded from bar+G-02; audience guard in audience.ts
   },
   {
     priority: 7,
@@ -93,7 +104,7 @@ function splitClauses(text: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Shelf assignment
+// RawSheet — full rich type including Phase-1 encoding blocks
 // ---------------------------------------------------------------------------
 
 export interface RawSheet {
@@ -103,7 +114,23 @@ export interface RawSheet {
   rows: string[];
   measures: string[];
   rationale?: string;
+  /** Phase-1 additions */
+  kind?: SheetKind;
+  color?: { field: string; kind: "dimension" | "measure_names" | "measure" };
+  kpi?: {
+    primaryMeasure: string;
+    comparisonMeasure?: string;
+    deltaMeasure?: string;
+    deltaIsPositiveGood?: boolean;
+    sparklineField?: string;
+  };
+  scatter?: { x: string; y: string; breakdown?: string };
+  geo?: { geoField: string; geoRole: GeoRole; colorMeasure?: string };
 }
+
+// ---------------------------------------------------------------------------
+// Shelf assignment
+// ---------------------------------------------------------------------------
 
 /**
  * Select shelf fields for a given markType from classified fields.
@@ -113,7 +140,7 @@ export interface RawSheet {
 function assignShelves(
   markType: MarkType,
   fields: FieldClassification[],
-): Pick<RawSheet, "cols" | "rows" | "measures"> {
+): Pick<RawSheet, "cols" | "rows" | "measures" | "scatter" | "geo" | "color"> {
   const usable = fields.filter((f) => !f.suppress);
   const temporal = usable.find((f) => f.role === "temporal" || f.tags.includes("temporal"));
   const geo = usable.find(
@@ -133,12 +160,58 @@ function assignShelves(
         rows: [],
         measures: measures.slice(0, 1),
       };
+
     case "map":
       return {
         cols: [],
         rows: geo ? [geo.name] : [],
         measures: measures.slice(0, 1),
       };
+
+    case "map_filled": {
+      // Use the geo field with geo binding; color by the first measure
+      const geoField = geo;
+      const colorMeasure = measures[0];
+      return {
+        cols: [],
+        rows: geoField ? [geoField.name] : [],
+        measures: colorMeasure ? [colorMeasure] : [],
+        ...(geoField && geoField.geoRole !== undefined
+          ? {
+              geo: {
+                geoField: geoField.name,
+                geoRole: geoField.geoRole,
+                colorMeasure,
+              },
+            }
+          : {}),
+        ...(colorMeasure
+          ? { color: { field: colorMeasure, kind: "measure" as const } }
+          : {}),
+      };
+    }
+
+    case "scatter": {
+      // Assign x=measures[0], y=measures[1]; breakdown=first dim if available
+      const x = measures[0];
+      const y = measures[1] ?? measures[0]; // fallback same measure if only one
+      const breakdown = nonTemporalDims[0]?.name;
+      return {
+        cols: [],
+        rows: [],
+        measures: [x, y].filter((m): m is string => m !== undefined),
+        ...(x && y
+          ? {
+              scatter: {
+                x,
+                y,
+                ...(breakdown ? { breakdown } : {}),
+              },
+            }
+          : {}),
+      };
+    }
+
     case "text": {
       // KPI: no dim, first measure
       const firstDim = nonTemporalDims[0];
@@ -148,13 +221,19 @@ function assignShelves(
         measures: measures.slice(0, 1),
       };
     }
+
     case "bar":
     default: {
       const firstDim = nonTemporalDims[0];
+      // Color by the second dimension if available (C-09 pattern)
+      const colorDim = nonTemporalDims[1];
       return {
         cols: firstDim ? [firstDim.name] : [],
         rows: [],
         measures: measures.slice(0, 1),
+        ...(colorDim
+          ? { color: { field: colorDim.name, kind: "dimension" as const } }
+          : {}),
       };
     }
   }
@@ -167,6 +246,9 @@ function assignShelves(
 /**
  * If markType is bar/line but no usable dimension exists, downgrade to text (KPI).
  * If the resulting text mark has no measures, drop it entirely (invariant §0.2).
+ *
+ * scatter and map_filled are NOT downgraded here — they go through the audience
+ * guard in audience.ts instead.
  */
 function applyNoDimensionDowngrade(
   sheet: RawSheet,
@@ -184,6 +266,7 @@ function applyNoDimensionDowngrade(
       markType: "text",
       cols: [],
       rows: [],
+      color: undefined,
       rationale:
         (sheet.rationale ? sheet.rationale + " " : "") +
         "No usable dimension found; downgraded from " +
@@ -219,10 +302,6 @@ function annotateHighCardinality(sheet: RawSheet, fields: FieldClassification[])
 }
 
 // ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 // Descriptive sheet title derivation
 // ---------------------------------------------------------------------------
 
@@ -232,27 +311,40 @@ function annotateHighCardinality(sheet: RawSheet, fields: FieldClassification[])
  * Priority:
  *   1. measure + dimension → "Measure by Dimension" (e.g. "Revenue by Region")
  *   2. measure + temporal  → "Measure over Time"
- *   3. measure only        → the measure name (KPI title)
- *   4. dimension only      → the dimension name
- *   5. clause fallback     → first 40 chars of the clause, title-cased
- *   6. numeric fallback    → "${baseTitle} ${idx+1}"
+ *   3. scatter → "X vs Y"
+ *   4. map_filled → "Measure by GeoField"
+ *   5. measure only        → the measure name (KPI title)
+ *   6. dimension only      → the dimension name
+ *   7. clause fallback     → first 40 chars of the clause, title-cased
+ *   8. numeric fallback    → "${baseTitle} ${idx+1}"
  */
 function deriveSheetTitle(
   clause: string,
-  shelves: Pick<RawSheet, "cols" | "rows" | "measures">,
+  shelves: Pick<RawSheet, "cols" | "rows" | "measures" | "scatter" | "geo">,
   fields: FieldClassification[],
   baseTitle: string,
   clauseIdx: number,
 ): string {
-  const firstMeasure = shelves.measures[0];
-  const allDims = [...shelves.cols, ...shelves.rows];
-  const firstDim = allDims[0];
-
   const toLabel = (name: string): string =>
     name
       .replace(/[_-]+/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase())
       .trim();
+
+  // Scatter: "X vs Y"
+  if (shelves.scatter) {
+    return `${toLabel(shelves.scatter.x)} vs ${toLabel(shelves.scatter.y)}`;
+  }
+
+  // Map: "Measure by GeoField"
+  if (shelves.geo) {
+    const colorLabel = shelves.geo.colorMeasure ? toLabel(shelves.geo.colorMeasure) : "Map";
+    return `${colorLabel} by ${toLabel(shelves.geo.geoField)}`;
+  }
+
+  const firstMeasure = shelves.measures[0];
+  const allDims = [...shelves.cols, ...shelves.rows];
+  const firstDim = allDims[0];
 
   if (firstMeasure && firstDim) {
     const fc = fields.find((f) => f.name === firstDim);
@@ -279,6 +371,92 @@ function deriveSheetTitle(
 }
 
 // ---------------------------------------------------------------------------
+// Phase-1: KPI-strip emitter
+// ---------------------------------------------------------------------------
+
+/** Measures that are "cost-like" (lower is better) → deltaIsPositiveGood = false. */
+const COST_LIKE_MEASURES = new Set<string>([
+  "Discount",
+  "Returns",
+  "Days to Ship",
+  "Days To Ship",
+  "Days_to_Ship",
+]);
+
+/**
+ * Return true if the measure name is cost-like (lower is better, so a negative
+ * delta is good).
+ */
+export function isCostLikeMeasure(name: string): boolean {
+  // Exact match first
+  if (COST_LIKE_MEASURES.has(name)) return true;
+  // Lowercase pattern match
+  const lower = name.toLowerCase();
+  return (
+    lower.includes("discount") ||
+    lower.includes("return") ||
+    lower.includes("days to ship") ||
+    lower.includes("days_to_ship") ||
+    lower.includes("cost") ||
+    lower.includes("churn")
+  );
+}
+
+/**
+ * Build a KPI-strip: one `kpi_tile` RawSheet per primary measure.
+ *
+ * Rules:
+ * - Only primary measures (not period_compare) are included.
+ * - CP/PP/Difference counterparts are bound via the kpi block (not as measures).
+ * - Only when a PP or Difference counterpart exists in the field list does the
+ *   KPI tile carry comparisonMeasure/deltaMeasure (graceful degradation).
+ * - Cost-like measures (Discount, Returns, Days to Ship) get deltaIsPositiveGood=false.
+ * - The strip is capped at maxTiles.
+ *
+ * @param primaryMeasures  Names of the primary measures to tile (not CP/PP/Diff).
+ * @param allClassifications  Full field list including suppressed period_compare fields.
+ * @param maxTiles  Maximum number of KPI tiles to produce (audience-driven cap).
+ */
+export function buildKpiStrip(
+  primaryMeasures: string[],
+  allClassifications: FieldClassification[],
+  maxTiles = 4,
+): RawSheet[] {
+  const toLabel = (name: string): string =>
+    name
+      .replace(/[_-]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+
+  return primaryMeasures.slice(0, maxTiles).map((measure) => {
+    const pair = findPeriodPair(measure, allClassifications);
+    const hasComparison = pair.pp !== undefined || pair.cp !== undefined;
+    const hasDelta = pair.diff !== undefined;
+
+    const kpi: RawSheet["kpi"] = {
+      primaryMeasure: measure,
+      ...(hasComparison ? { comparisonMeasure: pair.pp ?? pair.cp } : {}),
+      ...(hasDelta ? { deltaMeasure: pair.diff } : {}),
+      deltaIsPositiveGood: !isCostLikeMeasure(measure),
+    };
+
+    return {
+      title: toLabel(measure),
+      markType: "text" as MarkType,
+      kind: "kpi_tile" as SheetKind,
+      cols: [],
+      rows: [],
+      measures: [measure],
+      kpi,
+      rationale:
+        hasComparison || hasDelta
+          ? `KPI tile: ${measure} with period comparison (${pair.pp ?? pair.cp ?? "none"} / ${pair.diff ?? "none"}).`
+          : `KPI tile: ${measure} (no period comparison columns found).`,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -298,13 +476,13 @@ export function applyMarkHeuristic(
   const sheets: RawSheet[] = [];
 
   for (const [clauseIdx, clause] of clauses.entries()) {
-    let markType: MarkType = "bar";
-    let gapAnnotation: string | undefined;
+    let markType: RichMarkType = "bar";
+    // gapAnnotation retained for legacy G-02 when scatter not available
+    // (currently not set because we now route scatter → "scatter")
 
     for (const rule of MARK_RULES) {
       if (rule.regex.test(clause)) {
         markType = rule.markType;
-        gapAnnotation = rule.gapAnnotation;
         break;
       }
     }
@@ -314,8 +492,13 @@ export function applyMarkHeuristic(
       title: deriveSheetTitle(clause, shelves, fields, baseTitle, clauseIdx),
       markType,
       ...shelves,
-      rationale: gapAnnotation,
     };
+
+    // scatter/map_filled are not downgraded by the no-dimension rule
+    if (markType === "scatter" || markType === "map_filled") {
+      sheets.push(annotateHighCardinality(rawSheet, fields));
+      continue;
+    }
 
     // Apply no-dimension downgrade
     const maybeSheet = applyNoDimensionDowngrade(rawSheet, fields);

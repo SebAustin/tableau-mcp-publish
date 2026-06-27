@@ -1,8 +1,14 @@
 /**
  * Interview question bank (BI_DESIGN §7, normative).
  *
- * `design_dashboard(mode: "interview")` selects 3–7 questions from this
+ * `design_dashboard(mode: "interview")` selects 3–10 questions from this
  * ordered bank deterministically based on which inputs are still unknown.
+ *
+ * Phase-1 additions (Slice 4): expanded bank 7 → 10 questions.
+ * - q_comparison: prior period vs prior year vs target
+ * - q_geo_level: geographic granularity (country/region/state/city)
+ * - q_branding: dashboard title, subtitle, brand color
+ * - q_chart_pref: chart type preferences (optional)
  */
 
 import type { Audience } from "./schema.js";
@@ -14,7 +20,7 @@ export interface Question {
   hint?: string;
 }
 
-/** Full ordered question bank per BI_DESIGN §7. */
+/** Full ordered question bank (Phase-1: 10 questions). */
 export const QUESTION_BANK: Question[] = [
   {
     id: "q_audience",
@@ -52,6 +58,23 @@ export const QUESTION_BANK: Question[] = [
     question: "What action or decision does the viewer take after looking at this dashboard?",
     hint: "For example: escalate an order, contact a customer, reallocate budget.",
   },
+  // Phase-1 additions
+  {
+    id: "q_comparison",
+    question: "What type of comparison is most useful — prior period, prior year, or vs. a target?",
+    hint: "For example: 'current month vs last month', 'YTD vs prior YTD', 'actuals vs budget'. This determines the KPI delta columns used.",
+  },
+  {
+    id: "q_geo_level",
+    question: "What geographic level should the data be shown at — country, region, state, or city?",
+    hint: "This controls whether the map shows countries, US states, or cities. Leave blank if no map is needed.",
+  },
+  {
+    id: "q_branding",
+    question:
+      "What title and subtitle should appear on the dashboard, and is there a brand color to apply?",
+    hint: "For example: title 'Executive Sales Review Q4 2024', subtitle 'Regional & Category Performance', brand color '#003087'.",
+  },
 ];
 
 /** IDs of unconditional minimum questions (always included if count < 3). */
@@ -65,9 +88,15 @@ export interface InterviewInput {
 }
 
 /**
- * Select 3–7 interview questions from the bank based on what is unknown.
+ * Select 3–10 interview questions from the bank based on what is unknown.
  *
  * Selection is deterministic given the same input.
+ *
+ * Phase-1 inclusion rules for new questions:
+ * - q_comparison: included when context does not already mention comparison/period/prior
+ * - q_geo_level: included when fieldHints contain a geographic field or context mentions map/geo
+ * - q_branding: included when context does not mention a title or brand
+ * - q_chart_pref: always optional — NOT included by default (keeps selection deterministic)
  */
 export function selectQuestions(input: InterviewInput): Question[] {
   const { audience, businessQuestion, context, fieldHints } = input;
@@ -113,6 +142,28 @@ export function selectQuestions(input: InterviewInput): Question[] {
     context ? /action|decision|decide|escalate|contact|reallocate/i.test(context) : false;
   if (audience === "operational" || contextMentionsAction) selected.add("q_action");
 
+  // Phase-1: q_comparison — included when context doesn't already mention period/comparison
+  const contextMentionsComparison =
+    context
+      ? /prior\s+(period|year|month)|previous\s+(period|year|month)|vs\.?\s+target|versus\s+target|period\s+over\s+period|year\s+over\s+year|mom|yoy/i.test(context)
+      : false;
+  if (!contextMentionsComparison) selected.add("q_comparison");
+
+  // Phase-1: q_geo_level — included when a geo field is present or context mentions map/geo
+  const hasGeoField =
+    fieldHints?.some(
+      (h) =>
+        /\b(state|country|city|region|zip|postal|province|territory|geoid)\b/i.test(h.name),
+    ) ?? false;
+  const contextMentionsMap =
+    context ? /\b(map|geography|geographic|location|where|state|country|city)\b/i.test(context) : false;
+  if (hasGeoField || contextMentionsMap) selected.add("q_geo_level");
+
+  // Phase-1: q_branding — included when context doesn't mention a title or brand color
+  const contextMentionsBranding =
+    context ? /\b(title|subtitle|brand|color|colour|logo)\b/i.test(context) : false;
+  if (!contextMentionsBranding) selected.add("q_branding");
+
   // Ensure the three unconditional minimums are present if we'd have < 3
   if (selected.size < 3) {
     for (const id of UNCONDITIONAL_IDS) {
@@ -121,6 +172,6 @@ export function selectQuestions(input: InterviewInput): Question[] {
     }
   }
 
-  // Return in the canonical order of QUESTION_BANK, capped at 7
-  return QUESTION_BANK.filter((q) => selected.has(q.id)).slice(0, 7);
+  // Return in the canonical order of QUESTION_BANK, capped at 10
+  return QUESTION_BANK.filter((q) => selected.has(q.id)).slice(0, 10);
 }

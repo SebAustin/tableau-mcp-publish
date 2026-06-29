@@ -1,9 +1,28 @@
 /**
- * design_dashboard — M5
+ * design_dashboard — M5 / Slice 5: propose→confirm contract.
  *
- * Generates a DashboardPlan (or ClarifyingQuestions) from a set of inputs
- * using the pure planning pipeline (src/planner/).  No sidecar or REST calls.
- * The resulting plan can be passed to build_from_plan (M6).
+ * Returns a DashboardProposal (kind:"proposal") once enough context is known,
+ * or a ClarifyingQuestions (kind:"questions") in interview mode.
+ *
+ * This tool NEVER builds or publishes anything.  Building is a separate step
+ * triggered by the user confirming the proposal.
+ *
+ * ## Agent loop (STATELESS — the agent drives)
+ *
+ *  1. Agent calls `design_dashboard` (autonomous / directed / interview_followup).
+ *  2. Server returns a `kind:"proposal"` object.
+ *  3. Agent presents the proposal to the user:
+ *       - Human-readable text: summary, kpiStrip, views, layoutSummary.
+ *       - Optional: render an SVG/HTML wireframe from kpiStrip/views/layoutSummary
+ *         using a visualise tool (presentation only; no server call required).
+ *  4a. User says "change X" → agent re-calls `design_dashboard` in directed mode
+ *      with updated `directions` for a fresh proposal (server is stateless; no
+ *      session state is stored).
+ *  4b. User says "confirm" → agent calls `build_from_plan` with `proposal.plan`
+ *      VERBATIM.  Do NOT modify proposal.plan before passing it.
+ *
+ * No state is stored server-side between calls.  Each call to `design_dashboard`
+ * is independent.
  */
 
 import { z } from "zod";
@@ -11,6 +30,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { type ToolContext, toolResult } from "./context.js";
 import { generatePlan, generateInterview } from "../planner/plan.js";
 import type { PlanInput } from "../planner/plan.js";
+import { buildProposal } from "../planner/proposal.js";
 import { FieldHintSchema, AudienceEnum, DashboardLayoutEnum } from "../planner/schema.js";
 
 // ---------------------------------------------------------------------------
@@ -27,6 +47,64 @@ const audienceField = AudienceEnum.optional().describe(
 );
 
 // ---------------------------------------------------------------------------
+// Human-readable proposal formatter
+// ---------------------------------------------------------------------------
+
+/**
+ * Format a proposal as a readable multi-line string for the tool's text
+ * content so the calling agent can relay it directly to the user.
+ */
+function formatProposalText(proposal: ReturnType<typeof buildProposal>): string {
+  const lines: string[] = [];
+
+  lines.push(`Dashboard Proposal: "${proposal.workbookName}"`);
+  if (proposal.dashboardTitle) lines.push(`Title: ${proposal.dashboardTitle}`);
+  if (proposal.dashboardSubtitle) lines.push(`Subtitle: ${proposal.dashboardSubtitle}`);
+  lines.push("");
+  lines.push(`Summary: ${proposal.summary}`);
+  lines.push("");
+
+  if (proposal.kpiStrip.length > 0) {
+    lines.push("KPI Strip:");
+    for (const kpi of proposal.kpiStrip) {
+      const delta =
+        kpi.deltaMeasure
+          ? ` | Δ ${kpi.deltaMeasure} (${kpi.direction})`
+          : ` (${kpi.direction})`;
+      const comparison = kpi.comparisonMeasure ? ` vs ${kpi.comparisonMeasure}` : "";
+      lines.push(`  • ${kpi.label}: ${kpi.primaryMeasure}${comparison}${delta}`);
+    }
+    lines.push("");
+  }
+
+  if (proposal.views.length > 0) {
+    lines.push("Charts:");
+    for (const view of proposal.views) {
+      lines.push(`  • ${view.title}: ${view.encodingSummary}`);
+    }
+    lines.push("");
+  }
+
+  lines.push(`Layout: ${proposal.layoutSummary}`);
+
+  if (proposal.openQuestions && proposal.openQuestions.length > 0) {
+    lines.push("");
+    lines.push("Open Questions:");
+    for (const q of proposal.openQuestions) {
+      lines.push(`  • ${q}`);
+    }
+  }
+
+  lines.push("");
+  lines.push(
+    "To confirm this proposal, call build_from_plan with proposal.plan verbatim. " +
+      "To request changes, call design_dashboard again in directed mode with updated directions.",
+  );
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
 
@@ -36,15 +114,25 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
   server.registerTool(
     "design_dashboard",
     {
-      title: "Design a dashboard plan from a business question",
+      title: "Design a dashboard — returns a confirmable proposal",
       description:
-        "Generates a DashboardPlan JSON object (or a ClarifyingQuestions object) from a " +
-        "business question, target audience, and optional field hints. Three modes:\n" +
+        "Generates a DashboardProposal (kind:'proposal') or ClarifyingQuestions (kind:'questions') " +
+        "from a business question, target audience, and optional field hints.\n\n" +
+        "## Modes\n" +
         "  • autonomous: derive everything from businessQuestion + fieldHints.\n" +
-        "  • interview: return clarifying questions before planning (pass answers back as interview_followup).\n" +
-        "  • interview_followup: use the answers dict to produce the final plan.\n" +
-        "  • directed: use an explicit directions string (ignores businessQuestion).\n" +
-        "The returned plan can be passed to build_from_plan to generate and publish a workbook.",
+        "  • interview: return clarifying questions before planning " +
+        "(pass answers back as interview_followup).\n" +
+        "  • interview_followup: use the answers dict to produce the final proposal.\n" +
+        "  • directed: use an explicit directions string to adjust the design.\n\n" +
+        "## Propose→confirm loop (STATELESS — the agent drives)\n" +
+        "  1. Call design_dashboard → receive kind:'proposal'.\n" +
+        "  2. Present the proposal to the user (text + optional wireframe from " +
+        "kpiStrip/views/layoutSummary — presentation only, no server call).\n" +
+        "  3a. User says 'change X' → re-call design_dashboard in directed mode " +
+        "with updated directions for a fresh proposal.\n" +
+        "  3b. User says 'confirm' → call build_from_plan with proposal.plan VERBATIM.\n\n" +
+        "design_dashboard NEVER builds or publishes. " +
+        "build_from_plan is ALWAYS a separate step triggered by explicit user confirmation.",
       inputSchema: {
         mode: z
           .enum(["autonomous", "interview", "interview_followup", "directed"])
@@ -93,7 +181,10 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         ),
       },
       outputSchema: {
-        plan: z.unknown().describe("DashboardPlan or ClarifyingQuestions JSON object."),
+        result: z.unknown().describe(
+          "DashboardProposal (kind:'proposal') or ClarifyingQuestions (kind:'questions') JSON object. " +
+            "For proposals, pass result.plan verbatim to build_from_plan on user confirmation.",
+        ),
       },
     },
     async ({
@@ -109,15 +200,17 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       workbookName,
       requestedLayout,
     }) => {
+      // interview mode — return ClarifyingQuestions, not a proposal
       if (mode === "interview") {
         const result = generateInterview({
           audience,
           businessQuestion,
           fieldHints,
         });
-        return toolResult("Clarifying questions generated. Pass answers to design_dashboard (interview_followup mode).", {
-          plan: result,
-        });
+        return toolResult(
+          "Clarifying questions generated. Pass answers to design_dashboard (interview_followup mode).",
+          { result },
+        );
       }
 
       // directed mode requires directions (MC-2)
@@ -153,9 +246,9 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       };
 
       const plan = generatePlan(planInput);
-      return toolResult(`Dashboard plan "${plan.workbookName}" generated (${plan.sheets.length} sheet(s)).`, {
-        plan,
-      });
+      const proposal = buildProposal(plan);
+
+      return toolResult(formatProposalText(proposal), { result: proposal });
     },
   );
 }

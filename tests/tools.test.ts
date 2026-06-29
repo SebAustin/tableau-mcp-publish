@@ -301,8 +301,8 @@ describe("create_datasource_from_file (M2)", () => {
   });
 });
 
-describe("design_dashboard (M5)", () => {
-  it("autonomous mode returns a plan with kind='plan'", async () => {
+describe("design_dashboard (M5 / Slice 5)", () => {
+  it("autonomous mode returns a proposal with kind='proposal'", async () => {
     const res = await invoke("design_dashboard", {
       mode: "autonomous",
       audience: "analyst",
@@ -315,16 +315,17 @@ describe("design_dashboard (M5)", () => {
       datasourceName: "Sales",
       projectName: "Sales",
     });
-    const plan = (res.structuredContent as { plan: { kind: string; sheets: unknown[] } }).plan;
-    expect(plan.kind).toBe("plan");
-    expect(plan.sheets.length).toBeGreaterThan(0);
+    const result = (res.structuredContent as { result: { kind: string; plan: { kind: string; sheets: unknown[] } } }).result;
+    expect(result.kind).toBe("proposal");
+    expect(result.plan.kind).toBe("plan");
+    expect(result.plan.sheets.length).toBeGreaterThan(0);
   });
 
-  it("interview mode returns kind='questions' with 3–7 questions", async () => {
+  it("interview mode returns kind='questions' with 3–10 questions", async () => {
     const res = await invoke("design_dashboard", { mode: "interview" });
-    const plan = (res.structuredContent as { plan: { kind: string; questions: unknown[] } }).plan;
-    expect(plan.kind).toBe("questions");
-    expect(plan.questions.length).toBeGreaterThanOrEqual(3);
+    const result = (res.structuredContent as { result: { kind: string; questions: unknown[] } }).result;
+    expect(result.kind).toBe("questions");
+    expect(result.questions.length).toBeGreaterThanOrEqual(3);
   });
 
   it("throws when autonomous mode is missing datasourceLuid", async () => {

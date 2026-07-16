@@ -37,6 +37,9 @@ import { type ToolContext, toolResult } from "./context.js";
 import { DashboardPlanSchema } from "../planner/schema.js";
 import { AUDIENCE_CONSTRAINTS } from "../planner/audience.js";
 import type { DashboardPlan } from "../planner/schema.js";
+import { loadBrand } from "../branding/load.js";
+import { toBuilderBrand } from "../branding/builderBrand.js";
+import type { WorkbookBrand } from "../sidecar.js";
 
 // ---------------------------------------------------------------------------
 // R-7: Placeholder token rejection
@@ -123,6 +126,17 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
               "Must have schemaVersion: 1 and kind: 'plan'.",
           ),
         overwrite: z.boolean().default(false).describe("Overwrite existing workbook with same name."),
+        brandPath: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            "Optional path to brand.yaml, used to apply branding (palette, typography, " +
+              "number formats) to the built workbook. Defaults to the repo-root brand.yaml " +
+              "when this is omitted but `plan.personaName` or `plan.brandName` is set (i.e. " +
+              "the plan came from a persona-resolved design_dashboard call). Branding is " +
+              "skipped entirely when none of the three are present.",
+          ),
       },
       outputSchema: {
         workbookLuid: z.string(),
@@ -130,7 +144,7 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         datasourceLuid: z.string().optional(),
       },
     },
-    async ({ plan: rawPlan, overwrite }) => {
+    async ({ plan: rawPlan, overwrite, brandPath }) => {
       // Step 1: Parse + schema validate (schemaVersion guard fires here)
       const plan = DashboardPlanSchema.parse(rawPlan);
 
@@ -139,6 +153,22 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
 
       // Step 1c: R-5 — re-validate audience invariants (defense in depth)
       assertAudienceInvariants(plan);
+
+      // ---------------------------------------------------------------------
+      // Phase E1 (Slice B): resolve branding for the workbook.
+      //
+      // Triggered when the plan carries persona/brand provenance (set by
+      // design_dashboard when `persona` was supplied) OR when this call
+      // explicitly passes `brandPath`. The plan itself does not persist the
+      // brandPath used at design time, so this always reads brand.yaml at the
+      // DEFAULT_BRAND_PATH unless `brandPath` overrides it — matching the
+      // design_dashboard/loadBrand convention (only I/O in the tool layer).
+      // ---------------------------------------------------------------------
+      let brand: WorkbookBrand | undefined;
+      if (plan.personaName || plan.brandName || brandPath) {
+        const { brand: brandFile } = loadBrand(brandPath);
+        brand = toBuilderBrand(brandFile);
+      }
 
       // ---------------------------------------------------------------------------
       // E2E-2: Build + publish the datasource when a datasourceSpec is provided.
@@ -219,6 +249,7 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         canvasWidth: constraints.canvasWidth,
         canvasHeight: constraints.canvasHeight,
         hyperPath,
+        brand,
       });
 
       // Publish to Tableau Cloud

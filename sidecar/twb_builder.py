@@ -74,6 +74,158 @@ _GEO_SEMANTIC_ROLE: dict[str, str] = {
     "zipcode": "[ZipCode].[Name]",
 }
 
+# ---------------------------------------------------------------------------
+# Brand application helpers (Phase E1, Slice B — "Builder applies branding")
+#
+# Every function here is a pure, independently-testable helper.  Every call
+# site that consumes them is guarded by ``if brand:`` (or equivalent) so that
+# a request with NO brand block produces byte-identical output to before this
+# slice — the existing determinism guards
+# (``test_default_path_byte_identical_with_and_without_extra_keys`` et al.)
+# stay green untouched.
+# ---------------------------------------------------------------------------
+
+_HEX_SHORT_RE = re.compile(r"^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$")
+
+
+def _normalize_hex_color(color: str) -> str:
+    """Expand a ``#rgb`` shorthand to ``#rrggbb``; pass through longer forms.
+
+    The TWB XSD's ``ColorObject-ST`` (used by ``<color>``, ``<run
+    fontcolor=...>``, etc.) only accepts 6 or 8 hex digits
+    (``#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}``). ``brand.yaml``'s ``HexColorSchema``
+    additionally allows the 3-digit CSS shorthand (e.g. ``#5af``), so every
+    color read from a brand block is normalised through this helper before
+    being written into workbook XML.
+    """
+    match = _HEX_SHORT_RE.match(color)
+    if match:
+        r, g, b = match.groups()
+        return f"#{r}{r}{g}{g}{b}{b}"
+    return color
+
+
+# Word-level (not substring) hints for classify_measure_format — see its
+# docstring for why word-splitting is used instead of naive substring search.
+_CURRENCY_MEASURE_HINTS = frozenset({"sales", "revenue", "profit", "price", "cost", "amount"})
+_PERCENT_MEASURE_HINTS = frozenset({"ratio", "percent", "rate", "discount"})
+
+_DEFAULT_CURRENCY_FORMAT = "$#,##0"
+_DEFAULT_PERCENT_FORMAT = "0.0%"
+_DEFAULT_NUMBER_FORMAT = "#,##0"
+
+
+def classify_measure_format(field_name: str, formats: dict[str, Any]) -> str:
+    """Return the ``default-format`` value for a measure column, by name heuristics.
+
+    Mirrors the ``default-format`` attribute seen on reference-workbook
+    ``<column>`` elements (e.g. ``default-format='p0.00%'`` on a percent
+    parameter, ``default-format='n#,##0;-#,##0'`` on a currency measure) —
+    the *grammar* of those format strings is opaque to us (Tableau-internal),
+    so we pass through whatever the brand file's ``formats.currency`` /
+    ``formats.percent`` / ``formats.number`` strings already contain rather
+    than inventing new format-string syntax.
+
+    Classification is by whole-word match against the field name (split on
+    non-letter characters, lower-cased) — NOT substring match — so a field
+    like "Corporate Sales" is not misclassified as percent just because
+    "Corporate" contains the substring "rate". Percent-like hints are checked
+    before currency-like hints so an ambiguous name like "Profit Margin"
+    (which has no currency hint word anyway) or "Discount" (a 0-1 ratio, not
+    a dollar amount) resolves to percent.
+
+    Args:
+        field_name: The measure's field name (e.g. "Sales", "Discount").
+        formats:    A ``formats`` dict with optional ``currency``/``percent``/
+                    ``number`` keys (snake_case-agnostic — all three are
+                    single words). Missing keys fall back to the same
+                    defaults as ``branding/schema.ts``'s ``FormatsSchema``.
+
+    Returns:
+        The format string to stamp on ``default-format``.
+    """
+    words = set(re.findall(r"[a-z]+", field_name.lower()))
+    if words & _PERCENT_MEASURE_HINTS:
+        return str(formats.get("percent") or _DEFAULT_PERCENT_FORMAT)
+    if words & _CURRENCY_MEASURE_HINTS:
+        return str(formats.get("currency") or _DEFAULT_CURRENCY_FORMAT)
+    return str(formats.get("number") or _DEFAULT_NUMBER_FORMAT)
+
+
+def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
+    """Return the workbook-level ``<preferences><color-palette>`` element.
+
+    Mirrors "Visualize Quota Attainment for Executives in Multiple Ways" ~26-41::
+
+        <preferences>
+          <color-palette custom='true' name='Barkbus Secondary Light' type='regular'>
+            <color>#84c8b4</color>
+            ...
+          </color-palette>
+        </preferences>
+
+    Placed as the FIRST child of ``<workbook>`` (before ``<datasources>``),
+    matching the reference's position and the XSD's ``WorkbookFile-CT``
+    sequence (``Workbook-Preferences-G`` precedes ``Workbook-DataSources-G``).
+    Only called when a brand block is present — see module-level note.
+    """
+    palette = brand.get("palette") or {}
+    brand_name = str(brand.get("brand_name") or "Brand")
+    categorical = [str(c) for c in (palette.get("categorical") or [])]
+
+    preferences_el = ET.Element("preferences")
+    palette_el = ET.SubElement(
+        preferences_el,
+        "color-palette",
+        {"custom": "true", "name": f"{brand_name} Palette", "type": "regular"},
+    )
+    for color in categorical:
+        ET.SubElement(palette_el, "color").text = _normalize_hex_color(color)
+    return preferences_el
+
+
+def _resolve_font_spec(brand: dict[str, Any] | None, kind: str) -> dict[str, Any] | None:
+    """Return ``brand['typography'][kind]`` (e.g. ``"title"``/``"body"``), or ``None``.
+
+    ``None`` is returned both when ``brand`` itself is absent and when the
+    ``typography`` section omits ``kind`` — callers use this to fall back to
+    the pre-brand hardcoded defaults.
+    """
+    if not brand:
+        return None
+    typography = brand.get("typography") or {}
+    spec = typography.get(kind)
+    return spec if spec else None
+
+
+def _title_or_subtitle_run_attrs(
+    font_spec: dict[str, Any] | None,
+    *,
+    default_bold: bool,
+    default_fontsize: int,
+) -> tuple[bool, int, str | None, str | None]:
+    """Return ``(bold, fontsize, fontcolor, fontname)`` for a title/subtitle run.
+
+    No brand (``font_spec is None``): reproduces the pre-brand hardcoded
+    values exactly — ``bold=True, fontsize=20`` for the title (mirrors
+    "Threshold Analysis Two Way" ~1664: ``<run bold='true' fontsize='20'>``)
+    and ``bold=False, fontsize=14`` for the subtitle — with no fontcolor/
+    fontname attribute (byte-identical determinism guard).
+
+    Brand present: mirrors "Visualize Quota Attainment..." ~4478/~4488 —
+    ``<run fontcolor='#0088ff' fontname='Tableau Bold' fontsize='36'>`` — a
+    named Bold font carries the boldness instead of a ``bold`` attribute, so
+    ``bold`` is always ``False`` on this path.
+    """
+    if font_spec is None:
+        return default_bold, default_fontsize, None, None
+    fontsize = int(font_spec.get("size") or default_fontsize)
+    fontcolor = font_spec.get("color")
+    fontcolor = _normalize_hex_color(str(fontcolor)) if fontcolor else None
+    fontname = font_spec.get("font")
+    fontname = str(fontname) if fontname else None
+    return False, fontsize, fontcolor, fontname
+
 
 def _slug(value: str) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9_]+", "_", value).strip("_")
@@ -617,6 +769,7 @@ def _build_text_zone(
     bold: bool = False,
     fontsize: int = 14,
     fontcolor: str | None = None,
+    fontname: str | None = None,
     h: int = 5000,
 ) -> ET.Element:
     """Return a ``<zone type-v2='text'>`` element carrying ``<formatted-text><run>``.
@@ -626,12 +779,18 @@ def _build_text_zone(
     attribute is written by Tableau Desktop on text zones; it is allowed via the
     XSD's ``anyAttribute namespace='##local'`` clause.
 
+    ``<run>`` attributes are inserted in alphabetical order
+    (``bold``, ``fontcolor``, ``fontname``, ``fontsize``) — matching the
+    attribute order Tableau Desktop itself writes in both reference cases
+    above (``bold`` + ``fontsize``; ``fontcolor`` + ``fontname`` + ``fontsize``).
+
     Args:
         text:       The text to display.
         zone_id:    Deterministic zone id (must be unique across the dashboard).
         bold:       Emit ``bold='true'`` on the ``<run>`` (mirrors wb6 title).
         fontsize:   Font size in points (unsigned int required by XSD).
         fontcolor:  Optional hex color string (e.g. ``"#0088ff"``).
+        fontname:   Optional font family name (e.g. ``"Tableau Bold"``).
         h:          Zone height on the 0–100000 grid.  Default 5000 (~5 %).
 
     Returns:
@@ -650,11 +809,14 @@ def _build_text_zone(
         },
     )
     ft = ET.SubElement(zone, "formatted-text")
-    run_attrs: dict[str, str] = {"fontsize": str(fontsize)}
+    run_attrs: dict[str, str] = {}
     if bold:
         run_attrs["bold"] = "true"
     if fontcolor:
         run_attrs["fontcolor"] = fontcolor
+    if fontname:
+        run_attrs["fontname"] = fontname
+    run_attrs["fontsize"] = str(fontsize)
     run_el = ET.SubElement(ft, "run", run_attrs)
     run_el.text = text
     return zone
@@ -712,6 +874,7 @@ def _build_dashboard(
     subtitle: str | None = None,
     text_zones: list[dict[str, str]] | None = None,
     layout_grammar: dict[str, Any] | None = None,
+    brand: dict[str, Any] | None = None,
 ) -> ET.Element:
     """Return the ``<dashboards>`` ET.Element for one dashboard.
 
@@ -778,6 +941,15 @@ def _build_dashboard(
         layout_grammar:  Optional layout descriptor.  Supports
                          ``{"kind": "kpi_band_over_charts", "kpi_tile_titles": […],
                          "chart_titles": […]}``.
+        brand:           Optional brand block (Phase E1, Slice B; ``model_dump()``
+                         snake_case dict — see ``server.BrandModel``).  When
+                         present, the title run uses
+                         ``brand["typography"]["title"]`` (font/size/color) and
+                         the subtitle run uses ``brand["typography"]["body"]``,
+                         mirroring "Visualize Quota Attainment..." ~4478/~4488
+                         exactly.  Absent (``None``, the default): the title/
+                         subtitle runs keep the pre-brand hardcoded values
+                         (byte-identical determinism guard).
     """
     dashboards_el = ET.Element("dashboards")
     dashboard = ET.SubElement(dashboards_el, "dashboard", {"name": name})
@@ -907,18 +1079,40 @@ def _build_dashboard(
         )
 
         # --- Header text zones (title, subtitle, explicit header textZones) --
-        # Title (mirrors wb7 ~4476: fontsize=20, no bold specified in that ref,
-        # but wb6 ~1664 uses bold=true; we follow wb6 for the primary title).
+        # Title: no brand → bold=true, fontsize=20 (mirrors wb6 ~1664).
+        # With brand → typography.title drives fontcolor/fontname/fontsize,
+        # no bold attribute (mirrors wb7 ~4478: the "Tableau Bold" font name
+        # itself carries the boldness). See _title_or_subtitle_run_attrs.
         if title:
+            t_bold, t_fontsize, t_fontcolor, t_fontname = _title_or_subtitle_run_attrs(
+                _resolve_font_spec(brand, "title"), default_bold=True, default_fontsize=20
+            )
             title_zone: ET.Element = _build_text_zone(
-                title, _next_id(), bold=True, fontsize=20, h=6000
+                title,
+                _next_id(),
+                bold=t_bold,
+                fontsize=t_fontsize,
+                fontcolor=t_fontcolor,
+                fontname=t_fontname,
+                h=6000,
             )
             outer_flow.append(title_zone)
 
-        # Subtitle (mirrors wb7 ~4487: smaller font, no bold).
+        # Subtitle: no brand → fontsize=14, no bold (mirrors wb7 ~4487 shape).
+        # With brand → typography.body drives fontcolor/fontname/fontsize
+        # (mirrors wb7 ~4488 exactly).
         if subtitle:
+            s_bold, s_fontsize, s_fontcolor, s_fontname = _title_or_subtitle_run_attrs(
+                _resolve_font_spec(brand, "body"), default_bold=False, default_fontsize=14
+            )
             subtitle_zone: ET.Element = _build_text_zone(
-                subtitle, _next_id(), bold=False, fontsize=14, h=4000
+                subtitle,
+                _next_id(),
+                bold=s_bold,
+                fontsize=s_fontsize,
+                fontcolor=s_fontcolor,
+                fontname=s_fontname,
+                h=4000,
             )
             outer_flow.append(subtitle_zone)
 
@@ -1036,17 +1230,28 @@ def build_twb_xml(
     dashboard_layout: str = "tiled_vertical",
     canvas_width: int = 1000,
     canvas_height: int = 800,
+    brand: dict[str, Any] | None = None,
 ) -> str:
     """Build a schema-valid TWB XML string.
 
     Workbook child ordering (required by XSD):
-    ``<datasources>`` → ``<worksheets>`` → ``<dashboards>`` (if any)
-    → ``<windows>`` → ``<explain-data>`` (required).
+    (``<preferences>`` if branded) → ``<datasources>`` → ``<worksheets>`` →
+    ``<dashboards>`` (if any) → ``<windows>`` → ``<explain-data>`` (required).
 
     When ``dashboards`` is ``None`` (default), both calls with no ``dashboards``
     kwarg and with an explicit ``dashboards=None`` produce byte-identical XML
     (a determinism guard — not a byte-snapshot comparison against the pre-feature
     version; the worksheet/window structure was re-baselined for schema validity).
+    The same determinism guarantee holds for ``brand``: omitting it (or passing
+    ``None`` explicitly) never changes the output (Phase E1, Slice B).
+
+    Args:
+        brand: Optional brand block (``model_dump()`` snake_case dict — see
+            ``server.BrandModel``). When present: a workbook-level
+            ``<preferences><color-palette>`` is emitted (mirrors "Visualize
+            Quota Attainment..." ~26-41), the dashboard title/subtitle runs
+            use ``brand["typography"]``, and every measure ``<column>`` gets a
+            ``default-format`` attribute via :func:`classify_measure_format`.
     """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
@@ -1056,6 +1261,10 @@ def build_twb_xml(
         "workbook",
         {"source-build": SOURCE_BUILD, "version": TWB_VERSION},
     )
+
+    # --- Brand preferences (workbook-level, BEFORE <datasources> per XSD) ---
+    if brand:
+        workbook.append(_build_preferences_element(brand))
 
     # --- Published datasource reference -------------------------------------
     datasources = ET.SubElement(workbook, "datasources")
@@ -1128,12 +1337,17 @@ def build_twb_xml(
         if field in sqlproxy_geo_role_map:
             dim_attrs["semantic-role"] = sqlproxy_geo_role_map[field]
         ET.SubElement(datasource, "column", dim_attrs)
+    brand_formats: dict[str, Any] | None = brand.get("formats") if brand else None
     for field in seen_measures:
-        ET.SubElement(
-            datasource,
-            "column",
-            {"datatype": "real", "name": f"[{field}]", "role": "measure", "type": "quantitative"},
-        )
+        measure_attrs: dict[str, str] = {
+            "datatype": "real",
+            "name": f"[{field}]",
+            "role": "measure",
+            "type": "quantitative",
+        }
+        if brand_formats is not None:
+            measure_attrs["default-format"] = classify_measure_format(field, brand_formats)
+        ET.SubElement(datasource, "column", measure_attrs)
 
     # --- Worksheets ---------------------------------------------------------
     # re-baselined for schema-valid output (XSD A2)
@@ -1162,6 +1376,7 @@ def build_twb_xml(
                 subtitle=db.get("subtitle") or None,
                 text_zones=db.get("text_zones") or None,
                 layout_grammar=db.get("layout_grammar") or None,
+                brand=brand,
             )
             workbook.append(dashboards_el)
 
@@ -1223,13 +1438,15 @@ def build_starter_twbx(
     dashboard_layout: str = "tiled_vertical",
     canvas_width: int = 1000,
     canvas_height: int = 800,
+    brand: dict[str, Any] | None = None,
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource.
 
     When ``dashboards`` is ``None`` (default), the two call forms (no kwarg and
     explicit ``None``) produce byte-identical output (determinism guard).
     Pass a non-None list to include a ``<dashboards>`` block and a dashboard
-    window entry.
+    window entry. ``brand`` (Phase E1, Slice B) follows the same determinism
+    guarantee — see :func:`build_twb_xml`.
     """
     twb_xml = build_twb_xml(
         datasource_name,
@@ -1241,6 +1458,7 @@ def build_starter_twbx(
         dashboard_layout=dashboard_layout,
         canvas_width=canvas_width,
         canvas_height=canvas_height,
+        brand=brand,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -1258,6 +1476,7 @@ def _build_federated_datasource(
     hyper_filename: str,
     columns: list[ColumnSpec],
     geo_role_map: dict[str, str] | None = None,
+    formats: dict[str, Any] | None = None,
 ) -> ET.Element:
     """Return a ``<datasource>`` ET.Element using a federated hyper connection.
 
@@ -1300,6 +1519,12 @@ def _build_federated_datasource(
                           any ``<column>`` whose name matches a key gets a
                           ``semantic-role`` attribute stamped on it.  Mirrors
                           wb1 ~2804 and the ``_GEO_SEMANTIC_ROLE`` lookup.
+        formats:          Optional ``brand["formats"]`` dict (Phase E1, Slice B).
+                          When provided, every ``role="measure"`` column gets a
+                          ``default-format`` attribute via
+                          :func:`classify_measure_format`.  Absent (the
+                          default): no ``default-format`` attribute is added,
+                          keeping the no-brand path byte-identical.
 
     Returns:
         An ET.Element for the ``<datasource>`` node.
@@ -1373,6 +1598,8 @@ def _build_federated_datasource(
         }
         if col.name in resolved_geo_map:
             col_attrs["semantic-role"] = resolved_geo_map[col.name]
+        if formats is not None and col.role == "measure":
+            col_attrs["default-format"] = classify_measure_format(col.name, formats)
         ET.SubElement(ds, "column", col_attrs)
 
     # --- <extract> block (marks the datasource as an embedded extract) ------
@@ -1411,6 +1638,7 @@ def build_embedded_twb_xml(
     dashboard_layout: str = "tiled_vertical",
     canvas_width: int = 1000,
     canvas_height: int = 800,
+    brand: dict[str, Any] | None = None,
 ) -> str:
     """Build a TWB XML string that embeds a .hyper extract via a federated connection.
 
@@ -1432,6 +1660,10 @@ def build_embedded_twb_xml(
         dashboard_layout: Zone tiling direction.
         canvas_width:     Dashboard canvas width in pixels.
         canvas_height:    Dashboard canvas height in pixels.
+        brand:            Optional brand block (Phase E1, Slice B) — see
+                          :func:`build_twb_xml` for the full behaviour.
+                          Absent (the default): byte-identical to before this
+                          slice (determinism guard).
 
     Returns:
         A UTF-8 TWB XML string with an XML declaration header.
@@ -1443,6 +1675,10 @@ def build_embedded_twb_xml(
         "workbook",
         {"source-build": SOURCE_BUILD, "version": TWB_VERSION},
     )
+
+    # --- Brand preferences (workbook-level, BEFORE <datasources> per XSD) ---
+    if brand:
+        workbook.append(_build_preferences_element(brand))
 
     # --- Collect geo-role map from all sheets --------------------------------
     # If any sheet carries a ``geo`` spec, thread the field→semantic-role
@@ -1465,6 +1701,7 @@ def build_embedded_twb_xml(
         hyper_filename,
         columns,
         geo_role_map=geo_role_map if geo_role_map else None,
+        formats=brand.get("formats") if brand else None,
     )
     datasources_el.append(ds_el)
 
@@ -1493,6 +1730,7 @@ def build_embedded_twb_xml(
                 subtitle=db.get("subtitle") or None,
                 text_zones=db.get("text_zones") or None,
                 layout_grammar=db.get("layout_grammar") or None,
+                brand=brand,
             )
             workbook.append(dashboards_el)
 
@@ -1544,6 +1782,7 @@ def build_embedded_twbx(
     dashboard_layout: str = "tiled_vertical",
     canvas_width: int = 1000,
     canvas_height: int = 800,
+    brand: dict[str, Any] | None = None,
 ) -> Path:
     """Build a self-contained .twbx that embeds the .hyper extract.
 
@@ -1565,6 +1804,9 @@ def build_embedded_twbx(
         dashboard_layout: Zone tiling direction.
         canvas_width:     Dashboard canvas width in pixels.
         canvas_height:    Dashboard canvas height in pixels.
+        brand:            Optional brand block (Phase E1, Slice B) — see
+                          :func:`build_twb_xml`. Absent (the default):
+                          byte-identical to before this slice.
 
     Returns:
         The resolved ``out_path``.
@@ -1590,6 +1832,7 @@ def build_embedded_twbx(
         dashboard_layout=dashboard_layout,
         canvas_width=canvas_width,
         canvas_height=canvas_height,
+        brand=brand,
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

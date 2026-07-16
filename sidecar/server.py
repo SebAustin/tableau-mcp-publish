@@ -162,6 +162,89 @@ class LayoutGrammarModel(BaseModel):
     chart_titles: list[str] | None = Field(default=None, alias="chartTitles")
 
 
+# ---------------------------------------------------------------------------
+# Brand block sub-models (Phase E1, Slice B — "Builder applies branding").
+#
+# Mirrors the flat wire shape produced by src/branding/builderBrand.ts's
+# toBuilderBrand(), which itself projects the nested, zod-validated
+# BrandFile (src/branding/schema.ts) down to just what the builder needs.
+#
+# THE MODEL_DUMP LESSON (see test_server_rich_dashboard.py): these models
+# accept camelCase on the wire (via `alias=`) but `req.brand.model_dump()`
+# — the only way twb_builder ever sees this data — produces the snake_case
+# FIELD names below, never the aliases. twb_builder.py reads snake_case keys
+# accordingly (`brand_name`, not `brandName`).
+# ---------------------------------------------------------------------------
+
+
+class BrandPaletteModel(BaseModel):
+    """Flattened palette (mirrors builderBrand.ts BuilderBrandPalette)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    categorical: list[str] = Field(default_factory=list)
+    sequential: list[str] = Field(default_factory=list)
+    diverging: list[str] = Field(default_factory=list)
+    good: str = "#59a14f"
+    bad: str = "#e15759"
+    neutral: str = "#898989"
+
+
+class BrandFontSpecModel(BaseModel):
+    """Title/body font spec: font + size + optional color."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    font: str
+    size: float
+    color: str | None = None
+
+
+class BrandBanFontSpecModel(BaseModel):
+    """BAN (Big Number / KPI hero figure) font spec: font + size, no color."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    font: str
+    size: float
+
+
+class BrandTypographyModel(BaseModel):
+    """Mirrors builderBrand.ts BuilderBrandTypography."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    title: BrandFontSpecModel
+    body: BrandFontSpecModel
+    ban: BrandBanFontSpecModel
+
+
+class BrandFormatsModel(BaseModel):
+    """Mirrors builderBrand.ts BuilderBrandFormats."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    currency: str = "$#,##0"
+    percent: str = "0.0%"
+    number: str = "#,##0"
+
+
+class BrandModel(BaseModel):
+    """The resolved brand block a caller may attach to a dashboard-workbook build.
+
+    Optional on the request: when absent, the builder emits byte-identical
+    output to before this slice (no `<preferences>`, hardcoded title/subtitle
+    fonts, no `default-format` on measure columns).
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    palette: BrandPaletteModel
+    typography: BrandTypographyModel
+    formats: BrandFormatsModel
+    brand_name: str = Field(default="Brand", alias="brandName")
+
+
 class DashboardWorkbookRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -184,6 +267,9 @@ class DashboardWorkbookRequest(BaseModel):
     dashboard_subtitle: str | None = Field(default=None, alias="dashboardSubtitle")
     text_zones: list[TextZoneModel] | None = Field(default=None, alias="textZones")
     layout_grammar: LayoutGrammarModel | None = Field(default=None, alias="layoutGrammar")
+    # Phase E1, Slice B: optional resolved brand block. Absent → byte-identical
+    # output to before this slice (see BrandModel docstring + twb_builder guards).
+    brand: BrandModel | None = None
 
 
 class FileRequest(BaseModel):
@@ -289,6 +375,11 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
         }
     ]
 
+    # Phase E1, Slice B: model_dump() the optional brand block once, snake_case
+    # (THE MODEL_DUMP LESSON — see BrandModel's docstring). None when absent,
+    # which keeps both build paths byte-identical to before this slice.
+    brand_dict: dict[str, Any] | None = req.brand.model_dump() if req.brand is not None else None
+
     if req.hyper_path:
         hyper_file = Path(req.hyper_path)
         if not hyper_file.is_file():
@@ -306,6 +397,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             dashboard_layout=req.dashboard_layout,
             canvas_width=req.canvas_width,
             canvas_height=req.canvas_height,
+            brand=brand_dict,
         )
     else:
         twbx_path = twb_builder.build_starter_twbx(
@@ -319,6 +411,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             dashboard_layout=req.dashboard_layout,
             canvas_width=req.canvas_width,
             canvas_height=req.canvas_height,
+            brand=brand_dict,
         )
     return {"path": str(twbx_path)}
 

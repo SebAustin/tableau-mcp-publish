@@ -154,6 +154,52 @@ export interface LayoutGrammar {
   chartTitles?: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Brand block (Phase E1, Slice B — mirrors branding/builderBrand.ts's
+// BuilderBrand, kept in sync manually per this file's existing convention).
+// ---------------------------------------------------------------------------
+
+export interface WorkbookBrandPalette {
+  categorical: string[];
+  sequential: string[];
+  diverging: string[];
+  good: string;
+  bad: string;
+  neutral: string;
+}
+
+export interface WorkbookBrandFontSpec {
+  font: string;
+  size: number;
+  color: string;
+}
+
+/** BAN (Big Number / KPI hero figure) font spec — no color field. */
+export interface WorkbookBrandBanFontSpec {
+  font: string;
+  size: number;
+}
+
+export interface WorkbookBrandTypography {
+  title: WorkbookBrandFontSpec;
+  body: WorkbookBrandFontSpec;
+  ban: WorkbookBrandBanFontSpec;
+}
+
+export interface WorkbookBrandFormats {
+  currency: string;
+  percent: string;
+  number: string;
+}
+
+/** Resolved brand block applied to the generated workbook (matches sidecar's BrandModel). */
+export interface WorkbookBrand {
+  palette: WorkbookBrandPalette;
+  typography: WorkbookBrandTypography;
+  formats: WorkbookBrandFormats;
+  brandName: string;
+}
+
 export interface DashboardWorkbookArgs extends WorkbookArgs {
   /** Sheet titles to include in the dashboard (subset or all of sheets[].title). */
   dashboardSheetTitles: string[];
@@ -182,6 +228,15 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
   textZones?: TextZone[];
   /** Structured layout grammar used by the builder to emit multi-zone XML. */
   layoutGrammar?: LayoutGrammar;
+  // --- Phase E1 (Slice B): optional resolved brand block ---
+  /**
+   * Resolved brand block (from `loadBrand()` + `toBuilderBrand()`) applied to
+   * the generated workbook: a workbook-level color palette, brand-driven
+   * title/subtitle typography, and `default-format` on measure columns.
+   *
+   * Omit to keep the pre-brand output byte-identical.
+   */
+  brand?: WorkbookBrand;
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -475,6 +530,12 @@ export class AuthoringSidecar {
     }
     if (args.layoutGrammar !== undefined) {
       payload["layoutGrammar"] = args.layoutGrammar;
+    }
+    // Phase E1 (Slice B): resolved brand block, forwarded as-is (camelCase on
+    // the wire; the sidecar's Pydantic model accepts it and its model_dump()
+    // produces the snake_case dict twb_builder reads).
+    if (args.brand !== undefined) {
+      payload["brand"] = args.brand;
     }
     const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };

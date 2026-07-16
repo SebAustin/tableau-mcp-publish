@@ -733,4 +733,78 @@ describe("build_from_plan (M6)", () => {
       }),
     ).rejects.toThrow(/dimensions/);
   });
+
+  // Phase E1, Slice B: "Builder applies branding" — build_from_plan resolves
+  // brand.yaml and threads a brand block into buildDashboardWorkbook.
+  describe("branding (E1, Slice B)", () => {
+    it("plan.personaName set (no explicit brandPath) → brand threaded from the repo-root brand.yaml", async () => {
+      await invoke("build_from_plan", {
+        plan: { ...basePlan, personaName: "ceo", brandName: "My Company" },
+      });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          brand: expect.objectContaining({
+            brandName: "My Company",
+            palette: expect.objectContaining({
+              categorical: expect.arrayContaining(["#4e79a7"]),
+              good: "#59a14f",
+              bad: "#e15759",
+            }),
+            typography: expect.objectContaining({
+              title: expect.objectContaining({ font: "Tableau Bold" }),
+            }),
+            formats: expect.objectContaining({ currency: "$#,##0" }),
+          }),
+        }),
+      );
+    });
+
+    it("no personaName/brandName/brandPath → brand is omitted entirely", async () => {
+      await invoke("build_from_plan", { plan: basePlan });
+      const call = ctx.sidecar.buildDashboardWorkbook.mock.calls[0]?.[0] as
+        | Record<string, unknown>
+        | undefined;
+      expect(call).toBeDefined();
+      expect(call?.["brand"]).toBeUndefined();
+    });
+
+    it("explicit brandPath input alone (no personaName/brandName) still resolves and threads a brand", async () => {
+      tmpDir = mkdtempSync(join(tmpdir(), "brand-build-test-"));
+      const brandPath = join(tmpDir, "brand.yaml");
+      writeFileSync(
+        brandPath,
+        `
+brand:
+  name: "Custom Corp"
+palette:
+  categorical: ["#111111", "#222222"]
+`,
+        "utf8",
+      );
+
+      await invoke("build_from_plan", { plan: basePlan, brandPath });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          brand: expect.objectContaining({
+            brandName: "Custom Corp",
+            palette: expect.objectContaining({ categorical: ["#111111", "#222222"] }),
+          }),
+        }),
+      );
+    });
+
+    it("a missing brandPath file falls back to built-in defaults (loadBrand never throws for ENOENT)", async () => {
+      // Mirrors loadBrand()'s documented behavior: file-not-found is a warning,
+      // not an error — the build still proceeds, branded with DEFAULT_BRAND.
+      await invoke("build_from_plan", {
+        plan: basePlan,
+        brandPath: "/definitely/does/not/exist/brand.yaml",
+      });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          brand: expect.objectContaining({ brandName: "My Company" }),
+        }),
+      );
+    });
+  });
 });

@@ -20,6 +20,7 @@ ever mismatched again.
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 import pandas as pd
@@ -376,3 +377,98 @@ def test_post_workbook_dashboard_returns_200(tmp_path: Path) -> None:
     assert body["path"].endswith(".twbx"), (
         f"Response path must end with .twbx; got {body['path']!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# E — Phase E1, Slice B: camelCase `brand` block round-trips through
+#     model_dump() (snake_case) and reaches the generated .twbx.
+# ---------------------------------------------------------------------------
+
+_BRAND_CAMEL = {
+    "palette": {
+        "categorical": ["#4e79a7", "#f28e2b", "#e15759"],
+        "sequential": ["#c6dbef", "#6baed6", "#08519c"],
+        "diverging": ["#e15759", "#f2f2f2", "#59a14f"],
+        "good": "#59a14f",
+        "bad": "#e15759",
+        "neutral": "#898989",
+    },
+    "typography": {
+        "title": {"font": "Tableau Bold", "size": 24, "color": "#1f1f1f"},
+        "body": {"font": "Tableau Book", "size": 11, "color": "#4d4d4d"},
+        "ban": {"font": "Tableau Bold", "size": 36},
+    },
+    "formats": {
+        "currency": "$#,##0",
+        "percent": "0.0%",
+        "number": "#,##0",
+    },
+    "brandName": "Acme Corp",
+}
+
+_CAMEL_PAYLOAD_WITH_BRAND = {**_CAMEL_PAYLOAD, "brand": _BRAND_CAMEL}
+
+
+def test_model_dump_produces_snake_case_brand_name() -> None:
+    """model_dump() on a camelCase brand payload must produce 'brand_name', not 'brandName'.
+
+    Same root-cause guard as test_model_dump_produces_snake_case_geo/kpi above,
+    extended to the Phase E1 brand block.
+    """
+    req = DashboardWorkbookRequest.model_validate(_CAMEL_PAYLOAD_WITH_BRAND)
+    assert req.brand is not None
+    brand_dict = req.brand.model_dump()
+    assert "brand_name" in brand_dict, (
+        f"model_dump() must produce 'brand_name' (snake_case), got keys: {list(brand_dict.keys())}"
+    )
+    assert brand_dict["brand_name"] == "Acme Corp"
+    assert "brandName" not in brand_dict, "model_dump() must not produce camelCase 'brandName'"
+
+
+def test_brand_absent_when_not_supplied() -> None:
+    """Requests without a brand block must parse with brand=None (no error)."""
+    req = DashboardWorkbookRequest.model_validate(_CAMEL_PAYLOAD)
+    assert req.brand is None
+
+
+def test_post_workbook_dashboard_with_brand_returns_200_and_applies_preferences(
+    tmp_path: Path,
+) -> None:
+    """POST /workbook/dashboard with a brand block must return 200 and the
+    generated .twbx must carry the branded <preferences><color-palette>."""
+    hyper_file = _build_hyper(tmp_path)
+
+    payload = {
+        **_CAMEL_PAYLOAD_WITH_BRAND,
+        "hyperPath": str(hyper_file),
+    }
+
+    client = TestClient(app)
+    response = client.post("/workbook/dashboard", json=payload)
+    assert response.status_code == 200, (
+        f"Expected 200 but got {response.status_code}. Response body: {response.text}"
+    )
+    body = response.json()
+
+    with zipfile.ZipFile(body["path"]) as archive:
+        twb_name = next(n for n in archive.namelist() if n.endswith(".twb"))
+        twb_xml = archive.read(twb_name).decode("utf-8")
+
+    root = ET.fromstring(twb_xml)
+    palette = root.find("preferences/color-palette")
+    assert palette is not None, "Branded .twbx must carry <preferences><color-palette>"
+    assert palette.get("name") == "Acme Corp Palette"
+    assert palette.get("custom") == "true"
+    colors = [c.text for c in palette.findall("color")]
+    assert colors == _BRAND_CAMEL["palette"]["categorical"]
+
+    # Title run must carry the branded typography (fontcolor/fontname/fontsize).
+    title_run = next(
+        r
+        for z in root.findall(".//dashboards//zone[@type-v2='text']")
+        for r in z.find("formatted-text").findall("run")
+        if r.text and "Executive Sales Dashboard" in r.text
+    )
+    assert title_run.get("fontname") == "Tableau Bold"
+    assert title_run.get("fontcolor") == "#1f1f1f"
+    assert title_run.get("fontsize") == "24"

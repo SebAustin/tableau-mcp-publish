@@ -42,6 +42,7 @@
     "typecheck": "tsc --noEmit",
     "demo": "tsx scripts/demo.ts",
     "demo:dashboard": "tsx scripts/demo-dashboard.ts",
+    "demo:superstore": "tsx scripts/demo-superstore.ts",
     "test:mcp-smoke": "tsx scripts/mcp-smoke.ts",
     "verify-setup": "tsx scripts/verify-setup.ts"
   },

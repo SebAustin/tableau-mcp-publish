@@ -57,7 +57,7 @@ KPI_SHEET = {
     "cols": [],
     "rows": [],
     "measures": ["Revenue"],
-    "kpi": {"primaryMeasure": "Revenue"},
+    "kpi": {"primary_measure": "Revenue"},
 }
 KPI_SHEET_2 = {
     "title": "KPI Profit",
@@ -66,7 +66,7 @@ KPI_SHEET_2 = {
     "cols": [],
     "rows": [],
     "measures": ["Profit"],
-    "kpi": {"primaryMeasure": "Profit"},
+    "kpi": {"primary_measure": "Profit"},
 }
 CHART_SHEET = {
     "title": "Revenue by Region",

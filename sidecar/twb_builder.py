@@ -214,8 +214,8 @@ def _build_worksheet(
     kpi_tile
         When ``sheet["kind"] == "kpi_tile"``, a ``Text`` mark (class
         ``Automatic`` per wb1 KPI sheets) is emitted with one ``<text>``
-        encoding per measure listed in ``kpi.primaryMeasure`` (required),
-        ``kpi.comparisonMeasure`` (optional), and ``kpi.deltaMeasure``
+        encoding per measure listed in ``kpi.primary_measure`` (required),
+        ``kpi.comparison_measure`` (optional), and ``kpi.delta_measure``
         (optional).  Mirrors wb1 ~3388-3398.
 
     map_filled (choropleth) — Slice 3C
@@ -267,11 +267,11 @@ def _build_worksheet(
     color_spec = sheet.get("color")  # optional {field, kind}
 
     # --- KPI tile spec -----------------------------------------------------
-    kpi_spec = sheet.get("kpi")  # optional {primaryMeasure, comparisonMeasure?, deltaMeasure?}
+    kpi_spec = sheet.get("kpi")  # optional {primary_measure, comparison_measure?, delta_measure?}
     is_kpi_tile = sheet_kind == "kpi_tile"
 
     # --- Filled map (choropleth) spec --------------------------------------
-    geo_spec = sheet.get("geo")  # optional {geoField, geoRole, colorMeasure?}
+    geo_spec = sheet.get("geo")  # optional {geo_field, geo_role, color_measure?}
     is_map_filled = mark_type == "map_filled" or geo_spec is not None
 
     worksheet = ET.Element("worksheet", {"name": title})
@@ -326,15 +326,15 @@ def _build_worksheet(
 
     # KPI tile: all measures go into dependency declarations.
     if is_kpi_tile and kpi_spec:
-        for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
+        for kpi_field_key in ("primary_measure", "comparison_measure", "delta_measure"):
             kpi_field = kpi_spec.get(kpi_field_key)
             if kpi_field and str(kpi_field) not in dep_measures:
                 dep_measures.append(str(kpi_field))
 
     # Filled map: geo dimension + color measure go into dependency declarations.
     if is_map_filled and geo_spec:
-        geo_field = str(geo_spec["geoField"])
-        geo_color = geo_spec.get("colorMeasure")
+        geo_field = str(geo_spec["geo_field"])
+        geo_color = geo_spec.get("color_measure")
         if geo_field not in dep_dims:
             dep_dims.append(geo_field)
         if geo_color and str(geo_color) not in dep_measures:
@@ -373,9 +373,9 @@ def _build_worksheet(
         # for a Shape overlay.  We emit only the two core panes (id='1' and id='0')
         # — the XSD does not mandate the overlay pane and omitting it keeps the
         # structure minimal.
-        geo_field_name = str(geo_spec["geoField"])
+        geo_field_name = str(geo_spec["geo_field"])
         geo_dim_col = f"{ds_ref}.{_dim_instance(geo_field_name)}"
-        geo_color_measure = geo_spec.get("colorMeasure")
+        geo_color_measure = geo_spec.get("color_measure")
         geometry_col = f"{ds_ref}.[Geometry (generated)]"
 
         # Pane id='1': LOD shadow (wb1 ~4786-4795)
@@ -445,7 +445,7 @@ def _build_worksheet(
         # Text encoding(s)
         if is_kpi_tile and kpi_spec:
             # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397)
-            for kpi_field_key in ("primaryMeasure", "comparisonMeasure", "deltaMeasure"):
+            for kpi_field_key in ("primary_measure", "comparison_measure", "delta_measure"):
                 kpi_field = kpi_spec.get(kpi_field_key)
                 if kpi_field:
                     encoding_elements.append(
@@ -1106,8 +1106,8 @@ def build_twb_xml(
                 seen_measures.append(str(field))
         g = sheet.get("geo")
         if g:
-            geo_field = str(g["geoField"])
-            geo_role = str(g.get("geoRole", "state")).lower()
+            geo_field = str(g["geo_field"])
+            geo_role = str(g.get("geo_role", "state")).lower()
             sqlproxy_geo_role_map[geo_field] = _GEO_SEMANTIC_ROLE.get(
                 geo_role, "[State].[Name]"
             )
@@ -1115,7 +1115,7 @@ def build_twb_xml(
             if geo_field not in seen_dims:
                 seen_dims.append(geo_field)
             # Ensure the color measure is declared if present.
-            geo_color = g.get("colorMeasure")
+            geo_color = g.get("color_measure")
             if geo_color and str(geo_color) not in seen_measures:
                 seen_measures.append(str(geo_color))
     for field in seen_dims:
@@ -1453,8 +1453,8 @@ def build_embedded_twb_xml(
     for sheet in sheets:
         g = sheet.get("geo")
         if g:
-            geo_field = str(g["geoField"])
-            geo_role = str(g.get("geoRole", "state")).lower()
+            geo_field = str(g["geo_field"])
+            geo_role = str(g.get("geo_role", "state")).lower()
             semantic_role = _GEO_SEMANTIC_ROLE.get(geo_role, "[State].[Name]")
             geo_role_map[geo_field] = semantic_role
 

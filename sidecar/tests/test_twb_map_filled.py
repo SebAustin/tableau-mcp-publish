@@ -99,9 +99,9 @@ SHEET_MAP_FILLED_WITH_COLOR = {
     "rows": [],
     "measures": [],
     "geo": {
-        "geoField": "State",
-        "geoRole": "state",
-        "colorMeasure": "Sales",
+        "geo_field": "State",
+        "geo_role": "state",
+        "color_measure": "Sales",
     },
 }
 
@@ -112,8 +112,8 @@ SHEET_MAP_FILLED_NO_COLOR = {
     "rows": [],
     "measures": [],
     "geo": {
-        "geoField": "State",
-        "geoRole": "state",
+        "geo_field": "State",
+        "geo_role": "state",
     },
 }
 
@@ -124,9 +124,9 @@ SHEET_MAP_COUNTRY = {
     "rows": [],
     "measures": [],
     "geo": {
-        "geoField": "Country",
-        "geoRole": "country",
-        "colorMeasure": "Sales",
+        "geo_field": "Country",
+        "geo_role": "country",
+        "color_measure": "Sales",
     },
 }
 

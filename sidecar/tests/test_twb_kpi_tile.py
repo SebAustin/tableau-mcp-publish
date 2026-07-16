@@ -85,7 +85,7 @@ SHEET_KPI_PRIMARY_ONLY = {
     "cols": [],
     "rows": [],
     "measures": [],
-    "kpi": {"primaryMeasure": "Current Sales"},
+    "kpi": {"primary_measure": "Current Sales"},
 }
 
 SHEET_KPI_FULL = {
@@ -96,9 +96,9 @@ SHEET_KPI_FULL = {
     "rows": [],
     "measures": [],
     "kpi": {
-        "primaryMeasure": "Current Sales",
-        "comparisonMeasure": "Previous Sales",
-        "deltaMeasure": "Sales Delta",
+        "primary_measure": "Current Sales",
+        "comparison_measure": "Previous Sales",
+        "delta_measure": "Sales Delta",
     },
 }
 

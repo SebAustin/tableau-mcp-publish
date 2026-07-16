@@ -702,3 +702,85 @@ describe("map_filled routing via mark heuristic (Slice 4)", () => {
     expect(mapSheet!.geo!.geoRole).toBe("state");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Question-aware deterministic ranking (E0 fix): an alphabetical column list
+// must not hijack the KPI band, the primary chart measure, or the geo level.
+// Trap reproduces the real Superstore file where "Days to Ship" and "Discount"
+// sort alphabetically before "Sales".
+// ---------------------------------------------------------------------------
+
+describe("question-aware ranking (E0)", () => {
+  const ALPHA_TRAP: FieldHint[] = [
+    // Alphabetical order — operational measures first, Sales LAST.
+    { name: "Days to Ship", dataType: "number" },
+    { name: "Discount", dataType: "number" },
+    { name: "Profit", dataType: "number" },
+    { name: "Profit Ratio", dataType: "number" },
+    { name: "Quantity", dataType: "number" },
+    { name: "Sales", dataType: "number" },
+    { name: "PP Profit", dataType: "number" },
+    { name: "PP Sales", dataType: "number" },
+    { name: "Profit Difference", dataType: "number" },
+    { name: "Sales Difference", dataType: "number" },
+    { name: "Category", dataType: "string" },
+    { name: "Country", dataType: "string" },
+    { name: "Region", dataType: "string" },
+    { name: "Segment", dataType: "string" },
+    { name: "State", dataType: "string" },
+    { name: "Order Date", dataType: "date" },
+  ];
+
+  const plan = () =>
+    generatePlan({
+      mode: "autonomous",
+      audience: "exec",
+      businessQuestion:
+        "How is Superstore performing on sales and profit by region, category, and state?",
+      fieldHints: ALPHA_TRAP,
+      datasourceLuid: "DS",
+      datasourceName: "Superstore",
+      projectName: "Test",
+    });
+
+  it("KPI band leads with question-mentioned measures (Sales, Profit), not alphabetical", () => {
+    const p = plan();
+    const kpiTitles = p.sheets.filter((s) => s.kind === "kpi_tile").map((s) => s.title);
+    expect(kpiTitles[0]).toBe("Sales");
+    expect(kpiTitles).toContain("Profit");
+    expect(kpiTitles[0]).not.toBe("Days to Ship");
+  });
+
+  it("primary chart measure is Sales (mentioned), and bar dim is a mentioned dimension", () => {
+    const p = plan();
+    const bar = p.sheets.find((s) => s.markType === "bar");
+    expect(bar).toBeDefined();
+    expect(bar!.measures[0]).toBe("Sales");
+    expect(["Region", "Category"]).toContain(bar!.cols[0]);
+  });
+
+  it("map picks State (mentioned in question) over Country", () => {
+    const p = plan();
+    const map = p.sheets.find((s) => s.markType === "map_filled");
+    expect(map).toBeDefined();
+    expect(map!.geo!.geoField).toBe("State");
+  });
+
+  it("unmentioned question falls back to canonical priority (Sales first, not Days to Ship)", () => {
+    const p = generatePlan({
+      mode: "autonomous",
+      audience: "exec",
+      businessQuestion: "Give me a performance overview",
+      fieldHints: ALPHA_TRAP,
+      datasourceLuid: "DS",
+      datasourceName: "Superstore",
+      projectName: "Test",
+    });
+    const kpiTitles = p.sheets.filter((s) => s.kind === "kpi_tile").map((s) => s.title);
+    expect(kpiTitles[0]).toBe("Sales");
+  });
+
+  it("ranking is deterministic (same input twice → identical plan)", () => {
+    expect(JSON.stringify(plan())).toBe(JSON.stringify(plan()));
+  });
+});

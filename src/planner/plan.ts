@@ -145,6 +145,112 @@ function buildPlaceholderSheets(_audience: Audience): SheetSpec[] {
 // ---------------------------------------------------------------------------
 
 /** Max exec chart sheets below the KPI band (so total stays ≤ maxSheets). */
+/**
+ * Canonical business-measure priority: when the business question doesn't name
+ * a measure, prefer revenue-like measures over operational ones. Lower index =
+ * higher priority; unlisted measures rank after all listed ones.
+ */
+const CANONICAL_MEASURE_PRIORITY: readonly string[] = [
+  "sales",
+  "revenue",
+  "profit",
+  "margin",
+  "ratio",
+  "quantity",
+  "orders",
+  "units",
+  "customers",
+  "discount",
+  "returns",
+  "ship",
+];
+
+/** True when the field name (or any of its words) appears as a word in the question. */
+export function isMentioned(fieldName: string, questionText: string): boolean {
+  const q = questionText.toLowerCase();
+  const tokens = fieldName.toLowerCase().split(/[\s_-]+/).filter((t) => t.length > 2);
+  if (tokens.length === 0) return false;
+  return tokens.every((t) => new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(q));
+}
+
+function canonicalRank(measureName: string): number {
+  const lower = measureName.toLowerCase();
+  const idx = CANONICAL_MEASURE_PRIORITY.findIndex((k) => lower.includes(k));
+  return idx === -1 ? CANONICAL_MEASURE_PRIORITY.length : idx;
+}
+
+/**
+ * Rank measures deterministically: question-mentioned first, then canonical
+ * business priority (sales/revenue/profit before operational metrics), then
+ * the original field order as a stable tiebreak. Pure — same inputs, same order.
+ */
+export function rankMeasures(measures: readonly string[], questionText: string): string[] {
+  return measures
+    .map((name, index) => ({ name, index }))
+    .sort((a, b) => {
+      const mentionDelta =
+        Number(isMentioned(b.name, questionText)) - Number(isMentioned(a.name, questionText));
+      if (mentionDelta !== 0) return mentionDelta;
+      const canonDelta = canonicalRank(a.name) - canonicalRank(b.name);
+      if (canonDelta !== 0) return canonDelta;
+      return a.index - b.index;
+    })
+    .map((m) => m.name);
+}
+
+/**
+ * Rank dimensions: question-mentioned first, then low-cardinality, then
+ * original order. Keeps bar/color choices aligned with what the user asked.
+ */
+export function rankDims(
+  dims: readonly FieldClassification[],
+  questionText: string,
+): FieldClassification[] {
+  return dims
+    .map((field, index) => ({ field, index }))
+    .sort((a, b) => {
+      const mentionDelta =
+        Number(isMentioned(b.field.name, questionText)) -
+        Number(isMentioned(a.field.name, questionText));
+      if (mentionDelta !== 0) return mentionDelta;
+      const lowDelta =
+        Number(b.field.cardinalityHint === "low") - Number(a.field.cardinalityHint === "low");
+      if (lowDelta !== 0) return lowDelta;
+      return a.index - b.index;
+    })
+    .map((d) => d.field);
+}
+
+/** Geo-role preference when the question doesn't name a level: finer grain first. */
+const GEO_ROLE_PREFERENCE: readonly string[] = ["state", "city", "zipcode", "country"];
+
+/**
+ * Pick the geo field: question-mentioned level wins (e.g. "by state" → State);
+ * otherwise prefer state > city > zipcode > country (finer, more useful grain).
+ */
+export function pickGeoField(
+  usable: readonly FieldClassification[],
+  questionText: string,
+): FieldClassification | undefined {
+  const geos = usable.filter(
+    (f) => f.role === "geographic" && f.tags.includes("geo_named") && f.geoRole !== undefined,
+  );
+  if (geos.length === 0) return undefined;
+  const ranked = geos
+    .map((field, index) => ({ field, index }))
+    .sort((a, b) => {
+      const mentionDelta =
+        Number(isMentioned(b.field.name, questionText)) -
+        Number(isMentioned(a.field.name, questionText));
+      if (mentionDelta !== 0) return mentionDelta;
+      const prefA = GEO_ROLE_PREFERENCE.indexOf(a.field.geoRole ?? "");
+      const prefB = GEO_ROLE_PREFERENCE.indexOf(b.field.geoRole ?? "");
+      if (prefA !== prefB) return prefA - prefB;
+      return a.index - b.index;
+    });
+  return ranked[0]?.field;
+}
+
 const EXEC_MAX_CHARTS = 2;
 /** Max KPI tiles in the exec KPI strip. */
 const EXEC_MAX_KPI_TILES = 4;
@@ -168,17 +274,20 @@ function buildExecKpiBandPlan(
   questionText: string,
 ): { sheets: SheetSpec[]; layoutGrammar: LayoutGrammar } {
   const usable = usableFields(allClassifications);
-  const measures = usable.filter((f) => f.role === "measure").map((f) => f.name);
-  const dims = usable.filter(
-    (f) => f.role === "dimension" && !f.tags.includes("temporal"),
+  // Question-aware, deterministic ranking: measures/dims the user named come
+  // first, then canonical business priority (Sales/Profit before Days-to-Ship),
+  // then stable field order — so an alphabetical column list can't hijack the
+  // KPI band or the primary chart measure.
+  const measures = rankMeasures(
+    usable.filter((f) => f.role === "measure").map((f) => f.name),
+    questionText,
+  );
+  const dims = rankDims(
+    usable.filter((f) => f.role === "dimension" && !f.tags.includes("temporal")),
+    questionText,
   );
   const temporal = usable.find((f) => f.role === "temporal" || f.tags.includes("temporal"));
-  const geoField = usable.find(
-    (f) =>
-      f.role === "geographic" &&
-      f.tags.includes("geo_named") &&
-      f.geoRole !== undefined,
-  );
+  const geoField = pickGeoField(usable, questionText);
 
   // 1. KPI strip
   const kpiSheets: SheetSpec[] = buildKpiStrip(
@@ -194,10 +303,9 @@ function buildExecKpiBandPlan(
   // colored by a second dimension when one exists, otherwise by the measure
   // itself (sequential color by magnitude) — so an exec bar is always encoded.
   const primaryMeasure = measures[0];
-  const primaryDim = dims.find((d) => d.cardinalityHint === "low") ?? dims[0];
-  const colorDim =
-    dims.find((d) => d !== primaryDim && d.cardinalityHint === "low") ??
-    dims.find((d) => d !== primaryDim);
+  // dims are already ranked (mentioned → low-cardinality → stable order).
+  const primaryDim = dims[0];
+  const colorDim = dims[1];
 
   if (primaryMeasure && primaryDim) {
     const barSheet: SheetSpec = {

@@ -16,6 +16,7 @@ import { classifyFields, usableFields } from "./fields.js";
 import type { FieldHint, FieldClassification } from "./fields.js";
 import { applyMarkHeuristic, buildKpiStrip } from "./marks.js";
 import { applyAudienceClamps } from "./audience.js";
+import type { AudienceConstraintOverrides } from "./audience.js";
 import {
   assertSchemaVersion,
   SCHEMA_VERSION,
@@ -414,6 +415,16 @@ export interface PlanInput {
   workbookName?: string;
   requestedLayout?: DashboardLayout;
   datasourceSpec?: DatasourceSpec;
+  /**
+   * Phase E1 (Slice A): persona-driven audience-constraint overrides, already
+   * resolved by the caller (e.g. `design_dashboard` reading brand.yaml). The
+   * planner stays pure — it never reads brand.yaml itself.
+   */
+  constraintOverrides?: AudienceConstraintOverrides;
+  /** Named persona (from brand.yaml) that produced `constraintOverrides`, for provenance. */
+  personaName?: string;
+  /** Brand name (from brand.yaml), for provenance alongside `personaName`. */
+  brandName?: string;
 }
 
 /** Generate a DashboardPlan from a finalized set of inputs. */
@@ -520,6 +531,7 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     audience,
     firstMeasure,
     requestedLayout,
+    input.constraintOverrides,
   );
 
   // L-01 layout gap
@@ -576,6 +588,8 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     dashboardTitle,
     dashboardSubtitle,
     ...(layoutGrammar !== undefined ? { layoutGrammar } : {}),
+    ...(input.personaName !== undefined ? { personaName: input.personaName } : {}),
+    ...(input.brandName !== undefined ? { brandName: input.brandName } : {}),
   });
 
   return plan;

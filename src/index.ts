@@ -17,13 +17,14 @@ import { registerPublishWorkbook } from "./tools/publishWorkbook.js";
 import { registerCreateDatasourceFromFile } from "./tools/createDatasourceFromFile.js";
 import { registerDesignDashboard } from "./tools/designDashboard.js";
 import { registerBuildFromPlan } from "./tools/buildFromPlan.js";
+import { registerValidateBrand } from "./tools/validateBrand.js";
 
 /** stderr only — stdout is reserved for the MCP stdio transport. */
 function log(message: string): void {
   process.stderr.write(`[tableau-mcp-publish] ${message}\n`);
 }
 
-/** Register all 14 tools onto the server. Exported for tests. */
+/** Register all 15 tools onto the server. Exported for tests. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerProjectTools(server, ctx);
   registerContentTools(server, ctx);
@@ -39,6 +40,8 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerDesignDashboard(server, ctx);
   // M6 — build + publish from plan
   registerBuildFromPlan(server, ctx);
+  // E1 — brand kit validation
+  registerValidateBrand(server, ctx);
 }
 
 async function main(): Promise<void> {

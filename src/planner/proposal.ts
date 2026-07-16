@@ -312,6 +312,13 @@ function buildSummary(plan: DashboardPlan): string {
 
   summary += ".";
 
+  // Phase E1 (Slice A): surface persona/brand provenance when design_dashboard
+  // resolved a named persona from brand.yaml.
+  if (plan.personaName) {
+    summary += ` Tailored for the "${plan.personaName}" persona`;
+    summary += plan.brandName ? ` (${plan.brandName} brand).` : ".";
+  }
+
   return summary;
 }
 

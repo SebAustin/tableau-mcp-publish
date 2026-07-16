@@ -310,20 +310,38 @@ export interface ClampResult {
 }
 
 /**
+ * Persona-driven overrides layered onto an audience's base constraints
+ * (Phase E1, Slice A). Currently only `maxSheets` is threaded through; more
+ * fields can be added here as later phases need them — every field is
+ * optional so an absent override is a no-op.
+ */
+export interface AudienceConstraintOverrides {
+  /** Override the audience's default max chart-sheet count. */
+  maxSheets?: number;
+}
+
+/**
  * Apply all 6 audience clamp steps in order (BI_DESIGN §3.2).
  *
- * @param rawSheets        Sheet list from chart selection.
- * @param audience         Target audience.
- * @param firstMeasure     Name of the first available measure (for KPI insertion).
- * @param requestedLayout  Caller-supplied layout override (ignored for operational).
+ * @param rawSheets           Sheet list from chart selection.
+ * @param audience            Target audience.
+ * @param firstMeasure        Name of the first available measure (for KPI insertion).
+ * @param requestedLayout     Caller-supplied layout override (ignored for operational).
+ * @param constraintOverrides Optional persona-driven overrides layered onto the
+ *                            audience's base constraints (e.g. maxSheets).
  */
 export function applyAudienceClamps(
   rawSheets: SheetSpec[],
   audience: Audience,
   firstMeasure = "",
   requestedLayout?: DashboardLayout,
+  constraintOverrides?: AudienceConstraintOverrides,
 ): ClampResult {
-  const constraints = AUDIENCE_CONSTRAINTS[audience];
+  const baseConstraints = AUDIENCE_CONSTRAINTS[audience];
+  const constraints: AudienceConstraints =
+    constraintOverrides?.maxSheets !== undefined
+      ? { ...baseConstraints, maxSheets: constraintOverrides.maxSheets }
+      : baseConstraints;
 
   let sheets = stepTruncate(rawSheets, constraints);
   sheets = stepDropDisallowedMarkTypes(sheets, audience, constraints);

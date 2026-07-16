@@ -32,6 +32,9 @@ import { generatePlan, generateInterview } from "../planner/plan.js";
 import type { PlanInput } from "../planner/plan.js";
 import { buildProposal } from "../planner/proposal.js";
 import { FieldHintSchema, AudienceEnum, DashboardLayoutEnum } from "../planner/schema.js";
+import type { Audience } from "../planner/schema.js";
+import type { AudienceConstraintOverrides } from "../planner/audience.js";
+import { loadBrand, resolvePersona } from "../branding/load.js";
 
 // ---------------------------------------------------------------------------
 // Shared sub-schemas
@@ -118,6 +121,11 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       description:
         "Generates a DashboardProposal (kind:'proposal') or ClarifyingQuestions (kind:'questions') " +
         "from a business question, target audience, and optional field hints.\n\n" +
+        "## Branding & personas\n" +
+        "  • Pass `persona` (e.g. 'ceo', 'cto', 'analyst') to resolve a named audience profile " +
+        "from brand.yaml — its base audience is used when `audience` is omitted, and its overrides " +
+        "(e.g. maxSheets) are applied. The proposal summary names the persona and brand.\n" +
+        "  • Use the `validate_brand` tool to check brand.yaml and list available persona names.\n\n" +
         "## Modes\n" +
         "  • autonomous: derive everything from businessQuestion + fieldHints.\n" +
         "  • interview: return clarifying questions before planning " +
@@ -142,6 +150,24 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
               "Use 'directed' to provide explicit sheet directions.",
           ),
         audience: audienceField,
+        persona: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            "Named persona from brand.yaml (e.g. 'ceo', 'cto', 'analyst'). When provided, " +
+              "resolves the persona's base audience (used when `audience` is omitted) and applies " +
+              "the persona's overrides (e.g. maxSheets). The proposal summary names the persona " +
+              "and the brand. `audience`, if also supplied, takes precedence over the persona's base.",
+          ),
+        brandPath: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            "Optional path to brand.yaml, used only when `persona` is supplied. " +
+              "Defaults to the repo-root brand.yaml.",
+          ),
         businessQuestion: z
           .string()
           .optional()
@@ -190,6 +216,8 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
     async ({
       mode,
       audience,
+      persona,
+      brandPath,
       businessQuestion,
       directions,
       answers,
@@ -200,10 +228,35 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       workbookName,
       requestedLayout,
     }) => {
+      // ---------------------------------------------------------------------
+      // Phase E1 (Slice A): resolve `persona` against brand.yaml.
+      //
+      // This is the ONLY I/O in this tool — brand.yaml is read here, once,
+      // and the resolved values (audience, constraint overrides, persona
+      // name, brand name) are passed into the pure planner. The planner
+      // itself never touches the filesystem.
+      // ---------------------------------------------------------------------
+      let resolvedAudience: Audience | undefined = audience;
+      let constraintOverrides: AudienceConstraintOverrides | undefined;
+      let personaName: string | undefined;
+      let brandName: string | undefined;
+
+      if (persona) {
+        const { brand } = loadBrand(brandPath);
+        const { audience: personaAudience, overrides } = resolvePersona(brand, persona);
+        // An explicit `audience` input always wins over the persona's base.
+        resolvedAudience = audience ?? personaAudience;
+        personaName = persona;
+        brandName = brand.brand.name;
+        if (overrides.maxSheets !== undefined) {
+          constraintOverrides = { maxSheets: overrides.maxSheets };
+        }
+      }
+
       // interview mode — return ClarifyingQuestions, not a proposal
       if (mode === "interview") {
         const result = generateInterview({
-          audience,
+          audience: resolvedAudience,
           businessQuestion,
           fieldHints,
         });
@@ -233,7 +286,7 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
 
       const planInput: PlanInput = {
         mode: mode === "interview_followup" ? "interview_followup" : mode as "autonomous" | "directed",
-        audience: audience ?? "mixed",
+        audience: resolvedAudience ?? "mixed",
         businessQuestion,
         directions,
         answers,
@@ -243,6 +296,9 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         projectName,
         workbookName,
         requestedLayout,
+        constraintOverrides,
+        personaName,
+        brandName,
       };
 
       const plan = generatePlan(planInput);

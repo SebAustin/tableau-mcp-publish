@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { z } from "zod";
 import { registerAllTools } from "../src/index.js";
 import type { Config } from "../src/config.js";
@@ -57,11 +60,19 @@ function makeCtx() {
 
 let server: FakeServer;
 let ctx: ReturnType<typeof makeCtx>;
+let tmpDir: string | undefined;
 
 beforeEach(() => {
   server = new FakeServer();
   ctx = makeCtx();
   registerAllTools(server as never, ctx as never);
+});
+
+afterEach(() => {
+  if (tmpDir) {
+    rmSync(tmpDir, { recursive: true, force: true });
+    tmpDir = undefined;
+  }
 });
 
 async function invoke(name: string, rawArgs: Record<string, unknown>) {
@@ -73,8 +84,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 14 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(14);
+  it("registers all 15 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(15);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -100,6 +111,8 @@ describe("tool registration", () => {
       "create_datasource_from_file",
       "design_dashboard",
       "build_from_plan",
+      // E1 — brand kit
+      "validate_brand",
     ]) {
       expect(names).toContain(t);
     }
@@ -338,6 +351,161 @@ describe("design_dashboard (M5 / Slice 5)", () => {
         projectName: "Sales",
       }),
     ).rejects.toThrow(/datasourceLuid/);
+  });
+
+  describe("persona resolution (E1)", () => {
+    it("persona='ceo' resolves to the exec base audience and the proposal mentions it", async () => {
+      const res = await invoke("design_dashboard", {
+        mode: "autonomous",
+        persona: "ceo",
+        businessQuestion: "How is revenue trending?",
+        fieldHints: [
+          { name: "order_date", dataType: "date" },
+          { name: "revenue", dataType: "number" },
+        ],
+        datasourceLuid: "DS",
+        datasourceName: "Sales",
+        projectName: "Sales",
+      });
+      const result = (
+        res.structuredContent as {
+          result: { kind: string; summary: string; audience: string; plan: { audience: string; personaName?: string } };
+        }
+      ).result;
+      expect(result.kind).toBe("proposal");
+      expect(result.audience).toBe("exec");
+      expect(result.plan.audience).toBe("exec");
+      expect(result.plan.personaName).toBe("ceo");
+      expect(result.summary).toMatch(/ceo/i);
+    });
+
+    it("an explicit `audience` input takes precedence over the persona's base", async () => {
+      const res = await invoke("design_dashboard", {
+        mode: "autonomous",
+        audience: "exec",
+        persona: "analyst", // base=analyst, but explicit audience should win
+        businessQuestion: "Revenue by region",
+        fieldHints: [
+          { name: "region", dataType: "string" },
+          { name: "revenue", dataType: "number" },
+        ],
+        datasourceLuid: "DS",
+        datasourceName: "Sales",
+        projectName: "Sales",
+      });
+      const result = (res.structuredContent as { result: { plan: { audience: string } } }).result;
+      expect(result.plan.audience).toBe("exec");
+    });
+
+    it("throws a clear error for an unknown persona, listing available names", async () => {
+      await expect(
+        invoke("design_dashboard", {
+          mode: "autonomous",
+          persona: "nonexistent_persona_xyz",
+          businessQuestion: "Revenue?",
+          datasourceLuid: "DS",
+          datasourceName: "Sales",
+          projectName: "Sales",
+        }),
+      ).rejects.toThrow(/Unknown persona "nonexistent_persona_xyz".*ceo/is);
+    });
+
+    it("threads a persona's maxSheets override through the audience clamp", async () => {
+      tmpDir = mkdtempSync(join(tmpdir(), "brand-tool-test-"));
+      const brandPath = join(tmpDir, "brand.yaml");
+      writeFileSync(
+        brandPath,
+        `
+brand:
+  name: "Vip Corp"
+personas:
+  vip:
+    base: analyst
+    maxSheets: 1
+`,
+        "utf8",
+      );
+
+      const res = await invoke("design_dashboard", {
+        mode: "directed",
+        persona: "vip",
+        brandPath,
+        directions: "revenue by region and profit by category and orders over time",
+        fieldHints: [
+          { name: "region", dataType: "string" },
+          { name: "category", dataType: "string" },
+          { name: "order_date", dataType: "date" },
+          { name: "revenue", dataType: "number" },
+          { name: "profit", dataType: "number" },
+          { name: "orders", dataType: "number" },
+        ],
+        datasourceLuid: "DS",
+        datasourceName: "Sales",
+        projectName: "Sales",
+      });
+      const result = (
+        res.structuredContent as {
+          result: { plan: { audience: string; sheets: unknown[]; personaName?: string; brandName?: string } };
+        }
+      ).result;
+      expect(result.plan.audience).toBe("analyst");
+      expect(result.plan.sheets.length).toBe(1);
+      expect(result.plan.personaName).toBe("vip");
+      expect(result.plan.brandName).toBe("Vip Corp");
+    });
+  });
+});
+
+describe("validate_brand (E1)", () => {
+  it("reports valid=true for the repo-root brand.yaml, listing the scaffolded personas", async () => {
+    const res = await invoke("validate_brand", {});
+    const result = res.structuredContent as {
+      valid: boolean;
+      warnings: string[];
+      personas: string[];
+      summary: string;
+    };
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual([]);
+    expect(result.personas).toEqual(
+      expect.arrayContaining(["ceo", "cto", "slt_manager", "analyst", "client"]),
+    );
+    expect(result.summary).toMatch(/valid/i);
+  });
+
+  it("reports valid=false (never throws) for a malformed brand file", async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), "brand-validate-test-"));
+    const brandPath = join(tmpDir, "brand.yaml");
+    writeFileSync(
+      brandPath,
+      `
+palette:
+  semantic:
+    good: "not-a-hex-color"
+`,
+      "utf8",
+    );
+
+    const res = await invoke("validate_brand", { path: brandPath });
+    const result = res.structuredContent as {
+      valid: boolean;
+      warnings: string[];
+      personas: string[];
+      summary: string;
+    };
+    expect(result.valid).toBe(false);
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.personas).toEqual([]);
+    expect(result.summary).toMatch(/invalid/i);
+  });
+
+  it("reports valid=true with a warning when the file is absent", async () => {
+    const missingPath = join(mkdtempSync(join(tmpdir(), "brand-missing-")), "does-not-exist.yaml");
+    const res = await invoke("validate_brand", { path: missingPath });
+    const result = res.structuredContent as { valid: boolean; warnings: string[] };
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toMatch(/not found/i);
   });
 });
 

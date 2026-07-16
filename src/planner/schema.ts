@@ -241,6 +241,11 @@ export const DashboardPlanSchema = z.object({
   textZones: z.array(TextZoneSchema).optional(),
   /** Structured layout grammar used by the builder to emit multi-zone XML. */
   layoutGrammar: LayoutGrammarSchema.optional(),
+  // --- Phase E1 (Slice A): brand/persona provenance, resolved by the tool layer ---
+  /** Named persona (from brand.yaml) that resolved this plan's audience + overrides, if any. */
+  personaName: z.string().optional(),
+  /** Brand name (from brand.yaml) applied when a persona was resolved, if any. */
+  brandName: z.string().optional(),
 });
 
 export type DashboardPlan = z.infer<typeof DashboardPlanSchema>;

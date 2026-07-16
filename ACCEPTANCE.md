@@ -320,3 +320,29 @@ Gate green: 87 TS + 114 Python = 201 tests. Also fixed this session: the stale-p
 Several throwaway diagnostic workbooks were published during debugging ("Diag Single Worksheet",
 "Diag Named Dashboard") and one datasource per demo run. The keeper artifacts are the demo datasource +
 workbook above; the `Diag*` workbooks can be deleted from the site.
+
+---
+
+# E2E — Exec-Dashboards Phase 1 CLOSED: rich dashboard live on Cloud (2026-06-29)
+
+`npm run demo:superstore` published the full Phase-1 rich vertical slice to the dev site,
+accepted by Tableau Cloud on the first attempt after the E0 fixes:
+
+| Artifact | URL |
+|---|---|
+| Datasource (68 cols, UTF-16/TSV auto-sniffed + coerced) | https://10ax.online.tableau.com/#/site/sebaustin/datasources/27108116 |
+| Exec dashboard workbook (embedded extract) | https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2519210 |
+
+**What renders:** KPI band — Sales (Δ Sales Difference, up_good), Profit, Quantity, Discount
+(down_good) — above "Sales by Category" (bar, colored by Segment) and "Sales by State"
+(filled US map colored by Sales), with dashboard title and the kpi_band_over_charts layout.
+
+**E0 fixes that landed first (offline verification caught both before any live publish):**
+1. `c2e497a` — builder nested keys aligned to `model_dump()` snake_case + an integration
+   test over the genuine camelCase-JSON → Pydantic → builder path (TestClient 200).
+2. `f17d664` — question-aware + canonical ranking (measures/dims/geo): the alphabetical
+   68-column file had made the plan key on "Days to Ship" and drop Sales; now the KPI band
+   leads with question-mentioned measures and the map honors "by state".
+
+Gate at close: **241 TS + 258 Python = 499 tests.** The propose→confirm proposal shown in the
+demo output is the exact contract an agent presents before build_from_plan publishes.

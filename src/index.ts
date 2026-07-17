@@ -18,13 +18,14 @@ import { registerCreateDatasourceFromFile } from "./tools/createDatasourceFromFi
 import { registerDesignDashboard } from "./tools/designDashboard.js";
 import { registerBuildFromPlan } from "./tools/buildFromPlan.js";
 import { registerValidateBrand } from "./tools/validateBrand.js";
+import { registerGetDatasourceFields } from "./tools/getDatasourceFields.js";
 
 /** stderr only — stdout is reserved for the MCP stdio transport. */
 function log(message: string): void {
   process.stderr.write(`[tableau-mcp-publish] ${message}\n`);
 }
 
-/** Register all 15 tools onto the server. Exported for tests. */
+/** Register all 16 tools onto the server. Exported for tests. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerProjectTools(server, ctx);
   registerContentTools(server, ctx);
@@ -42,6 +43,8 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerBuildFromPlan(server, ctx);
   // E1 — brand kit validation
   registerValidateBrand(server, ctx);
+  // E2 — VDS field metadata (Foundation slice)
+  registerGetDatasourceFields(server, ctx);
 }
 
 async function main(): Promise<void> {

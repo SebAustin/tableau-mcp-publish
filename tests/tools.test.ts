@@ -44,6 +44,10 @@ function makeCtx() {
     refreshDatasource: vi.fn().mockResolvedValue(undefined),
     deleteContent: vi.fn().mockResolvedValue(undefined),
     setPermissions: vi.fn().mockResolvedValue(undefined),
+    getDatasourceFields: vi.fn().mockResolvedValue([
+      { fieldName: "Sales", fieldCaption: "Sales", dataType: "REAL", defaultAggregation: "SUM" },
+      { fieldName: "Order Date", fieldCaption: "Order Date", dataType: "DATE" },
+    ]),
   };
   const sidecar = {
     buildDatasourceFromQuery: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/x.tdsx" }),
@@ -84,8 +88,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 15 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(15);
+  it("registers all 16 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(16);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -113,6 +117,8 @@ describe("tool registration", () => {
       "build_from_plan",
       // E1 — brand kit
       "validate_brand",
+      // E2 — VDS field metadata
+      "get_datasource_fields",
     ]) {
       expect(names).toContain(t);
     }
@@ -869,5 +875,34 @@ palette:
         }),
       );
     });
+  });
+});
+
+describe("get_datasource_fields (E2 Foundation)", () => {
+  it("maps VDS fields to { name, caption, dataType, defaultAggregation } and returns count", async () => {
+    const res = await invoke("get_datasource_fields", { datasourceLuid: "DS1" });
+    expect(ctx.rest.getDatasourceFields).toHaveBeenCalledWith("DS1");
+    expect(res.structuredContent).toEqual({
+      fields: [
+        { name: "Sales", caption: "Sales", dataType: "REAL", defaultAggregation: "SUM" },
+        { name: "Order Date", caption: "Order Date", dataType: "DATE" },
+      ],
+      count: 2,
+    });
+  });
+
+  it("returns an empty fields array with count 0 when the datasource has no fields", async () => {
+    ctx.rest.getDatasourceFields.mockResolvedValueOnce([]);
+    const res = await invoke("get_datasource_fields", { datasourceLuid: "DS-empty" });
+    expect(res.structuredContent).toEqual({ fields: [], count: 0 });
+  });
+
+  it("propagates a not-found error from the REST client", async () => {
+    ctx.rest.getDatasourceFields.mockRejectedValueOnce(
+      new Error("Tableau API request failed (404) on POST /api/v1/vizql-data-service/read-metadata: Datasource not found or VDS unavailable"),
+    );
+    await expect(invoke("get_datasource_fields", { datasourceLuid: "missing" })).rejects.toThrow(
+      /not found/,
+    );
   });
 });

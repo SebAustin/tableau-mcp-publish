@@ -3,6 +3,12 @@ import { basename } from "node:path";
 import { randomBytes } from "node:crypto";
 import { request } from "undici";
 import type { Config } from "./config.js";
+import { TableauApiError, parseTableauErrorBody, parseRetryAfterMs } from "./rest/errors.js";
+import { withRetry, DEFAULT_RETRY_POLICY, type RetryDeps, type RetrySignal } from "./rest/retry.js";
+import { readDatasourceMetadata, type VdsField } from "./rest/vds.js";
+
+export { TableauApiError } from "./rest/errors.js";
+export type { VdsField } from "./rest/vds.js";
 
 export interface Session {
   token: string;
@@ -125,6 +131,19 @@ interface ApiOptions {
   contentType?: string;
   auth?: boolean;
   parse?: "json" | "none";
+  /**
+   * Whether a failed call may be retried at all (independent of status
+   * code). Defaults per HTTP method when omitted — see the JSDoc on
+   * {@link TableauRestClient.api} for the full per-method reasoning. Pass
+   * this explicitly to override the default at a specific call site (e.g.
+   * the sign-in POST, or the chunk-append PUT that must never retry).
+   */
+  idempotent?: boolean;
+}
+
+/** GET/DELETE are always safe to retry; PUT is idempotent by REST semantics (full replace). POST is not, by default. */
+function defaultIdempotent(method: string): boolean {
+  return method === "GET" || method === "PUT" || method === "DELETE";
 }
 
 /**
@@ -138,6 +157,7 @@ export class TableauRestClient {
   constructor(
     private readonly cfg: Config,
     private readonly chunkSize: number = DEFAULT_CHUNK_SIZE_BYTES,
+    private readonly retryDeps: RetryDeps = {},
   ) {}
 
   private get baseUrl(): string {
@@ -149,8 +169,46 @@ export class TableauRestClient {
     return this.session;
   }
 
+  /**
+   * Executes a single Tableau REST call with bounded retry (max 3 attempts,
+   * see {@link DEFAULT_RETRY_POLICY}).
+   *
+   * Retry policy (senior-architect hardening, Phase E2 Foundation):
+   *  - Retriable statuses: 429 (Too Many Requests) and 502/503/504 (upstream
+   *    hiccups). NEVER 401, and never any other 4xx — those mean the
+   *    request itself is wrong, so retrying cannot help.
+   *  - `idempotent` (see {@link ApiOptions.idempotent}) gates whether a
+   *    failure is retried AT ALL, independent of status code, because
+   *    repeating a mutating, non-idempotent request risks duplicating a
+   *    server-side effect if the original request actually succeeded
+   *    upstream but the response was lost:
+   *      - GET: always idempotent (read-only) → default true.
+   *      - PUT: idempotent by REST semantics (full replace of a resource,
+   *        e.g. `setPermissions`) → default true, EXCEPT the file-upload
+   *        chunk-append PUT in {@link TableauRestClient.uploadInChunks},
+   *        which explicitly passes `idempotent: false` — appending the same
+   *        chunk bytes twice mid-stream could corrupt the upload session,
+   *        so a multipart publish body is never retried mid-stream.
+   *      - DELETE: idempotent (a second delete of an already-deleted
+   *        resource is a no-op, typically a 404 we don't retry anyway) →
+   *        default true.
+   *      - POST: NOT idempotent by default (creating/mutating calls could
+   *        duplicate a resource or double-trigger a job, e.g.
+   *        `createProject`, `publish`, `refreshDatasource`) EXCEPT the
+   *        initial sign-in POST (`signIn`), which explicitly passes
+   *        `idempotent: true` — repeating sign-in on a flaky network just
+   *        yields a fresh session token with no duplication risk, and it's
+   *        the one call that must survive transient failures to make the
+   *        server usable at all.
+   *  - 429 honors the upstream `Retry-After` header when present; all other
+   *    retries use deterministic-jitter exponential backoff (the jitter
+   *    function is injectable via `retryDeps`, so tests never sleep for
+   *    real).
+   *  - Bounded by `maxAttempts` and a wall-clock `totalTimeCapMs` so a
+   *    misbehaving upstream can never hang a tool call indefinitely.
+   */
   private async api(method: string, path: string, opts: ApiOptions = {}): Promise<unknown> {
-    const { query, body, contentType, auth = true, parse = "json" } = opts;
+    const { query, body, contentType, auth = true, parse = "json", idempotent } = opts;
     const url = new URL(`${this.baseUrl}${path}`);
     if (query) {
       for (const [k, v] of Object.entries(query)) {
@@ -161,21 +219,43 @@ export class TableauRestClient {
     if (auth) headers["X-Tableau-Auth"] = this.requireSession().token;
     if (contentType) headers["Content-Type"] = contentType;
 
-    const res = await request(url.toString(), { method, headers, body });
-    if (res.statusCode >= 400) {
-      // Log the full upstream body to stderr for debugging, but return only a
-      // redacted message to the caller (the agent) to avoid leaking site internals.
-      const text = await res.body.text();
-      process.stderr.write(
-        `[tableau-mcp-publish] Tableau API ${res.statusCode} on ${method} ${path}: ${text}\n`,
-      );
-      throw new Error(`Tableau API request failed (${res.statusCode}) on ${method} ${path}.`);
-    }
-    if (parse === "none") {
-      await res.body.text();
-      return undefined;
-    }
-    return res.body.json();
+    const isIdempotent = idempotent ?? defaultIdempotent(method);
+
+    return withRetry(
+      async () => {
+        const res = await request(url.toString(), { method, headers, body });
+        if (res.statusCode >= 400) {
+          // Log the full upstream body to stderr for debugging, but throw only a
+          // redacted, structured error to the caller to avoid leaking site internals.
+          const text = await res.body.text();
+          process.stderr.write(
+            `[tableau-mcp-publish] Tableau API ${res.statusCode} on ${method} ${path}: ${text}\n`,
+          );
+          const retryAfterHeader = (res as { headers?: Record<string, string | string[] | undefined> })
+            .headers?.["retry-after"];
+          const parsed = parseTableauErrorBody(text);
+          throw new TableauApiError({
+            status: res.statusCode,
+            method,
+            path,
+            code: parsed?.code,
+            summary: parsed?.summary,
+            detail: parsed?.detail,
+            retryAfterMs: parseRetryAfterMs(retryAfterHeader),
+          });
+        }
+        if (parse === "none") {
+          await res.body.text();
+          return undefined;
+        }
+        return res.body.json();
+      },
+      (err: unknown): RetrySignal | undefined =>
+        err instanceof TableauApiError ? { status: err.status, retryAfterMs: err.retryAfterMs } : undefined,
+      isIdempotent,
+      DEFAULT_RETRY_POLICY,
+      this.retryDeps,
+    );
   }
 
   async signIn(): Promise<Session> {
@@ -190,6 +270,9 @@ export class TableauRestClient {
       auth: false,
       body: JSON.stringify(payload),
       contentType: "application/json",
+      // Explicit override: see the per-method reasoning in api()'s JSDoc —
+      // sign-in is the one POST that's safe (and important) to retry.
+      idempotent: true,
     })) as { credentials?: { token?: string; site?: { id?: string }; user?: { id?: string } } };
 
     const creds = json.credentials;
@@ -388,9 +471,16 @@ export class TableauRestClient {
         },
       ]);
       // A failure here throws and we deliberately do NOT call the finalize POST.
+      // Explicit override: PUT defaults to idempotent=true (full-replace REST
+      // semantics), but appending a chunk is NOT a full replace — it's a
+      // stateful append to an upload session. Retrying it after the server
+      // actually received the bytes (but the ack was lost to a 429/503)
+      // would duplicate that chunk's bytes mid-stream and corrupt the
+      // session, so this call never retries.
       await this.api("PUT", `/sites/${siteId}/fileUploads/${uploadSessionId}`, {
         body,
         contentType,
+        idempotent: false,
       });
     }
     return uploadSessionId;
@@ -432,6 +522,17 @@ export class TableauRestClient {
     }
 
     return { id: ds.id, name: ds.name ?? "", contentUrl };
+  }
+
+  /**
+   * Fetch REAL field names, data types, and default aggregations for a
+   * published datasource via the VizQL Data Service (VDS) `read-metadata`
+   * endpoint. Backs the `get_datasource_fields` tool; feeds `design_dashboard`
+   * `fieldHints` and (Phase E3) Pulse pre-flight validation.
+   */
+  async getDatasourceFields(datasourceLuid: string): Promise<VdsField[]> {
+    const { token } = this.requireSession();
+    return readDatasourceMetadata({ server: this.cfg.server, token }, datasourceLuid, this.retryDeps);
   }
 
   async refreshDatasource(datasourceId: string): Promise<void> {

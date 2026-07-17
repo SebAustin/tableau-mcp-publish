@@ -200,6 +200,44 @@ def _coerce_formatted_numerics(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# Date-like strings must contain a separator (/, -, space) or a month name so that
+# plain integers ("2013", "212") and IDs are never mistaken for dates.
+_DATE_HINT_RE = re.compile(r"[/\-]|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b", re.I)
+
+
+def _coerce_date_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert date-formatted string columns ('1/3/2013') to datetime in place.
+
+    Mirrors :func:`_coerce_formatted_numerics`: a column converts only when >= 90%
+    of its non-blank values (a) carry a date-separator/month hint and (b) parse via
+    ``pd.to_datetime``. Runs AFTER numeric coercion, so numeric columns are already
+    non-object and skipped; ID-like strings ('CA-2011-103800') carry the hint but
+    fail to parse, so they stay text. Required for Tableau Pulse, which needs a
+    real (non-string) time dimension on the published datasource.
+    """
+    for col in df.columns:
+        if df[col].dtype != object:
+            continue
+        series = df[col]
+        text = series.astype(str).str.strip()
+        nonblank = text[~text.str.lower().isin(_NULL_TOKENS)]
+        if len(nonblank) == 0:
+            continue
+        if (nonblank.map(lambda s: bool(_DATE_HINT_RE.search(s)))).mean() < 0.9:
+            continue
+        parsed = pd.to_datetime(nonblank, errors="coerce", format="mixed")
+        if parsed.notna().mean() >= 0.9:
+            df[col] = pd.to_datetime(
+                text.where(~text.str.lower().isin(_NULL_TOKENS)), errors="coerce", format="mixed"
+            )
+    return df
+
+
+def _coerce_ingested(df: pd.DataFrame) -> pd.DataFrame:
+    """Full ingest coercion chain: display-formatted numbers, then date strings."""
+    return _coerce_date_columns(_coerce_formatted_numerics(df))
+
+
 def _sniff_csv_dialect(p: Path) -> tuple[str, str]:
     """Sniff ``(encoding, delimiter)`` for a delimited text file from its first bytes.
 
@@ -277,7 +315,7 @@ def file_to_dataframe(
             sniffed_enc, sniffed_delim = _sniff_csv_dialect(p)
             enc = enc or sniffed_enc
             delim = delim or sniffed_delim
-        return _coerce_formatted_numerics(
+        return _coerce_ingested(
             pd.read_csv(p, nrows=max_rows, encoding=enc, sep=delim)
         )
 
@@ -286,13 +324,13 @@ def file_to_dataframe(
         df_excel = pd.read_excel(p, sheet_name=sheet, engine="openpyxl")
         if len(df_excel) > max_rows:
             df_excel = df_excel.head(max_rows)
-        return _coerce_formatted_numerics(df_excel)
+        return _coerce_ingested(df_excel)
 
     if ftype == "parquet":
         df_parquet = pd.read_parquet(p)
         if len(df_parquet) > max_rows:
             df_parquet = df_parquet.head(max_rows)
-        return _coerce_formatted_numerics(df_parquet)
+        return _coerce_ingested(df_parquet)
 
     if ftype in {"json", "jsonl"}:
         if json_path is not None:
@@ -337,7 +375,7 @@ def file_to_dataframe(
 
         if len(df_json) > max_rows:
             df_json = df_json.head(max_rows)
-        return _coerce_formatted_numerics(df_json)
+        return _coerce_ingested(df_json)
 
     raise ValueError(
         f"Unsupported file_type: {file_type!r}. "

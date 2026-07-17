@@ -259,3 +259,56 @@ def test_file_to_dataframe_clamps_rows_jsonl(tmp_path: Path) -> None:
     p.write_text(lines + "\n")
     df = hyper_builder.file_to_dataframe("jsonl", str(p), max_rows=60)
     assert len(df) == 60
+
+
+# ---------------------------------------------------------------------------
+# Date coercion (E3 pre-req: Pulse needs a real time dimension, not strings)
+# ---------------------------------------------------------------------------
+
+
+def test_file_to_dataframe_coerces_date_strings(tmp_path: Path) -> None:
+    """m/d/Y date strings become datetime; ID-like strings with hyphens stay text."""
+    csv = tmp_path / "d.csv"
+    csv.write_text(
+        "Order Date,Ship Date,Order ID,Region\n"
+        "1/3/2013,1/7/2013,CA-2011-103800,West\n"
+        "2/5/2013,2/9/2013,CA-2011-112326,East\n"
+        "11/22/2014,11/26/2014,US-2012-108966,South\n"
+    )
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert str(df["Order Date"].dtype).startswith("datetime64")
+    assert str(df["Ship Date"].dtype).startswith("datetime64")
+    # ID-like strings carry the hyphen hint but fail to parse -> stay text.
+    assert df["Order ID"].dtype == object
+    assert df["Region"].dtype == object
+    assert df["Order Date"].iloc[0].year == 2013
+    assert df["Order Date"].iloc[2].month == 11
+
+
+def test_date_coercion_skips_integer_strings(tmp_path: Path) -> None:
+    """Plain integers ('2013') lack the separator hint and are never dates."""
+    csv = tmp_path / "y.csv"
+    csv.write_text("Year,Label\n2013,a\n2014,b\n2015,c\n")
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert not str(df["Year"].dtype).startswith("datetime64")
+
+
+def test_date_coercion_requires_90pct(tmp_path: Path) -> None:
+    """A column with <90% parseable dates is NOT coerced."""
+    csv = tmp_path / "m.csv"
+    csv.write_text("v\n1/3/2013\nnot-a-date\nalso-not\nnope-1\nnope-2\n")
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert df["v"].dtype == object
+
+
+def test_date_coercion_preserves_blanks_as_nat(tmp_path: Path) -> None:
+    """Blank/NULL tokens in a date column become NaT, not strings.
+
+    Two columns so the empty-date row is not a blank LINE (pandas'
+    skip_blank_lines default would drop a fully blank row).
+    """
+    csv = tmp_path / "b.csv"
+    csv.write_text("d,x\n1/3/2013,a\nNULL,b\n2/5/2013,c\n,d\n3/7/2013,e\n")
+    df = hyper_builder.file_to_dataframe("csv", str(csv))
+    assert str(df["d"].dtype).startswith("datetime64")
+    assert df["d"].isna().sum() == 2

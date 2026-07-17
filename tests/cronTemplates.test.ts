@@ -69,18 +69,18 @@ describe("buildCrontabLine", () => {
   it("emits a daily 5-field cron expression at the given HH:MM", () => {
     const line = buildCrontabLine(dailyInput);
     expect(line.startsWith("30 3 * * * ")).toBe(true);
-    expect(line).toContain('cd "/repo"');
+    expect(line).toContain("cd '/repo'"); // re-baselined: VB-02 shell-quoting
     expect(line).toContain("npx tsx scripts/refresh-local.ts");
-    expect(line).toContain('--file "/data/sales.csv"');
-    expect(line).toContain('--name "Sales CSV"');
-    expect(line).toContain('--project "Sales"');
-    expect(line).toContain(">> \"/repo/scripts/cron/refresh-local.log\" 2>&1");
+    expect(line).toContain("--file '/data/sales.csv'"); // re-baselined: VB-02
+    expect(line).toContain("--name 'Sales CSV'"); // re-baselined: VB-02
+    expect(line).toContain("--project 'Sales'"); // re-baselined: VB-02
+    expect(line).toContain(">> '/repo/scripts/cron/refresh-local.log' 2>&1"); // re-baselined: VB-02
   });
 
   it("emits an hourly cron expression (minute 0 of every hour) and includes --persona", () => {
     const line = buildCrontabLine(hourlyInput);
     expect(line.startsWith("0 * * * * ")).toBe(true);
-    expect(line).toContain('--persona "ceo"');
+    expect(line).toContain("--persona 'ceo'"); // re-baselined: VB-02 shell-quoting
   });
 
   it("is a single line (no embedded newlines) — required for a valid crontab entry", () => {
@@ -130,5 +130,52 @@ describe("buildLaunchdPlist", () => {
     expect(plist).toContain("&quot;Q2&quot;");
     expect(plist).toContain("&lt;Co&gt;");
     expect(plist).not.toContain('"Q2"'); // raw quote must not survive unescaped inside a <string>
+  });
+});
+
+// ---------------------------------------------------------------------------
+// VB-02: shell-injection hardening — adversarial names must be inert
+// ---------------------------------------------------------------------------
+
+describe("VB-02 shell-injection hardening (crontab line)", () => {
+  it("single-quotes command substitution so $(id) is inert", () => {
+    const line = buildCrontabLine({
+      schedule: { kind: "hourly" },
+      invocation: { file: "/data/x.csv", name: "$(id)", project: "Sales" },
+      repoRoot: "/repo",
+    });
+    // The dangerous token must appear inside single quotes (literal, not executable).
+    expect(line).toContain("--name '$(id)'");
+    // And never as a bare double-quoted (interpolating) token.
+    expect(line).not.toContain('--name "$(id)"');
+  });
+
+  it("neutralizes double-quote breakout + command injection attempts", () => {
+    const evil = '"; touch /tmp/pwned; #';
+    const line = buildCrontabLine({
+      schedule: { kind: "daily", time: "03:30" },
+      invocation: { file: "/data/x.csv", name: evil, project: "Sales" },
+      repoRoot: "/repo",
+    });
+    expect(line).toContain(`--name '${evil}'`);
+  });
+
+  it("splices embedded single quotes with the POSIX '\\'' idiom", () => {
+    const line = buildCrontabLine({
+      schedule: { kind: "hourly" },
+      invocation: { file: "/data/x.csv", name: "O'Brien's KPIs", project: "Sales" },
+      repoRoot: "/repo",
+    });
+    expect(line).toContain("--name 'O'\\''Brien'\\''s KPIs'");
+  });
+
+  it("quotes repoRoot and the log path too", () => {
+    const line = buildCrontabLine({
+      schedule: { kind: "hourly" },
+      invocation: { file: "/data/x.csv", name: "N", project: "P" },
+      repoRoot: "/my repo/$(evil)",
+    });
+    expect(line).toContain("cd '/my repo/$(evil)'");
+    expect(line).toContain(">> '/my repo/$(evil)/scripts/cron/refresh-local.log' 2>&1");
   });
 });

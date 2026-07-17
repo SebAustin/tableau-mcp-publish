@@ -48,14 +48,26 @@ function xmlEscape(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+/**
+ * Safely single-quote a value for a /bin/sh command line (VB-02).
+ *
+ * Double quotes do NOT neutralize `$(…)`, backticks, or `$VAR` — a datasource
+ * name like `$(rm -rf ~)` would execute when cron runs the line. POSIX single
+ * quotes make everything literal; embedded single quotes use the standard
+ * `'\''` splice.
+ */
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
 /** Builds the `--file/--name/--project/--persona` argument string passed to refresh-local.ts. */
 function refreshLocalArgString(invocation: RefreshLocalInvocation): string {
   const parts = [
-    `--file "${invocation.file}"`,
-    `--name "${invocation.name}"`,
-    `--project "${invocation.project}"`,
+    `--file ${shellQuote(invocation.file)}`,
+    `--name ${shellQuote(invocation.name)}`,
+    `--project ${shellQuote(invocation.project)}`,
   ];
-  if (invocation.persona) parts.push(`--persona "${invocation.persona}"`);
+  if (invocation.persona) parts.push(`--persona ${shellQuote(invocation.persona)}`);
   return parts.join(" ");
 }
 
@@ -79,9 +91,9 @@ export function buildCrontabLine(input: CronArtifactInput): string {
         })();
   const logPath = `${input.repoRoot}/scripts/cron/refresh-local.log`;
   return (
-    `${cronTime} cd "${input.repoRoot}" && ` +
+    `${cronTime} cd ${shellQuote(input.repoRoot)} && ` +
     `/usr/bin/env PATH="/usr/local/bin:/usr/bin:/bin:$PATH" npx tsx scripts/refresh-local.ts ` +
-    `${refreshLocalArgString(input.invocation)} >> "${logPath}" 2>&1`
+    `${refreshLocalArgString(input.invocation)} >> ${shellQuote(logPath)} 2>&1`
   );
 }
 

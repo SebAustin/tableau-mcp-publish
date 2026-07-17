@@ -117,3 +117,53 @@ items (PA-1, PA-3) and the LOW pin (PA-4) have since been **remediated** (see st
 
 > Not applicable: there is no blockchain / smart-contract / web3 component, so the
 > `smart-contract-audit` skill was not used.
+
+## Vibe-BI expansion surface (E0–E4) — added surface
+
+**Audited:** 2026-07-17 · branch `feat/exec-dashboards` (slice `db658b2..HEAD`) · STRIDE +
+dependency/secret/input review of the branch-new surface only. Baseline (F-01..F-12) and the
+prompt-authoring add-on (PA-1..PA-8) are unchanged and still hold.
+**Result:** 0 CRITICAL · 0 HIGH · 1 MEDIUM · 2 LOW · 9 PASS. Shippable; VB-02 remediated in-branch.
+
+### New surface
+- E0 Foundation: `src/rest/{errors,retry,vds}.ts`, `get_datasource_fields`.
+- E1 Branding: `src/branding/{schema,load,builderBrand}.ts`, `validate_brand`, sidecar brand block.
+- E2 Automation: `src/rest/{schedules,webhooks,credentials}.ts`, `create_live_datasource`,
+  schedule/webhook tools, sidecar `/datasource/live` + `tds_builder.build_live_tds`, and the
+  operator CLIs `scripts/{generate-cron,cronTemplates,refresh-local}.ts`.
+- E3 Pulse: `src/rest/pulse.ts` + Pulse tools (JSON bodies, `/api/-/pulse/*`).
+- E4 Stories: sidecar story models + `twb_builder` storyboard emit.
+- New npm dep: `yaml@2.9.0` (only).
+
+### STRIDE (expansion surface)
+| Threat | Result |
+|---|---|
+| Spoofing | Mitigated — new sidecar routes behind the same global `token_guard` (127.0.0.1 + `hmac.compare_digest`); no opt-out. |
+| Tampering | Mitigated — new `tsRequest` builders `xmlEscape`/enum/regex-bound all inputs; brand/story reach `.twb` via ElementTree + hex-validated colors. |
+| Repudiation | Unchanged — Cloud records the acting user. |
+| Information disclosure | Mitigated — embedded DB password never logged (request body never logged), never persisted, absent from the live `.tds`; new error paths redact body, never echo the token. |
+| Denial of service | Mitigated — date-coercion + CSV sniff respect the 500 MB / 1 M-row caps; sniff reads only 64 KB. |
+| Elevation of privilege | Mitigated — new deletes require `confirm=true`; live publish rejects empty/`Default` project; `overwrite` defaults false. |
+
+### Findings & remediation status
+| ID | Sev | Finding | Status |
+|---|---|---|---|
+| VB-01 | PASS | Embedded publish credentials never logged (incl. error + retry paths — only the response body hits stderr), `xmlEscape`d, never persisted, absent from the live `.tds`; `tests/secrets.test.ts` asserts the DB password is absent on success and on a 400. | ✅ Verified clean |
+| VB-02 | MED | Shell injection in the generated crontab line: `buildCrontabLine` wrapped `file`/`name`/`project`/`persona` in double quotes only, which does not neutralize `$(…)`/backticks/`$VAR`/`"`. Operator-only CLI (not an MCP tool), generate-only, manual install required — not agent-reachable. | ✅ **Fixed in-branch** — all interpolations POSIX single-quote-escaped (`shellQuote` in `scripts/cronTemplates.ts`); adversarial-name tests added (`$(id)`, quote-breakout, embedded quotes). Launchd plist already safe (exec-array + `xmlEscape`). |
+| VB-03 | LOW | DB credentials pass as `create_live_datasource` tool args, so they transit the agent/LLM context / client tool-call transcript (outside this server's control). Mitigated by env-var guidance in the tool description. | ⚠️ Accepted — inherent to the feature; consider a future env-var-name indirection. |
+| VB-04 | PASS | Webhook HTTPS-only not bypassable: `startsWith("https://")` after `z.url()`; uppercase scheme and leading whitespace are rejected (fail-closed). | ✅ Verified clean |
+| VB-05 | PASS | XML injection across all new `tsRequest` builders (schedules/webhooks/credentials/publish) — escaped or enum/regex-bound. Pulse/VDS use `JSON.stringify`. | ✅ Verified clean |
+| VB-06 | PASS | `confirm=true` gate on `delete_refresh_schedule` / `delete_webhook` / `delete_pulse_definition`. | ✅ Verified clean |
+| VB-07 | PASS | Error-body redaction + no token leakage on new REST/VDS/Pulse error paths. | ✅ Verified clean |
+| VB-08 | PASS | `yaml@2.9.0` safe-by-default (no code exec); brand values hex-validated + ElementTree-escaped into XML. | ✅ Verified clean |
+| VB-09 | LOW | `brandPath` arbitrary local-file read + YAML alias-expansion DoS. Read is by-design (matches F-10); alias DoS bounded by yaml's default `maxAliasCount`. | ⚠️ Accepted / documented |
+| VB-10 | PASS | Ingest date coercion runs after the row clamp; CSV sniff reads only 64 KB; 500 MB pre-read cap enforced. No DoS regression vs PA-1. | ✅ Verified clean |
+| VB-11 | PASS | Sidecar new routes behind the global constant-time token guard; Pydantic-validated; 400s echo only agent-supplied fields; live `.tds` carries no credentials. | ✅ Verified clean |
+| VB-12 | PASS | `npm audit --omit=dev` → 0 vulnerabilities; `yaml@2.9.0`/`undici@7.28.0`/`zod@3.25.76`/SDK pinned & clean; no sidecar Python-dep changes. | ✅ Verified clean |
+
+### Recommended fixes for HIGH/CRITICAL
+None — no CRITICAL/HIGH on the expansion surface. VB-02 (MEDIUM) was remediated in-branch
+before merge.
+
+> Not applicable: no blockchain / smart-contract / web3 component, so the `smart-contract-audit`
+> skill was not used.

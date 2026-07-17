@@ -846,6 +846,66 @@ describe("build_from_plan (M6)", () => {
     });
   });
 
+  // Phase E4: build_from_plan threads plan.storyArc into a Story on
+  // buildDashboardWorkbook, applying the "Story: " name prefix, and rejects
+  // a hand-edited plan whose storyArc references a nonexistent sheet before
+  // any sidecar call.
+  describe("storyArc threading (Phase E4)", () => {
+    const storyPlan = {
+      ...basePlan,
+      dashboardTitle: "Executive Overview",
+      storyName: "Executive Overview",
+      storyArc: [
+        { caption: "Here's the headline.", capturedSheet: "Rev by Region" },
+      ],
+    };
+
+    it("threads plan.storyArc into a Story (name prefixed with 'Story: ') on buildDashboardWorkbook", async () => {
+      await invoke("build_from_plan", { plan: storyPlan });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stories: [
+            {
+              name: "Story: Executive Overview",
+              points: [{ caption: "Here's the headline.", capturedSheet: "Rev by Region" }],
+            },
+          ],
+        }),
+      );
+    });
+
+    it("falls back to dashboardTitle, then workbookName, for the story name when storyName is absent", async () => {
+      const { storyName: _storyName, ...planWithoutStoryName } = storyPlan;
+      await invoke("build_from_plan", { plan: planWithoutStoryName });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stories: [expect.objectContaining({ name: "Story: Executive Overview" })],
+        }),
+      );
+    });
+
+    it("omits stories entirely when the plan has no storyArc", async () => {
+      await invoke("build_from_plan", { plan: basePlan });
+      const call = ctx.sidecar.buildDashboardWorkbook.mock.calls[0]?.[0] as
+        | Record<string, unknown>
+        | undefined;
+      expect(call).toBeDefined();
+      expect(call?.["stories"]).toBeUndefined();
+    });
+
+    it("throws an actionable error (loud fail) when storyArc.capturedSheet is not one of the plan's sheet titles — before any sidecar call", async () => {
+      const invalidStoryPlan = {
+        ...basePlan,
+        storyArc: [{ caption: "Oops", capturedSheet: "Nonexistent Sheet" }],
+      };
+      await expect(invoke("build_from_plan", { plan: invalidStoryPlan })).rejects.toThrow(
+        /capturedSheet.*Nonexistent Sheet|storyArc/i,
+      );
+      expect(ctx.sidecar.buildDashboardWorkbook).not.toHaveBeenCalled();
+      expect(ctx.rest.publishWorkbook).not.toHaveBeenCalled();
+    });
+  });
+
   describe("branding (E1, Slice B)", () => {
     it("plan.personaName set (no explicit brandPath) → brand threaded from the repo-root brand.yaml", async () => {
       await invoke("build_from_plan", {

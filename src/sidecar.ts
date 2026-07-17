@@ -196,6 +196,25 @@ export interface LayoutGrammar {
 }
 
 // ---------------------------------------------------------------------------
+// Story block (Phase E4 — Stories; mirrors schema.ts's StoryArcPoint and the
+// sidecar's StoryPointModel/StoryModel, kept in sync manually per this
+// file's existing convention).
+// ---------------------------------------------------------------------------
+
+/** One story point: a caption over an existing worksheet or dashboard. */
+export interface StoryPoint {
+  caption: string;
+  capturedSheet: string;
+}
+
+/** A Tableau story (storyboard dashboard) built alongside the regular dashboard. */
+export interface Story {
+  name: string;
+  navType?: "caption" | "number" | "dot" | "arrowonly";
+  points: StoryPoint[];
+}
+
+// ---------------------------------------------------------------------------
 // Brand block (Phase E1, Slice B — mirrors branding/builderBrand.ts's
 // BuilderBrand, kept in sync manually per this file's existing convention).
 // ---------------------------------------------------------------------------
@@ -278,6 +297,17 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
    * Omit to keep the pre-brand output byte-identical.
    */
   brand?: WorkbookBrand;
+  // --- Phase E4: optional stories (Tableau storyboard dashboards) ---
+  /**
+   * Stories to append after the regular dashboard, inside the SAME
+   * `<dashboards>` container the sidecar emits. Every `capturedSheet` must
+   * name one of `sheets[].title` or the regular dashboard — the sidecar
+   * validates this and raises loudly (never a silently-broken reference)
+   * otherwise.
+   *
+   * Omit to keep the pre-story output byte-identical.
+   */
+  stories?: Story[];
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -588,6 +618,12 @@ export class AuthoringSidecar {
     // produces the snake_case dict twb_builder reads).
     if (args.brand !== undefined) {
       payload["brand"] = args.brand;
+    }
+    // Phase E4: stories, forwarded as-is (camelCase on the wire; the
+    // sidecar's StoryModel/StoryPointModel accept it and their model_dump()
+    // produces the snake_case dict twb_builder._build_story reads).
+    if (args.stories !== undefined) {
+      payload["stories"] = args.stories;
     }
     const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };

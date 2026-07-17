@@ -10,6 +10,11 @@
  * - Derive dashboardTitle from the business question; dashboardSubtitle from
  *   audience + implied period.
  * - Populate color/geo/scatter on the relevant sheets.
+ *
+ * Phase E4 addition:
+ * - When the resolved persona prefers "story" artifacts OR the business
+ *   question uses story/narrative/presentation language, emit a deterministic
+ *   storyArc over the finalized sheet list (see buildStoryArc below).
  */
 
 import { classifyFields, usableFields } from "./fields.js";
@@ -28,6 +33,7 @@ import {
   type LayoutGrammar,
   type PersonaPreferredArtifact,
   type PersonaTone,
+  type StoryArcPoint,
   DashboardPlanSchema,
 } from "./schema.js";
 import { selectQuestions, type InterviewInput } from "./questions.js";
@@ -404,6 +410,83 @@ function toLabel(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Phase E4 — deterministic story arc (Pillar E, BI_DESIGN §9)
+// ---------------------------------------------------------------------------
+
+/** Question language that signals the user wants a narrative artifact. */
+const STORY_LANGUAGE_RE = /\b(story|narrative|presentation)\b/i;
+
+/**
+ * True when a story arc should be emitted: either the resolved persona
+ * explicitly prefers "story" artifacts (brand.yaml `preferredArtifact`), or
+ * the business question itself asks for a story/narrative/presentation.
+ */
+export function wantsStoryArc(
+  personaPreferredArtifact: PersonaPreferredArtifact | undefined,
+  questionText: string,
+): boolean {
+  if (personaPreferredArtifact === "story") return true;
+  return STORY_LANGUAGE_RE.test(questionText);
+}
+
+/**
+ * Persona-toned caption for one non-headline story point, derived from the
+ * sheet's own shape (mirrors the encodingSummary style `buildProposal` uses
+ * for `views[]`, without importing across the planner/proposal boundary).
+ *
+ * - tone "concise": the sheet's own title (already human-readable — no
+ *   narrative wrapper needed).
+ * - default / "detailed": a short narrative sentence.
+ */
+function deriveChartCaption(sheet: SheetSpec, tone: PersonaTone | undefined): string {
+  if (tone === "concise") return sheet.title;
+  if (sheet.markType === "map_filled" && sheet.geo) {
+    return `Where it shows up: ${toLabel(sheet.geo.geoField)}.`;
+  }
+  if (sheet.markType === "scatter" && sheet.scatter) {
+    return `${toLabel(sheet.scatter.x)} vs ${toLabel(sheet.scatter.y)} — is there a relationship?`;
+  }
+  const measure = sheet.measures[0];
+  const dim = sheet.cols[0] ?? sheet.rows[0];
+  if (measure && dim) return `${toLabel(measure)} by ${toLabel(dim)}.`;
+  if (measure) return `${toLabel(measure)}.`;
+  return `${sheet.title}.`;
+}
+
+/** Headline caption for the story's opening point. */
+function deriveHeadlineCaption(dashboardTitle: string, tone: PersonaTone | undefined): string {
+  return tone === "concise"
+    ? dashboardTitle
+    : `${dashboardTitle}: the headline numbers at a glance.`;
+}
+
+/**
+ * Build a deterministic exec-style story arc over the plan's own sheets:
+ * a headline point (the plan's leading sheet — the top KPI tile for exec
+ * plans) followed by one point per remaining sheet, in plan order.
+ *
+ * Every `capturedSheet` is guaranteed to equal an existing sheet title in
+ * `sheets` — `build_from_plan` re-validates this before calling the sidecar,
+ * and the builder validates it a third time against the actual workbook
+ * (fail loud, never silent) as the final backstop.
+ */
+export function buildStoryArc(
+  sheets: readonly SheetSpec[],
+  dashboardTitle: string,
+  tone: PersonaTone | undefined,
+): StoryArcPoint[] {
+  if (sheets.length === 0) return [];
+  const [headline, ...rest] = sheets;
+  const points: StoryArcPoint[] = [
+    { caption: deriveHeadlineCaption(dashboardTitle, tone), capturedSheet: headline!.title },
+  ];
+  for (const sheet of rest) {
+    points.push({ caption: deriveChartCaption(sheet, tone), capturedSheet: sheet.title });
+  }
+  return points;
+}
+
+// ---------------------------------------------------------------------------
 // Main plan generators
 // ---------------------------------------------------------------------------
 
@@ -590,6 +673,16 @@ export function generatePlan(input: PlanInput): DashboardPlan {
   }
   const rationale = rationaleLines.join(" ");
 
+  // ---------------------------------------------------------------------------
+  // Phase E4: deterministic story arc (persona preference or question language)
+  // ---------------------------------------------------------------------------
+
+  const emitStoryArc = wantsStoryArc(input.personaPreferredArtifact, questionText);
+  const storyArc = emitStoryArc
+    ? buildStoryArc(sheets, dashboardTitle, input.personaTone)
+    : undefined;
+  const storyName = emitStoryArc ? dashboardTitle : undefined;
+
   const plan = DashboardPlanSchema.parse({
     schemaVersion: SCHEMA_VERSION,
     kind: "plan",
@@ -612,6 +705,8 @@ export function generatePlan(input: PlanInput): DashboardPlan {
       ? { personaPreferredArtifact: input.personaPreferredArtifact }
       : {}),
     ...(input.personaTone !== undefined ? { personaTone: input.personaTone } : {}),
+    ...(storyArc !== undefined ? { storyArc } : {}),
+    ...(storyName !== undefined ? { storyName } : {}),
   });
 
   return plan;

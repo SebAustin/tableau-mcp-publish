@@ -16,6 +16,17 @@ Two workbook styles are supported:
 
 Mark types bar/line/text are well supported; map is experimental.
 
+Stories (Phase E4)
+------------------
+Both ``build_twb_xml`` and ``build_embedded_twb_xml`` accept an optional
+``stories`` param: a list of ``{name, nav_type?, points: [{caption,
+captured_sheet}]}`` dicts. Each story is emitted as a ``<dashboard
+type='storyboard'>`` (see ``_build_story``) — a peer of regular dashboards
+inside the SAME shared ``<dashboards>`` container, appended after every
+regular dashboard. Every ``captured_sheet`` must name an existing worksheet or
+regular-dashboard in the workbook; an unknown reference raises ``ValueError``
+loudly rather than shipping a broken story.
+
 Schema compliance
 -----------------
 Output is validated against the official TWB XSD (twb_2026.1.0.xsd from
@@ -876,7 +887,16 @@ def _build_dashboard(
     layout_grammar: dict[str, Any] | None = None,
     brand: dict[str, Any] | None = None,
 ) -> ET.Element:
-    """Return the ``<dashboards>`` ET.Element for one dashboard.
+    """Return the ``<dashboard>`` ET.Element for one dashboard.
+
+    NOTE: this returns the bare ``<dashboard>`` element, NOT a ``<dashboards>``
+    wrapper. The XSD's ``Workbook-Dashboards-G`` allows exactly ONE
+    ``<dashboards>`` element per workbook (holding ``maxOccurs="unbounded"``
+    ``<dashboard>`` children); callers append this return value into a single,
+    shared ``<dashboards>`` container alongside any other regular dashboards
+    AND any stories (also ``<dashboard type='storyboard'>`` elements — Phase
+    E4, see :func:`_build_story`) — see ``build_twb_xml``'s dashboard-building
+    block.
 
     Zone coordinates use the 0–100000 Tableau grid; ``canvas_width``/``canvas_height``
     are the audience-derived pixel dimensions written into ``<size>``.
@@ -951,8 +971,7 @@ def _build_dashboard(
                          subtitle runs keep the pre-brand hardcoded values
                          (byte-identical determinism guard).
     """
-    dashboards_el = ET.Element("dashboards")
-    dashboard = ET.SubElement(dashboards_el, "dashboard", {"name": name})
+    dashboard = ET.Element("dashboard", {"name": name})
 
     # Real dashboards (wb1–wb7) carry a <style/> child before <size>.
     ET.SubElement(dashboard, "style")
@@ -1217,7 +1236,232 @@ def _build_dashboard(
     # Offset by 10000 to avoid collision with worksheet UUIDs.
     ET.SubElement(dashboard, "simple-id", {"uuid": _quuid(10000 + dashboard_index + 1)})
 
-    return dashboards_el
+    return dashboard
+
+
+# ---------------------------------------------------------------------------
+# Story (storyboard) builder — Phase E4, Pillar E
+# ---------------------------------------------------------------------------
+
+
+def _build_story(
+    name: str,
+    story_points: list[dict[str, Any]],
+    dashboard_index: int,
+    canvas_width: int,
+    canvas_height: int,
+    valid_sheet_names: set[str],
+    nav_type: str = "caption",
+) -> ET.Element:
+    """Return a ``<dashboard type='storyboard'>`` ET.Element (Phase E4 — Stories).
+
+    Verified structure (mirrors a real Tableau-authored story .twb; the shape
+    below is gated against the official XSD's ``FlipboardDoc-G`` /
+    ``StoryPoint-G`` groups in ``test_twb_story.py``)::
+
+        <dashboard name='Story: ...' type='storyboard'>
+          <style/>
+          <size .../>
+          <zones>
+            <zone h='100000' id='1' type-v2='layout-basic' w='100000' x='0' y='0'>
+              <zone h='100000' id='2' param='vert' type-v2='layout-flow' w='100000' x='0' y='0'>
+                <zone h='7500' id='3' type='title' w='100000' x='0' y='0'/>
+                <zone h='8000' id='4' is-fixed='true' paired-zone-id='5' type='flipboard-nav'
+                      w='100000' x='0' y='7500'/>
+                <zone h='84500' id='5' paired-zone-id='4' type='flipboard'
+                      w='100000' x='0' y='15500'>
+                  <flipboard active-id='1' nav-type='caption' show-nav-arrows='true'>
+                    <story-points>
+                      <story-point caption='...' captured-sheet='...' id='1'/>
+                      ...
+                    </story-points>
+                  </flipboard>
+                </zone>
+              </zone>
+            </zone>
+          </zones>
+          <simple-id uuid='...'/>
+        </dashboard>
+
+    The title / flipboard-nav / flipboard zones carry a bare ``type='...'``
+    attribute — NOT ``type-v2`` (every other zone kind in this module uses
+    ``type-v2``). This is the attribute spelling a real Tableau-authored story
+    workbook uses for these three zone kinds. The official XSD does not
+    declare a ``type`` attribute on ``Zone-G`` at all (only ``type-v2``); it
+    validates via the ``anyAttribute namespace='##local'
+    processContents='skip'`` wildcard the XSD puts on every zone, which
+    accepts any unqualified attribute without checking its value — so
+    ``type='title'`` etc. are simultaneously schema-valid AND byte-for-byte
+    faithful to the reference spelling (no compromise between the two was
+    needed).
+
+    Args:
+        name:               Story dashboard name (e.g. ``"Story: Q4 Review"``).
+        story_points:       Ordered list of ``{caption, captured_sheet}`` dicts
+                             (snake_case keys — post ``model_dump()``).
+        dashboard_index:    Zero-based index for deterministic simple-id UUID
+                             allocation (disjoint ``_quuid`` range — see below).
+        canvas_width:       Story canvas pixel width (same ``<size>`` semantics
+                             as a regular dashboard).
+        canvas_height:      Story canvas pixel height.
+        valid_sheet_names:  The set of every worksheet + regular-dashboard name
+                             already defined in this workbook. Every
+                             ``captured_sheet`` MUST be a member of this set —
+                             enforced here with a loud ``ValueError`` (never a
+                             silently-broken reference left for Tableau Cloud
+                             to reject at render time).
+        nav_type:           Flipboard navigator style: ``"caption"`` (default),
+                             ``"number"``, ``"dot"``, or ``"arrowonly"``.
+
+    Returns:
+        A ``<dashboard>`` ET.Element. The caller appends it into the SAME
+        shared ``<dashboards>`` container as regular dashboards (see
+        ``_build_dashboard``'s docstring for why there is only ever one).
+
+    Raises:
+        ValueError: if ``story_points`` is empty, or any ``captured_sheet`` is
+            not in ``valid_sheet_names``.
+    """
+    if not story_points:
+        raise ValueError(f"Story {name!r} must have at least one story point.")
+
+    unknown = sorted(
+        {
+            str(p.get("captured_sheet"))
+            for p in story_points
+            if str(p.get("captured_sheet")) not in valid_sheet_names
+        }
+    )
+    if unknown:
+        raise ValueError(
+            f"Story {name!r} references unknown captured_sheet(s) {unknown!r}. "
+            f"Valid worksheet/dashboard names: {sorted(valid_sheet_names)!r}."
+        )
+
+    dashboard = ET.Element("dashboard", {"name": name, "type": "storyboard"})
+    ET.SubElement(dashboard, "style")
+    ET.SubElement(
+        dashboard,
+        "size",
+        {
+            "maxheight": str(canvas_height),
+            "maxwidth": str(canvas_width),
+            "minheight": str(canvas_height),
+            "minwidth": str(canvas_width),
+        },
+    )
+
+    zones_el = ET.SubElement(dashboard, "zones")
+    container = ET.SubElement(
+        zones_el,
+        "zone",
+        {"h": "100000", "id": "1", "type-v2": "layout-basic", "w": "100000", "x": "0", "y": "0"},
+    )
+    outer_flow = ET.SubElement(
+        container,
+        "zone",
+        {
+            "h": "100000",
+            "id": "2",
+            "param": "vert",
+            "type-v2": "layout-flow",
+            "w": "100000",
+            "x": "0",
+            "y": "0",
+        },
+    )
+
+    # Fixed vertical split: title / nav bar / flipboard content. Proportions
+    # mirror typical Tableau Desktop story output (title ~7.5%, nav ~8%,
+    # content absorbs the remainder) — the XSD does not mandate exact values.
+    title_h = 7500
+    nav_h = 8000
+    flip_h = 100000 - title_h - nav_h
+
+    ET.SubElement(
+        outer_flow,
+        "zone",
+        {"h": str(title_h), "id": "3", "type": "title", "w": "100000", "x": "0", "y": "0"},
+    )
+    ET.SubElement(
+        outer_flow,
+        "zone",
+        {
+            "h": str(nav_h),
+            "id": "4",
+            "is-fixed": "true",
+            "paired-zone-id": "5",
+            "type": "flipboard-nav",
+            "w": "100000",
+            "x": "0",
+            "y": str(title_h),
+        },
+    )
+    flip_zone = ET.SubElement(
+        outer_flow,
+        "zone",
+        {
+            "h": str(flip_h),
+            "id": "5",
+            "paired-zone-id": "4",
+            "type": "flipboard",
+            "w": "100000",
+            "x": "0",
+            "y": str(title_h + nav_h),
+        },
+    )
+    flipboard_el = ET.SubElement(
+        flip_zone,
+        "flipboard",
+        {"active-id": "1", "nav-type": nav_type, "show-nav-arrows": "true"},
+    )
+    story_points_el = ET.SubElement(flipboard_el, "story-points")
+    for i, point in enumerate(story_points):
+        ET.SubElement(
+            story_points_el,
+            "story-point",
+            {
+                "caption": str(point["caption"]),
+                "captured-sheet": str(point["captured_sheet"]),
+                "id": str(i + 1),
+            },
+        )
+
+    # <simple-id> offset: 40000 + story index — disjoint from worksheets (1..),
+    # regular dashboards (10000+), worksheet windows (20000+), and dashboard
+    # windows (30000+). See _append_story_window for the matching 50000+ range.
+    ET.SubElement(dashboard, "simple-id", {"uuid": _quuid(40000 + dashboard_index + 1)})
+
+    return dashboard
+
+
+def _append_story_window(
+    windows_el: ET.Element,
+    story_name: str,
+    story_points: list[dict[str, Any]],
+    story_index: int,
+) -> None:
+    """Append a ``class='dashboard'`` ``<window>`` entry for one story.
+
+    Mirrors the regular-dashboard window pattern exactly — the 400011 lesson
+    (see ``build_twb_xml``'s dashboard-window loop): ``<viewpoints>`` lists
+    every DISTINCT ``captured_sheet`` referenced by the story's points (each
+    with a ``<zoom type='entire-view'/>``, first-appearance order), followed
+    by ``<active id='-1'/>`` and a ``<simple-id>`` from a disjoint ``_quuid``
+    range (50000+, distinct from worksheet/dashboard/story simple-ids and from
+    worksheet/dashboard window simple-ids).
+    """
+    win = ET.SubElement(windows_el, "window", {"class": "dashboard", "name": story_name})
+    viewpoints = ET.SubElement(win, "viewpoints")
+    seen: list[str] = []
+    for point in story_points:
+        captured = str(point["captured_sheet"])
+        if captured not in seen:
+            seen.append(captured)
+            vp = ET.SubElement(viewpoints, "viewpoint", {"name": captured})
+            ET.SubElement(vp, "zoom", {"type": "entire-view"})
+    ET.SubElement(win, "active", {"id": "-1"})
+    ET.SubElement(win, "simple-id", {"uuid": _quuid(50000 + story_index + 1)})
 
 
 def build_twb_xml(
@@ -1231,6 +1475,7 @@ def build_twb_xml(
     canvas_width: int = 1000,
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
+    stories: list[dict[str, Any]] | None = None,
 ) -> str:
     """Build a schema-valid TWB XML string.
 
@@ -1243,7 +1488,8 @@ def build_twb_xml(
     (a determinism guard — not a byte-snapshot comparison against the pre-feature
     version; the worksheet/window structure was re-baselined for schema validity).
     The same determinism guarantee holds for ``brand``: omitting it (or passing
-    ``None`` explicitly) never changes the output (Phase E1, Slice B).
+    ``None`` explicitly) never changes the output (Phase E1, Slice B), and for
+    ``stories`` (Phase E4): omitting it never changes the output either.
 
     Args:
         brand: Optional brand block (``model_dump()`` snake_case dict — see
@@ -1252,6 +1498,15 @@ def build_twb_xml(
             Quota Attainment..." ~26-41), the dashboard title/subtitle runs
             use ``brand["typography"]``, and every measure ``<column>`` gets a
             ``default-format`` attribute via :func:`classify_measure_format`.
+        stories: Optional list of story specs (Phase E4 — Stories), each
+            ``{name, nav_type?, points: [{caption, captured_sheet}]}``
+            (snake_case — post ``model_dump()``). Each is emitted as a
+            ``<dashboard type='storyboard'>`` (see :func:`_build_story`)
+            appended into the SAME ``<dashboards>`` container as
+            ``dashboards``, after every regular dashboard, plus a matching
+            ``class='dashboard'`` window entry. Every ``captured_sheet`` MUST
+            name an existing worksheet or regular-dashboard in this workbook —
+            enforced with a loud ``ValueError`` otherwise.
     """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
@@ -1355,30 +1610,59 @@ def build_twb_xml(
     for i, sheet in enumerate(sheets):
         worksheets.append(_build_worksheet(sheet, datasource_name, ds_internal, i))
 
-    # --- Optional dashboard block (BEFORE <windows> per XSD) ----------------
-    # XSD workbook sequence: Worksheets → Dashboards → Windows → explain-data
-    # When ``dashboards`` is None (default), both call forms (no kwarg and explicit
-    # None) produce byte-identical XML — a determinism guard, not a pre-feature snapshot.
-    if dashboards:
-        for db_index, db in enumerate(dashboards):
-            db_name = str(db.get("name", "Dashboard 1"))
-            db_titles: list[str] = [str(t) for t in db.get("titles", [])]
-            if not db_titles:
-                db_titles = [str(s["title"]) for s in sheets]
-            dashboards_el = _build_dashboard(
-                db_name,
-                dashboard_layout,
-                db_titles,
-                canvas_width,
-                canvas_height,
-                db_index,
-                title=db.get("title") or None,
-                subtitle=db.get("subtitle") or None,
-                text_zones=db.get("text_zones") or None,
-                layout_grammar=db.get("layout_grammar") or None,
-                brand=brand,
-            )
-            workbook.append(dashboards_el)
+    # --- Optional dashboard + story block (BEFORE <windows> per XSD) --------
+    # XSD workbook sequence: Worksheets → Dashboards → Windows → explain-data.
+    # Workbook-Dashboards-G allows exactly ONE <dashboards> element per
+    # workbook (holding maxOccurs="unbounded" <dashboard> children) — every
+    # regular dashboard AND every story (also a <dashboard type='storyboard'>,
+    # Phase E4) is appended into that SAME container, stories AFTER regular
+    # dashboards. When both ``dashboards`` and ``stories`` are None/empty
+    # (default), no <dashboards> element is emitted at all — both call forms
+    # (kwargs omitted vs. explicit None) produce byte-identical XML — a
+    # determinism guard, not a pre-feature snapshot.
+    if dashboards or stories:
+        dashboards_container = ET.SubElement(workbook, "dashboards")
+        if dashboards:
+            for db_index, db in enumerate(dashboards):
+                db_name = str(db.get("name", "Dashboard 1"))
+                db_titles: list[str] = [str(t) for t in db.get("titles", [])]
+                if not db_titles:
+                    db_titles = [str(s["title"]) for s in sheets]
+                dashboard_el = _build_dashboard(
+                    db_name,
+                    dashboard_layout,
+                    db_titles,
+                    canvas_width,
+                    canvas_height,
+                    db_index,
+                    title=db.get("title") or None,
+                    subtitle=db.get("subtitle") or None,
+                    text_zones=db.get("text_zones") or None,
+                    layout_grammar=db.get("layout_grammar") or None,
+                    brand=brand,
+                )
+                dashboards_container.append(dashboard_el)
+        if stories:
+            # Every captured_sheet must resolve to an existing worksheet or
+            # regular-dashboard name — validated inside _build_story (fails
+            # loud with ValueError, listing the valid names).
+            valid_names: set[str] = {str(s["title"]) for s in sheets}
+            if dashboards:
+                valid_names |= {str(db.get("name", "Dashboard 1")) for db in dashboards}
+            for story_index, story in enumerate(stories):
+                story_name = str(story.get("name") or f"Story {story_index + 1}")
+                story_points = list(story.get("points") or [])
+                nav_type = str(story.get("nav_type") or "caption")
+                story_el = _build_story(
+                    story_name,
+                    story_points,
+                    story_index,
+                    canvas_width,
+                    canvas_height,
+                    valid_names,
+                    nav_type=nav_type,
+                )
+                dashboards_container.append(story_el)
 
     # --- Windows (after dashboards per XSD) ---------------------------------
     # re-baselined for schema-valid output (XSD A2)
@@ -1414,6 +1698,15 @@ def build_twb_xml(
             # Window simple-id offset: 30000 + dashboard index to avoid collision
             ET.SubElement(win, "simple-id", {"uuid": _quuid(30000 + db_index + 1)})
 
+    if stories:
+        # Story window entries (Phase E4) — same class='dashboard' pattern as
+        # regular dashboards, disjoint _quuid range (50000+). See
+        # _append_story_window's docstring.
+        for story_index, story in enumerate(stories):
+            story_name = str(story.get("name") or f"Story {story_index + 1}")
+            story_points = list(story.get("points") or [])
+            _append_story_window(windows, story_name, story_points, story_index)
+
     # --- explain-data (required by XSD after <windows>) ---------------------
     # re-baselined for schema-valid output (XSD A2)
     explain = ET.SubElement(
@@ -1439,14 +1732,15 @@ def build_starter_twbx(
     canvas_width: int = 1000,
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
+    stories: list[dict[str, Any]] | None = None,
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource.
 
     When ``dashboards`` is ``None`` (default), the two call forms (no kwarg and
     explicit ``None``) produce byte-identical output (determinism guard).
     Pass a non-None list to include a ``<dashboards>`` block and a dashboard
-    window entry. ``brand`` (Phase E1, Slice B) follows the same determinism
-    guarantee — see :func:`build_twb_xml`.
+    window entry. ``brand`` (Phase E1, Slice B) and ``stories`` (Phase E4)
+    follow the same determinism guarantee — see :func:`build_twb_xml`.
     """
     twb_xml = build_twb_xml(
         datasource_name,
@@ -1459,6 +1753,7 @@ def build_starter_twbx(
         canvas_width=canvas_width,
         canvas_height=canvas_height,
         brand=brand,
+        stories=stories,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -1639,6 +1934,7 @@ def build_embedded_twb_xml(
     canvas_width: int = 1000,
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
+    stories: list[dict[str, Any]] | None = None,
 ) -> str:
     """Build a TWB XML string that embeds a .hyper extract via a federated connection.
 
@@ -1664,6 +1960,9 @@ def build_embedded_twb_xml(
                           :func:`build_twb_xml` for the full behaviour.
                           Absent (the default): byte-identical to before this
                           slice (determinism guard).
+        stories:          Optional list of story specs (Phase E4) — see
+                          :func:`build_twb_xml` for the full behaviour. Absent
+                          (the default): byte-identical to before this slice.
 
     Returns:
         A UTF-8 TWB XML string with an XML declaration header.
@@ -1712,27 +2011,50 @@ def build_embedded_twb_xml(
             _build_worksheet(sheet, datasource_name, ds_internal, i)
         )
 
-    # --- Optional dashboards ------------------------------------------------
-    if dashboards:
-        for db_index, db in enumerate(dashboards):
-            db_name = str(db.get("name", "Dashboard 1"))
-            db_titles: list[str] = [str(t) for t in db.get("titles", [])]
-            if not db_titles:
-                db_titles = [str(s["title"]) for s in sheets]
-            dashboards_el = _build_dashboard(
-                db_name,
-                dashboard_layout,
-                db_titles,
-                canvas_width,
-                canvas_height,
-                db_index,
-                title=db.get("title") or None,
-                subtitle=db.get("subtitle") or None,
-                text_zones=db.get("text_zones") or None,
-                layout_grammar=db.get("layout_grammar") or None,
-                brand=brand,
-            )
-            workbook.append(dashboards_el)
+    # --- Optional dashboards + stories ---------------------------------------
+    # Same single-<dashboards>-container discipline as build_twb_xml — see its
+    # comment for the XSD rationale (Workbook-Dashboards-G allows exactly one
+    # <dashboards> element per workbook).
+    if dashboards or stories:
+        dashboards_container = ET.SubElement(workbook, "dashboards")
+        if dashboards:
+            for db_index, db in enumerate(dashboards):
+                db_name = str(db.get("name", "Dashboard 1"))
+                db_titles: list[str] = [str(t) for t in db.get("titles", [])]
+                if not db_titles:
+                    db_titles = [str(s["title"]) for s in sheets]
+                dashboard_el = _build_dashboard(
+                    db_name,
+                    dashboard_layout,
+                    db_titles,
+                    canvas_width,
+                    canvas_height,
+                    db_index,
+                    title=db.get("title") or None,
+                    subtitle=db.get("subtitle") or None,
+                    text_zones=db.get("text_zones") or None,
+                    layout_grammar=db.get("layout_grammar") or None,
+                    brand=brand,
+                )
+                dashboards_container.append(dashboard_el)
+        if stories:
+            valid_names: set[str] = {str(s["title"]) for s in sheets}
+            if dashboards:
+                valid_names |= {str(db.get("name", "Dashboard 1")) for db in dashboards}
+            for story_index, story in enumerate(stories):
+                story_name = str(story.get("name") or f"Story {story_index + 1}")
+                story_points = list(story.get("points") or [])
+                nav_type = str(story.get("nav_type") or "caption")
+                story_el = _build_story(
+                    story_name,
+                    story_points,
+                    story_index,
+                    canvas_width,
+                    canvas_height,
+                    valid_names,
+                    nav_type=nav_type,
+                )
+                dashboards_container.append(story_el)
 
     # --- Windows ------------------------------------------------------------
     windows_el = ET.SubElement(workbook, "windows")
@@ -1761,6 +2083,12 @@ def build_embedded_twb_xml(
             ET.SubElement(win, "active", {"id": "-1"})
             ET.SubElement(win, "simple-id", {"uuid": _quuid(30000 + db_index + 1)})
 
+    if stories:
+        for story_index, story in enumerate(stories):
+            story_name = str(story.get("name") or f"Story {story_index + 1}")
+            story_points = list(story.get("points") or [])
+            _append_story_window(windows_el, story_name, story_points, story_index)
+
     # --- explain-data (required by XSD) ------------------------------------
     explain = ET.SubElement(
         workbook,
@@ -1783,6 +2111,7 @@ def build_embedded_twbx(
     canvas_width: int = 1000,
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
+    stories: list[dict[str, Any]] | None = None,
 ) -> Path:
     """Build a self-contained .twbx that embeds the .hyper extract.
 
@@ -1805,6 +2134,9 @@ def build_embedded_twbx(
         canvas_width:     Dashboard canvas width in pixels.
         canvas_height:    Dashboard canvas height in pixels.
         brand:            Optional brand block (Phase E1, Slice B) — see
+                          :func:`build_twb_xml`. Absent (the default):
+                          byte-identical to before this slice.
+        stories:          Optional list of story specs (Phase E4) — see
                           :func:`build_twb_xml`. Absent (the default):
                           byte-identical to before this slice.
 
@@ -1833,6 +2165,7 @@ def build_embedded_twbx(
         canvas_width=canvas_width,
         canvas_height=canvas_height,
         brand=brand,
+        stories=stories,
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

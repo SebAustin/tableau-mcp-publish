@@ -39,7 +39,7 @@ import { AUDIENCE_CONSTRAINTS } from "../planner/audience.js";
 import type { DashboardPlan } from "../planner/schema.js";
 import { loadBrand } from "../branding/load.js";
 import { toBuilderBrand } from "../branding/builderBrand.js";
-import type { WorkbookBrand } from "../sidecar.js";
+import type { WorkbookBrand, Story } from "../sidecar.js";
 
 // ---------------------------------------------------------------------------
 // R-7: Placeholder token rejection
@@ -103,6 +103,32 @@ function assertAudienceInvariants(plan: DashboardPlan): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Phase E4: storyArc capturedSheet re-validation (defense in depth)
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-validates that every `plan.storyArc[].capturedSheet` names one of this
+ * plan's own sheet titles. `generatePlan()`'s `buildStoryArc` only ever
+ * emits references to `plan.sheets[].title`, but a hand-edited plan could
+ * violate that — this is a build-time guard, additional to (not a
+ * replacement for) the sidecar's own validation against the actual built
+ * workbook (`twb_builder._build_story` raises `ValueError` there too).
+ */
+function assertStoryArcCapturedSheetsExist(plan: DashboardPlan): void {
+  if (!plan.storyArc || plan.storyArc.length === 0) return;
+  const validTitles = new Set(plan.sheets.map((s) => s.title));
+  for (const point of plan.storyArc) {
+    if (!validTitles.has(point.capturedSheet)) {
+      throw new Error(
+        `build_from_plan: storyArc point "${point.caption}" references capturedSheet ` +
+          `"${point.capturedSheet}" which is not one of this plan's sheet titles: ` +
+          `${[...validTitles].join(", ")}.`,
+      );
+    }
+  }
+}
+
 export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     "build_from_plan",
@@ -153,6 +179,10 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
 
       // Step 1c: R-5 — re-validate audience invariants (defense in depth)
       assertAudienceInvariants(plan);
+
+      // Step 1d: Phase E4 — re-validate storyArc capturedSheet references
+      // (defense in depth, mirrors R-5's rationale)
+      assertStoryArcCapturedSheetsExist(plan);
 
       // ---------------------------------------------------------------------
       // Phase E1 (Slice B): resolve branding for the workbook.
@@ -228,6 +258,24 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
       // Determine canvas dimensions from the audience constraints
       const constraints = AUDIENCE_CONSTRAINTS[plan.audience];
 
+      // Phase E4: thread plan.storyArc → a single Story, applying the
+      // "Story: " name prefix the Tableau story dashboard name requires
+      // (see twb_builder._build_story's docstring for the verified shape).
+      // Undefined when the plan carries no storyArc, keeping the pre-story
+      // request byte-identical.
+      const stories: Story[] | undefined =
+        plan.storyArc && plan.storyArc.length > 0
+          ? [
+              {
+                name: `Story: ${plan.storyName ?? plan.dashboardTitle ?? plan.workbookName}`,
+                points: plan.storyArc.map((p) => ({
+                  caption: p.caption,
+                  capturedSheet: p.capturedSheet,
+                })),
+              },
+            ]
+          : undefined;
+
       // Build the .twbx with the embedded extract via the sidecar.
       // Passing hyperPath uses the federated-connection path in server.py
       // (/workbook/dashboard → build_embedded_twbx) so the workbook renders
@@ -264,6 +312,7 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         ...(plan.dashboardSubtitle ? { dashboardSubtitle: plan.dashboardSubtitle } : {}),
         ...(plan.textZones ? { textZones: plan.textZones } : {}),
         ...(plan.layoutGrammar ? { layoutGrammar: plan.layoutGrammar } : {}),
+        ...(stories ? { stories } : {}),
       });
 
       // Publish to Tableau Cloud

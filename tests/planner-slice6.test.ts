@@ -13,8 +13,11 @@
  *   the annotation still fires end-to-end for a high-cardinality dimension.
  * - FEW-7: the small-multiples hint is appended to a bar-colored-by-a-second-
  *   dimension sheet when the question signals a cross-dimension comparison.
- * - preferredArtifact "story"/"pulse" surface an honest openQuestion naming
- *   the phase where that capability lands; "dashboard" (or unset) does not.
+ * - preferredArtifact "pulse" surfaces an honest openQuestion naming the
+ *   phase where that capability lands; "dashboard" (or unset) does not.
+ *   "story" now ships (Phase E4): it drives a deterministic storyArc instead
+ *   of a stub openQuestion — see tests/planner-storyArc.test.ts for coverage
+ *   of that behavior; this file only asserts the openQuestion is gone.
  * - tone "concise" trims the proposal summary to one sentence + the layout
  *   line while still preserving persona provenance.
  * - Determinism: identical inputs (including the new override fields) yield
@@ -356,10 +359,18 @@ const artifactBaseInput = {
 };
 
 describe("preferredArtifact — honest capability surfacing (BI_DESIGN §9)", () => {
-  it('"story" appends an openQuestion naming Phase E4', () => {
+  // Phase E4: "story" shipped — generatePlan() now emits a storyArc for it
+  // instead of a "not yet available" stub. Full storyArc/storyOutline
+  // coverage lives in tests/planner-storyArc.test.ts; this test only pins
+  // that the old openQuestion is gone.
+  it('"story" no longer appends a "not yet available" openQuestion (Phase E4 shipped)', () => {
     const plan = generatePlan({ ...artifactBaseInput, personaPreferredArtifact: "story" });
     const proposal = buildProposal(plan);
-    expect(proposal.openQuestions?.some((q) => /story/i.test(q) && /Phase E4/.test(q))).toBe(true);
+    const hasNotAvailableNote =
+      proposal.openQuestions?.some((q) => /story/i.test(q) && /not yet available/i.test(q)) ??
+      false;
+    expect(hasNotAvailableNote).toBe(false);
+    expect(plan.storyArc?.length).toBeGreaterThan(0);
   });
 
   it('"pulse" appends an openQuestion naming Phase E3', () => {

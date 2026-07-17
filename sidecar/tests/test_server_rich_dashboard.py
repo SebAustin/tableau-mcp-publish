@@ -472,3 +472,94 @@ def test_post_workbook_dashboard_with_brand_returns_200_and_applies_preferences(
     assert title_run.get("fontname") == "Tableau Bold"
     assert title_run.get("fontcolor") == "#1f1f1f"
     assert title_run.get("fontsize") == "24"
+
+
+# ---------------------------------------------------------------------------
+# F — Phase E4: camelCase `stories` block round-trips through model_dump()
+#     (snake_case) and reaches the generated .twbx as a <dashboard
+#     type='storyboard'>. Same MODEL_DUMP LESSON as brand/geo/kpi above.
+# ---------------------------------------------------------------------------
+
+_STORY_CAMEL = [
+    {
+        "name": "Story: Executive Walkthrough",
+        "navType": "caption",
+        "points": [
+            {"caption": "Here's where we stand.", "capturedSheet": "Revenue KPI"},
+            {"caption": "Broken down by category.", "capturedSheet": "Sales by Category"},
+        ],
+    }
+]
+
+_CAMEL_PAYLOAD_WITH_STORY = {**_CAMEL_PAYLOAD, "stories": _STORY_CAMEL}
+
+
+def test_model_dump_produces_snake_case_story_fields() -> None:
+    """model_dump() on a camelCase stories payload must produce snake_case keys
+    ('nav_type', 'captured_sheet') — same ROOT CAUSE guard as geo/kpi/brand above."""
+    req = DashboardWorkbookRequest.model_validate(_CAMEL_PAYLOAD_WITH_STORY)
+    assert req.stories is not None
+    story_dicts = [s.model_dump() for s in req.stories]
+    assert "nav_type" in story_dicts[0], (
+        f"model_dump() must produce 'nav_type' (snake_case); got keys: "
+        f"{list(story_dicts[0].keys())}"
+    )
+    assert story_dicts[0]["nav_type"] == "caption"
+    assert "navType" not in story_dicts[0], "model_dump() must not produce camelCase 'navType'"
+
+    point = story_dicts[0]["points"][0]
+    assert "captured_sheet" in point, (
+        f"model_dump() must produce 'captured_sheet' (snake_case), got keys: {list(point.keys())}"
+    )
+    assert point["captured_sheet"] == "Revenue KPI"
+    assert "capturedSheet" not in point, "model_dump() must not produce camelCase 'capturedSheet'"
+
+
+def test_stories_absent_when_not_supplied() -> None:
+    """Requests without a stories block must parse with stories=None (no error)."""
+    req = DashboardWorkbookRequest.model_validate(_CAMEL_PAYLOAD)
+    assert req.stories is None
+
+
+def test_post_workbook_dashboard_with_story_returns_200_and_emits_storyboard(
+    tmp_path: Path,
+) -> None:
+    """POST /workbook/dashboard with a stories block must return 200 and the
+    generated .twbx must carry a <dashboard type='storyboard'> alongside the
+    regular dashboard, inside the SAME <dashboards> container."""
+    hyper_file = _build_hyper(tmp_path)
+
+    payload = {
+        **_CAMEL_PAYLOAD_WITH_STORY,
+        "hyperPath": str(hyper_file),
+    }
+
+    client = TestClient(app)
+    response = client.post("/workbook/dashboard", json=payload)
+    assert response.status_code == 200, (
+        f"Expected 200 but got {response.status_code}. Response body: {response.text}"
+    )
+    body = response.json()
+
+    with zipfile.ZipFile(body["path"]) as archive:
+        twb_name = next(n for n in archive.namelist() if n.endswith(".twb"))
+        twb_xml = archive.read(twb_name).decode("utf-8")
+
+    root = ET.fromstring(twb_xml)
+    dashboards_els = root.findall("dashboards")
+    assert len(dashboards_els) == 1, (
+        "story must live in the SAME <dashboards> as the regular dashboard"
+    )
+
+    story = dashboards_els[0].find("dashboard[@type='storyboard']")
+    assert story is not None, "stories payload must produce a <dashboard type='storyboard'>"
+    assert story.get("name") == "Story: Executive Walkthrough"
+
+    points = story.findall(".//flipboard/story-points/story-point")
+    assert len(points) == 2
+    assert points[0].get("captured-sheet") == "Revenue KPI"
+    assert points[1].get("captured-sheet") == "Sales by Category"
+
+    win = root.find(".//windows/window[@name='Story: Executive Walkthrough']")
+    assert win is not None
+    assert win.get("class") == "dashboard"

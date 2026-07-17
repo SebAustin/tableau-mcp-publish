@@ -163,6 +163,33 @@ class LayoutGrammarModel(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Story sub-models (Phase E4 — Stories). Mirrors sidecar.ts's
+# StoryPoint/Story interfaces. Same MODEL_DUMP LESSON as BrandModel below:
+# these accept camelCase on the wire but model_dump() produces the snake_case
+# field names (`captured_sheet`, `nav_type`) that twb_builder.py reads.
+# ---------------------------------------------------------------------------
+
+
+class StoryPointModel(BaseModel):
+    """One story point (mirrors schema.ts's StoryArcPoint / sidecar.ts's StoryPoint)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    caption: str
+    captured_sheet: str = Field(alias="capturedSheet")
+
+
+class StoryModel(BaseModel):
+    """A story — Tableau storyboard dashboard (Phase E4). Mirrors sidecar.ts's Story."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    nav_type: str = Field(default="caption", alias="navType")
+    points: list[StoryPointModel]
+
+
+# ---------------------------------------------------------------------------
 # Brand block sub-models (Phase E1, Slice B — "Builder applies branding").
 #
 # Mirrors the flat wire shape produced by src/branding/builderBrand.ts's
@@ -270,6 +297,11 @@ class DashboardWorkbookRequest(BaseModel):
     # Phase E1, Slice B: optional resolved brand block. Absent → byte-identical
     # output to before this slice (see BrandModel docstring + twb_builder guards).
     brand: BrandModel | None = None
+    # Phase E4: optional stories (Tableau storyboard dashboards). Each story's
+    # captured_sheet is validated against the actual worksheet/dashboard names
+    # by twb_builder._build_story (raises ValueError, listing valid names,
+    # otherwise). Absent → byte-identical output to before this slice.
+    stories: list[StoryModel] | None = None
 
 
 class FileRequest(BaseModel):
@@ -433,6 +465,13 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
     # which keeps both build paths byte-identical to before this slice.
     brand_dict: dict[str, Any] | None = req.brand.model_dump() if req.brand is not None else None
 
+    # Phase E4: model_dump() the optional stories list once, snake_case (same
+    # MODEL_DUMP LESSON). None when absent, keeping both build paths
+    # byte-identical to before this slice.
+    stories_list: list[dict[str, Any]] | None = (
+        [s.model_dump() for s in req.stories] if req.stories else None
+    )
+
     if req.hyper_path:
         hyper_file = Path(req.hyper_path)
         if not hyper_file.is_file():
@@ -451,6 +490,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             canvas_width=req.canvas_width,
             canvas_height=req.canvas_height,
             brand=brand_dict,
+            stories=stories_list,
         )
     else:
         twbx_path = twb_builder.build_starter_twbx(
@@ -465,6 +505,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             canvas_width=req.canvas_width,
             canvas_height=req.canvas_height,
             brand=brand_dict,
+            stories=stories_list,
         )
     return {"path": str(twbx_path)}
 

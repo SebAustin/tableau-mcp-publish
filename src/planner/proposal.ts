@@ -378,21 +378,37 @@ function detectOpenQuestions(plan: DashboardPlan): string[] | undefined {
 
 /**
  * When the resolved persona prefers an artifact type this server cannot
- * build yet ("story" or "pulse"), surface an honest openQuestion naming the
- * phase where that capability lands, rather than silently ignoring the
- * preference or pretending to honor it. "dashboard" (or no preference) needs
- * no note — this proposal already is a dashboard.
+ * build yet ("pulse"), surface an honest openQuestion naming the phase where
+ * that capability lands, rather than silently ignoring the preference or
+ * pretending to honor it. "dashboard" (or no preference) needs no note — this
+ * proposal already is a dashboard.
+ *
+ * Phase E4: "story" is no longer a stub — `generatePlan()` emits a
+ * deterministic `storyArc` for it and `buildProposal` surfaces the arc via
+ * `storyOutline` below, so no "not yet available" note is warranted for that
+ * preference anymore.
  */
 function detectPersonaArtifactQuestion(plan: DashboardPlan): string | undefined {
   const artifact = plan.personaPreferredArtifact;
-  if (artifact === undefined || artifact === "dashboard") return undefined;
+  if (artifact === undefined || artifact === "dashboard" || artifact === "story") {
+    return undefined;
+  }
 
   const personaLabel = plan.personaName ? `The "${plan.personaName}" persona` : "This persona";
-  const phase = artifact === "story" ? "Phase E4" : "Phase E3";
   return (
-    `${personaLabel} prefers a "${artifact}" artifact; ${artifact} generation lands in ${phase} ` +
+    `${personaLabel} prefers a "${artifact}" artifact; ${artifact} generation lands in Phase E3 ` +
     "and is not yet available — this proposal is a dashboard."
   );
+}
+
+// ---------------------------------------------------------------------------
+// Phase E4 — story outline
+// ---------------------------------------------------------------------------
+
+/** Ordered captions from `plan.storyArc`, or undefined when there is none. */
+function buildStoryOutline(plan: DashboardPlan): string[] | undefined {
+  if (!plan.storyArc || plan.storyArc.length === 0) return undefined;
+  return plan.storyArc.map((p) => p.caption);
 }
 
 /**
@@ -430,7 +446,17 @@ export function buildProposal(plan: DashboardPlan): DashboardProposal {
   const kpiStrip = buildKpiStripItems(plan);
   const views = buildViews(plan);
   const layoutSummary = buildLayoutSummary(plan);
-  const summary = applyToneToSummary(buildSummary(plan), layoutSummary, plan.personaTone);
+  let summary = applyToneToSummary(buildSummary(plan), layoutSummary, plan.personaTone);
+
+  // Phase E4: surface the story arc (if any) both as a structured field
+  // (storyOutline, for programmatic use) and as a sentence in the
+  // human-readable summary (so it isn't buried in the plan JSON).
+  const storyOutline = buildStoryOutline(plan);
+  if (storyOutline) {
+    summary +=
+      ` This proposal includes a ${storyOutline.length}-point story: ` +
+      `${storyOutline.join(" -> ")}.`;
+  }
 
   const artifactNote = detectPersonaArtifactQuestion(plan);
   const combinedOpenQuestions = [
@@ -453,6 +479,7 @@ export function buildProposal(plan: DashboardPlan): DashboardProposal {
     views,
     layoutSummary,
     ...(openQuestions !== undefined ? { openQuestions } : {}),
+    ...(storyOutline !== undefined ? { storyOutline } : {}),
     plan,
   };
 

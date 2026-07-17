@@ -233,6 +233,20 @@ export const TextZoneSchema = z.object({
 });
 export type TextZone = z.infer<typeof TextZoneSchema>;
 
+/**
+ * One point in a story arc (Phase E4 — Stories, BI_DESIGN §9).
+ * `capturedSheet` must name one of the plan's own sheet titles — `plan.ts`'s
+ * `buildStoryArc` only ever emits references to `plan.sheets[].title`, and
+ * `build_from_plan` re-validates this before calling the sidecar (the
+ * builder validates it a third time against the actual workbook, as the
+ * final backstop — see `twb_builder._build_story`).
+ */
+export const StoryArcPointSchema = z.object({
+  caption: z.string().min(1),
+  capturedSheet: z.string().min(1),
+});
+export type StoryArcPoint = z.infer<typeof StoryArcPointSchema>;
+
 // ---------------------------------------------------------------------------
 // DashboardPlan
 // ---------------------------------------------------------------------------
@@ -266,17 +280,35 @@ export const DashboardPlanSchema = z.object({
   // --- Phase E1 (Slice C): persona artifact/tone provenance (BI_DESIGN §9) ---
   /**
    * The resolved persona's preferred artifact type (from brand.yaml), if any.
-   * `buildProposal` surfaces an honest openQuestion when this is "story" or
-   * "pulse" — those artifact types are not yet buildable by this server
-   * (Phase E4 / E3 respectively); this plan always describes a dashboard.
+   * "story" now drives `generatePlan()` to emit a `storyArc` (Phase E4, see
+   * below) instead of a stub; `buildProposal` still surfaces an honest
+   * openQuestion for "pulse" (Phase E3 provenance-only — no dashboard build
+   * path consumes it yet).
    */
   personaPreferredArtifact: PersonaPreferredArtifactEnum.optional(),
   /**
    * The resolved persona's tone preference (from brand.yaml), if any.
    * `buildProposal` trims the proposal summary to its first sentence + the
-   * layout line when this is "concise".
+   * layout line when this is "concise". Also drives the story-point caption
+   * style in `buildStoryArc` (Phase E4): "concise" → the sheet's own title;
+   * default/"detailed" → a short narrative sentence.
    */
   personaTone: PersonaToneEnum.optional(),
+  // --- Phase E4: deterministic story arc (Pillar E, BI_DESIGN §9) ---
+  /**
+   * Ordered story points, emitted by `generatePlan()` when the resolved
+   * persona prefers "story" artifacts OR the business question itself uses
+   * story/narrative/presentation language. Every `capturedSheet` is one of
+   * this plan's own `sheets[].title` values. Absent when no story arc was
+   * warranted for this plan.
+   */
+  storyArc: z.array(StoryArcPointSchema).optional(),
+  /**
+   * Display name for the story (before `build_from_plan` applies the
+   * `"Story: "` prefix the Tableau story dashboard name requires). Present
+   * iff `storyArc` is present.
+   */
+  storyName: z.string().optional(),
 });
 
 export type DashboardPlan = z.infer<typeof DashboardPlanSchema>;
@@ -366,6 +398,12 @@ export const DashboardProposalSchema = z.object({
    * Present only when the proposal is preliminary.
    */
   openQuestions: z.array(z.string()).optional(),
+  /**
+   * Ordered captions from `plan.storyArc`, if any (Phase E4). Mirrors
+   * `plan.storyArc.map(p => p.caption)` — surfaced here so a caller can
+   * render the story outline without re-deriving it from the plan.
+   */
+  storyOutline: z.array(z.string()).optional(),
   /**
    * The ready-to-execute plan embedded in the proposal.
    * The agent passes this verbatim to `build_from_plan` on user confirmation.

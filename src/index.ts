@@ -22,13 +22,14 @@ import { registerGetDatasourceFields } from "./tools/getDatasourceFields.js";
 import { registerScheduleTools } from "./tools/schedules.js";
 import { registerWebhookTools } from "./tools/webhooks.js";
 import { registerCreateLiveDatasource } from "./tools/createLiveDatasource.js";
+import { registerPulseTools } from "./tools/pulse.js";
 
 /** stderr only — stdout is reserved for the MCP stdio transport. */
 function log(message: string): void {
   process.stderr.write(`[tableau-mcp-publish] ${message}\n`);
 }
 
-/** Register all 23 tools onto the server. Exported for tests. */
+/** Register all 27 tools onto the server. Exported for tests. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerProjectTools(server, ctx);
   registerContentTools(server, ctx);
@@ -53,6 +54,8 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerWebhookTools(server, ctx);
   // E2 slice C — live Cloud connections (Snowflake/Presto) + embedded credentials
   registerCreateLiveDatasource(server, ctx);
+  // E3 — Tableau Pulse metric definitions + metrics
+  registerPulseTools(server, ctx);
 }
 
 async function main(): Promise<void> {

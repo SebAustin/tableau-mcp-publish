@@ -65,6 +65,15 @@ function makeCtx() {
       { webhookId: "WH1", name: "On refresh", event: "DatasourceRefreshSucceeded", url: "https://example.com/hook" },
     ]),
     deleteWebhook: vi.fn().mockResolvedValue(undefined),
+    createPulseDefinition: vi.fn().mockResolvedValue({
+      definition: { definitionId: "DEF1", name: "Sales", datasourceLuid: "DS1" },
+      warnings: [],
+    }),
+    listPulseDefinitions: vi.fn().mockResolvedValue([
+      { definitionId: "DEF1", name: "Sales", datasourceLuid: "DS1" },
+    ]),
+    createPulseMetric: vi.fn().mockResolvedValue({ metricId: "M1", definitionId: "DEF1" }),
+    deletePulseDefinition: vi.fn().mockResolvedValue(undefined),
   };
   const sidecar = {
     buildDatasourceFromQuery: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/x.tdsx" }),
@@ -106,8 +115,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 23 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(23);
+  it("registers all 27 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(27);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -146,6 +155,11 @@ describe("tool registration", () => {
       "delete_webhook",
       // E2 slice C — live Cloud connections + embedded credentials
       "create_live_datasource",
+      // E3 — Tableau Pulse metrics
+      "create_pulse_definition",
+      "list_pulse_definitions",
+      "create_pulse_metric",
+      "delete_pulse_definition",
     ]) {
       expect(names).toContain(t);
     }
@@ -1184,5 +1198,89 @@ describe("create_live_datasource (E2 slice C)", () => {
       true,
       expect.anything(),
     );
+  });
+});
+
+describe("create_pulse_definition / list_pulse_definitions / create_pulse_metric / delete_pulse_definition (E3)", () => {
+  const salesDefinition = {
+    name: "Sales",
+    datasourceLuid: "DS1",
+    measure: { field: "Sales", aggregation: "SUM" },
+    timeDimension: { field: "Order Date" },
+  };
+
+  it("create_pulse_definition forwards the definition input and skipPreflight to the REST client", async () => {
+    const res = await invoke("create_pulse_definition", salesDefinition);
+    expect(ctx.rest.createPulseDefinition).toHaveBeenCalledWith(
+      {
+        name: "Sales",
+        datasourceLuid: "DS1",
+        measure: { field: "Sales", aggregation: "SUM" },
+        timeDimension: { field: "Order Date" },
+        filters: [],
+        allowedDimensions: [],
+        numberFormat: "NUMBER",
+        sentiment: "NONE",
+        isRunningTotal: false,
+      },
+      { skipPreflight: false },
+    );
+    expect(res.structuredContent).toMatchObject({ definitionId: "DEF1", name: "Sales" });
+    expect((res.structuredContent as { note: string }).note).toMatch(/Cloud-only/);
+  });
+
+  it("create_pulse_definition passes skipPreflight=true through", async () => {
+    await invoke("create_pulse_definition", { ...salesDefinition, skipPreflight: true });
+    expect(ctx.rest.createPulseDefinition).toHaveBeenCalledWith(expect.anything(), { skipPreflight: true });
+  });
+
+  it("create_pulse_definition surfaces pre-flight warnings in the returned note", async () => {
+    ctx.rest.createPulseDefinition.mockResolvedValueOnce({
+      definition: { definitionId: "DEF1", name: "Sales" },
+      warnings: ['Measure "Sales" has a VDS defaultAggregation of "AVERAGE", which differs from "SUM".'],
+    });
+    const res = await invoke("create_pulse_definition", salesDefinition);
+    expect((res.structuredContent as { note: string }).note).toMatch(/Pre-flight notes:.*AVERAGE/s);
+  });
+
+  it("create_pulse_definition rejects an aggregation outside the enum", async () => {
+    await expect(
+      invoke("create_pulse_definition", {
+        ...salesDefinition,
+        measure: { field: "Sales", aggregation: "TOTAL" },
+      }),
+    ).rejects.toThrow();
+    expect(ctx.rest.createPulseDefinition).not.toHaveBeenCalled();
+  });
+
+  it("list_pulse_definitions returns the mapped definition list with a count", async () => {
+    const res = await invoke("list_pulse_definitions", {});
+    expect(res.structuredContent).toEqual({
+      definitions: [{ definitionId: "DEF1", name: "Sales", datasourceLuid: "DS1" }],
+      count: 1,
+    });
+  });
+
+  it("create_pulse_metric forwards the input (with defaults applied) and returns metricId", async () => {
+    const res = await invoke("create_pulse_metric", { definitionId: "DEF1" });
+    expect(ctx.rest.createPulseMetric).toHaveBeenCalledWith({
+      definitionId: "DEF1",
+      filters: [],
+      granularity: "GRANULARITY_BY_MONTH",
+      range: "RANGE_LAST_COMPLETE",
+      comparison: "TIME_COMPARISON_PREVIOUS_PERIOD",
+    });
+    expect(res.structuredContent).toEqual({ metricId: "M1" });
+  });
+
+  it("delete_pulse_definition refuses without confirm=true", async () => {
+    await expect(invoke("delete_pulse_definition", { definitionId: "DEF1" })).rejects.toThrow(/confirm=true/);
+    expect(ctx.rest.deletePulseDefinition).not.toHaveBeenCalled();
+  });
+
+  it("delete_pulse_definition proceeds with confirm=true", async () => {
+    const res = await invoke("delete_pulse_definition", { definitionId: "DEF1", confirm: true });
+    expect(ctx.rest.deletePulseDefinition).toHaveBeenCalledWith("DEF1");
+    expect(res.structuredContent).toEqual({ deleted: true, definitionId: "DEF1" });
   });
 });

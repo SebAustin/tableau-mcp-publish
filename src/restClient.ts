@@ -27,12 +27,31 @@ import {
   type Webhook,
 } from "./rest/webhooks.js";
 import { buildConnectionCredentialsXml, type DatasourceCredentials } from "./rest/credentials.js";
+import {
+  createDefinition,
+  createMetric,
+  deleteDefinition,
+  getDefinition,
+  listDefinitions,
+  listMetrics,
+  validatePulsePreflight,
+  type CreatePulseDefinitionInput,
+  type CreatePulseMetricInput,
+  type PulseDefinition,
+  type PulseMetric,
+} from "./rest/pulse.js";
 
 export { TableauApiError } from "./rest/errors.js";
 export type { VdsField } from "./rest/vds.js";
 export type { ExtractRefreshTask, ExtractRefreshType, ScheduleSpec, ScheduleTarget } from "./rest/schedules.js";
 export type { CreateWebhookInput, Webhook, WebhookEvent } from "./rest/webhooks.js";
 export type { DatasourceCredentials } from "./rest/credentials.js";
+export type {
+  CreatePulseDefinitionInput,
+  CreatePulseMetricInput,
+  PulseDefinition,
+  PulseMetric,
+} from "./rest/pulse.js";
 
 export interface Session {
   token: string;
@@ -582,6 +601,86 @@ export class TableauRestClient {
   async getDatasourceFields(datasourceLuid: string): Promise<VdsField[]> {
     const { token } = this.requireSession();
     return readDatasourceMetadata({ server: this.cfg.server, token }, datasourceLuid, this.retryDeps);
+  }
+
+  private pulseAuth(): { server: string; token: string } {
+    const { token } = this.requireSession();
+    return { server: this.cfg.server, token };
+  }
+
+  /**
+   * Create a Tableau Pulse metric definition (Phase E3 — see `rest/pulse.ts`
+   * for the full API + VERIFY-LIVE documentation). Cloud-only.
+   *
+   * Runs a VDS-backed pre-flight check before calling Pulse, unless
+   * `skipPreflight` is set:
+   *   - if VDS itself is unavailable (network error, VDS disabled, etc.), the
+   *     check is SKIPPED with a warning rather than blocking creation —
+   *     resilience over strictness when the *validator* is down, not the
+   *     *input*;
+   *   - if VDS answers but the measure/time_dimension field is missing, or
+   *     the time_dimension isn't date-like, this throws (hard fail) with the
+   *     available field list — see `validatePulsePreflight`;
+   *   - a measure aggregation mismatch is a soft warning, not a hard fail.
+   *
+   * Not retried: POST is non-idempotent (see `rest/pulse.ts`).
+   */
+  async createPulseDefinition(
+    input: CreatePulseDefinitionInput,
+    opts: { skipPreflight?: boolean } = {},
+  ): Promise<{ definition: PulseDefinition; warnings: string[] }> {
+    const warnings: string[] = [];
+
+    if (opts.skipPreflight) {
+      warnings.push(
+        "Pre-flight validation skipped (skipPreflight=true): field existence and aggregation " +
+          "were not verified against the datasource.",
+      );
+    } else {
+      let fields: VdsField[] | undefined;
+      try {
+        fields = await this.getDatasourceFields(input.datasourceLuid);
+      } catch (err: unknown) {
+        warnings.push(
+          "Pre-flight validation skipped: could not fetch datasource fields via VDS " +
+            `(${err instanceof Error ? err.message : String(err)}). Proceeding without field ` +
+            "verification — pass skipPreflight:true to silence this warning, or verify field " +
+            "names manually.",
+        );
+      }
+      if (fields) {
+        const result = validatePulsePreflight(fields, input.measure, input.timeDimension);
+        warnings.push(...result.warnings);
+      }
+    }
+
+    const definition = await createDefinition(this.pulseAuth(), input, this.retryDeps);
+    return { definition, warnings };
+  }
+
+  /** List every Pulse metric definition on the site. Read-only GET — retriable per `rest/pulse.ts`'s policy. */
+  async listPulseDefinitions(): Promise<PulseDefinition[]> {
+    return listDefinitions(this.pulseAuth(), this.retryDeps);
+  }
+
+  /** Fetch a single Pulse metric definition by id. Read-only GET — retriable per `rest/pulse.ts`'s policy. */
+  async getPulseDefinition(definitionId: string): Promise<PulseDefinition> {
+    return getDefinition(this.pulseAuth(), definitionId, this.retryDeps);
+  }
+
+  /** Delete a Pulse metric definition by id. Not retried — see `rest/pulse.ts`'s `deleteDefinition` VERIFY-LIVE note. */
+  async deletePulseDefinition(definitionId: string): Promise<void> {
+    await deleteDefinition(this.pulseAuth(), definitionId, this.retryDeps);
+  }
+
+  /** Create a Pulse metric instance from an existing definition. Not retried: POST is non-idempotent. */
+  async createPulseMetric(input: CreatePulseMetricInput): Promise<PulseMetric> {
+    return createMetric(this.pulseAuth(), input, this.retryDeps);
+  }
+
+  /** List every metric instance built on a Pulse definition. Read-only GET — retriable per `rest/pulse.ts`'s policy. */
+  async listPulseMetrics(definitionId: string): Promise<PulseMetric[]> {
+    return listMetrics(this.pulseAuth(), definitionId, this.retryDeps);
   }
 
   async refreshDatasource(datasourceId: string): Promise<void> {

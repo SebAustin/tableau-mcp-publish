@@ -6,9 +6,31 @@ import type { Config } from "./config.js";
 import { TableauApiError, parseTableauErrorBody, parseRetryAfterMs } from "./rest/errors.js";
 import { withRetry, DEFAULT_RETRY_POLICY, type RetryDeps, type RetrySignal } from "./rest/retry.js";
 import { readDatasourceMetadata, type VdsField } from "./rest/vds.js";
+import { xmlEscape, asArray } from "./rest/xml.js";
+import {
+  buildExtractRefreshTaskXml,
+  parseExtractRefreshTaskList,
+  parseExtractRefreshTaskResponse,
+  validateScheduleSpec,
+  RUN_NOW_BODY,
+  type ExtractRefreshTask,
+  type ExtractRefreshType,
+  type ScheduleSpec,
+  type ScheduleTarget,
+} from "./rest/schedules.js";
+import {
+  buildCreateWebhookXml,
+  parseWebhook,
+  parseWebhookList,
+  validateCreateWebhookInput,
+  type CreateWebhookInput,
+  type Webhook,
+} from "./rest/webhooks.js";
 
 export { TableauApiError } from "./rest/errors.js";
 export type { VdsField } from "./rest/vds.js";
+export type { ExtractRefreshTask, ExtractRefreshType, ScheduleSpec, ScheduleTarget } from "./rest/schedules.js";
+export type { CreateWebhookInput, Webhook, WebhookEvent } from "./rest/webhooks.js";
 
 export interface Session {
   token: string;
@@ -78,20 +100,6 @@ export function splitIntoChunks(buf: Buffer, chunkSize: number): Buffer[] {
     chunks.push(buf.subarray(offset, Math.min(offset + chunkSize, buf.length)));
   }
   return chunks;
-}
-
-function asArray<T>(value: T | T[] | undefined | null): T[] {
-  if (value == null) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 interface MultipartPart {
@@ -544,6 +552,81 @@ export class TableauRestClient {
     });
   }
 
+  /**
+   * Create a Cloud extract-refresh task with an embedded recurring schedule
+   * (Phase E2 slice B — see `rest/schedules.ts` for the full API + caveat
+   * documentation). Distinct from {@link refreshDatasource}, which triggers a
+   * one-off immediate refresh with no schedule involved. Not retried: POST is
+   * non-idempotent by default, and retrying a lost-response create could
+   * double-create the task.
+   */
+  async scheduleRefresh(
+    target: ScheduleTarget,
+    type: ExtractRefreshType,
+    spec: ScheduleSpec,
+  ): Promise<ExtractRefreshTask> {
+    const { siteId } = this.requireSession();
+    const validated = validateScheduleSpec(spec);
+    const body = buildExtractRefreshTaskXml(target, type, validated);
+    const json = await this.api("POST", `/sites/${siteId}/tasks/extractRefreshes`, {
+      body,
+      contentType: "text/xml",
+    });
+    return parseExtractRefreshTaskResponse(json);
+  }
+
+  /** Update an existing extract-refresh task's target/type/schedule. Not retried (POST, non-idempotent). */
+  async updateRefreshSchedule(
+    taskId: string,
+    target: ScheduleTarget,
+    type: ExtractRefreshType,
+    spec: ScheduleSpec,
+  ): Promise<ExtractRefreshTask> {
+    const { siteId } = this.requireSession();
+    const validated = validateScheduleSpec(spec);
+    const body = buildExtractRefreshTaskXml(target, type, validated);
+    const json = await this.api("POST", `/sites/${siteId}/tasks/extractRefreshes/${taskId}`, {
+      body,
+      contentType: "text/xml",
+    });
+    return parseExtractRefreshTaskResponse(json);
+  }
+
+  /** List every extract-refresh task on the site. Read-only GET — retriable per the default policy. */
+  async listRefreshSchedules(): Promise<ExtractRefreshTask[]> {
+    const { siteId } = this.requireSession();
+    const json = await this.api("GET", `/sites/${siteId}/tasks/extractRefreshes`);
+    return parseExtractRefreshTaskList(json);
+  }
+
+  /** Fetch a single extract-refresh task by its taskId. Read-only GET — retriable per the default policy. */
+  async getRefreshSchedule(taskId: string): Promise<ExtractRefreshTask> {
+    const { siteId } = this.requireSession();
+    const json = await this.api("GET", `/sites/${siteId}/tasks/extractRefreshes/${taskId}`);
+    return parseExtractRefreshTaskResponse(json);
+  }
+
+  /** Delete an extract-refresh task. DELETE is idempotent by REST semantics — retriable per the default policy. */
+  async deleteRefreshSchedule(taskId: string): Promise<void> {
+    const { siteId } = this.requireSession();
+    await this.api("DELETE", `/sites/${siteId}/tasks/extractRefreshes/${taskId}`, { parse: "none" });
+  }
+
+  /**
+   * Run an existing scheduled task immediately, independent of its recurring
+   * cadence. Distinct from {@link refreshDatasource} (a direct, schedule-free
+   * one-off refresh on the datasource itself). Not retried: POST is
+   * non-idempotent, and retrying a lost-response call risks double-queuing a run.
+   */
+  async runRefreshScheduleNow(taskId: string): Promise<void> {
+    const { siteId } = this.requireSession();
+    await this.api("POST", `/sites/${siteId}/tasks/extractRefreshes/${taskId}/runNow`, {
+      body: RUN_NOW_BODY,
+      contentType: "text/xml",
+      parse: "none",
+    });
+  }
+
   async listContent(): Promise<ContentItem[]> {
     const { siteId } = this.requireSession();
     const datasources = await this.getAllPages<ContentItem>("/datasources", (page) => {
@@ -600,6 +683,49 @@ export class TableauRestClient {
       contentType: "text/xml",
       parse: "none",
     });
+  }
+
+  /**
+   * Create a webhook (Phase E2 slice B — see `rest/webhooks.ts` for payload
+   * shape + event list documentation). Requires site-administrator
+   * privileges upstream: a 403 is rewrapped with an explicit hint instead of
+   * a bare "Forbidden" so the failure is actionable. Not retried (POST,
+   * non-idempotent).
+   */
+  async createWebhook(input: CreateWebhookInput): Promise<Webhook> {
+    const { siteId } = this.requireSession();
+    const validated = validateCreateWebhookInput(input);
+    const body = buildCreateWebhookXml(validated);
+    try {
+      const json = await this.api("POST", `/sites/${siteId}/webhooks`, { body, contentType: "text/xml" });
+      return parseWebhook(json);
+    } catch (err: unknown) {
+      if (err instanceof TableauApiError && err.status === 403) {
+        throw new TableauApiError({
+          status: err.status,
+          method: err.method,
+          path: err.path,
+          code: err.code,
+          summary: `${err.summary ? `${err.summary} — ` : ""}creating a webhook requires site administrator privileges.`,
+          detail: err.detail,
+          retryAfterMs: err.retryAfterMs,
+        });
+      }
+      throw err;
+    }
+  }
+
+  /** List every webhook on the site. Read-only GET — retriable per the default policy. */
+  async listWebhooks(): Promise<Webhook[]> {
+    const { siteId } = this.requireSession();
+    const json = await this.api("GET", `/sites/${siteId}/webhooks`);
+    return parseWebhookList(json);
+  }
+
+  /** Delete a webhook by its id. DELETE is idempotent by REST semantics — retriable per the default policy. */
+  async deleteWebhook(webhookId: string): Promise<void> {
+    const { siteId } = this.requireSession();
+    await this.api("DELETE", `/sites/${siteId}/webhooks/${webhookId}`, { parse: "none" });
   }
 }
 

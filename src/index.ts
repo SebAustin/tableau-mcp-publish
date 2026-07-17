@@ -19,13 +19,15 @@ import { registerDesignDashboard } from "./tools/designDashboard.js";
 import { registerBuildFromPlan } from "./tools/buildFromPlan.js";
 import { registerValidateBrand } from "./tools/validateBrand.js";
 import { registerGetDatasourceFields } from "./tools/getDatasourceFields.js";
+import { registerScheduleTools } from "./tools/schedules.js";
+import { registerWebhookTools } from "./tools/webhooks.js";
 
 /** stderr only — stdout is reserved for the MCP stdio transport. */
 function log(message: string): void {
   process.stderr.write(`[tableau-mcp-publish] ${message}\n`);
 }
 
-/** Register all 16 tools onto the server. Exported for tests. */
+/** Register all 22 tools onto the server. Exported for tests. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerProjectTools(server, ctx);
   registerContentTools(server, ctx);
@@ -45,6 +47,9 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerValidateBrand(server, ctx);
   // E2 — VDS field metadata (Foundation slice)
   registerGetDatasourceFields(server, ctx);
+  // E2 slice B — Cloud extract-refresh scheduling + webhooks
+  registerScheduleTools(server, ctx);
+  registerWebhookTools(server, ctx);
 }
 
 async function main(): Promise<void> {

@@ -48,6 +48,23 @@ function makeCtx() {
       { fieldName: "Sales", fieldCaption: "Sales", dataType: "REAL", defaultAggregation: "SUM" },
       { fieldName: "Order Date", fieldCaption: "Order Date", dataType: "DATE" },
     ]),
+    scheduleRefresh: vi.fn().mockResolvedValue({
+      taskId: "TASK1",
+      type: "FullRefresh",
+      frequency: "Daily",
+      nextRunAt: "2026-07-18T03:30:00Z",
+    }),
+    listRefreshSchedules: vi.fn().mockResolvedValue([
+      { taskId: "TASK1", type: "FullRefresh", targetKind: "datasource", targetId: "DS", frequency: "Daily", nextRunAt: "2026-07-18T03:30:00Z" },
+    ]),
+    deleteRefreshSchedule: vi.fn().mockResolvedValue(undefined),
+    createWebhook: vi
+      .fn()
+      .mockResolvedValue({ webhookId: "WH1", name: "On refresh", event: "DatasourceRefreshSucceeded" }),
+    listWebhooks: vi.fn().mockResolvedValue([
+      { webhookId: "WH1", name: "On refresh", event: "DatasourceRefreshSucceeded", url: "https://example.com/hook" },
+    ]),
+    deleteWebhook: vi.fn().mockResolvedValue(undefined),
   };
   const sidecar = {
     buildDatasourceFromQuery: vi.fn().mockResolvedValue({ tdsxPath: "/tmp/x.tdsx" }),
@@ -88,8 +105,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 16 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(16);
+  it("registers all 22 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(22);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -119,6 +136,13 @@ describe("tool registration", () => {
       "validate_brand",
       // E2 — VDS field metadata
       "get_datasource_fields",
+      // E2 slice B — Cloud extract-refresh scheduling + webhooks
+      "schedule_refresh",
+      "list_refresh_schedules",
+      "delete_refresh_schedule",
+      "create_webhook",
+      "list_webhooks",
+      "delete_webhook",
     ]) {
       expect(names).toContain(t);
     }
@@ -904,5 +928,138 @@ describe("get_datasource_fields (E2 Foundation)", () => {
     await expect(invoke("get_datasource_fields", { datasourceLuid: "missing" })).rejects.toThrow(
       /not found/,
     );
+  });
+});
+
+describe("schedule_refresh / list_refresh_schedules / delete_refresh_schedule (E2 slice B)", () => {
+  const dailySpec = {
+    targetType: "datasource",
+    targetId: "DS1",
+    frequency: "Daily",
+    frequencyDetails: { start: "03:30:00" },
+  };
+
+  it("schedule_refresh creates a task, always includes the Bridge/connectivity note", async () => {
+    const res = await invoke("schedule_refresh", dailySpec);
+    expect(ctx.rest.scheduleRefresh).toHaveBeenCalledWith(
+      { kind: "datasource", id: "DS1" },
+      "FullRefresh", // default type
+      { frequency: "Daily", frequencyDetails: { start: "03:30:00", intervals: [] } },
+    );
+    expect(res.structuredContent).toMatchObject({
+      taskId: "TASK1",
+      frequency: "Daily",
+      nextRunAt: "2026-07-18T03:30:00Z",
+    });
+    expect((res.structuredContent as { note: string }).note).toMatch(/Tableau Bridge/);
+  });
+
+  it("schedule_refresh passes an explicit type through (e.g. IncrementalRefresh)", async () => {
+    await invoke("schedule_refresh", { ...dailySpec, type: "IncrementalRefresh" });
+    expect(ctx.rest.scheduleRefresh).toHaveBeenCalledWith(
+      { kind: "datasource", id: "DS1" },
+      "IncrementalRefresh",
+      expect.anything(),
+    );
+  });
+
+  it("schedule_refresh supports a workbook target", async () => {
+    await invoke("schedule_refresh", { ...dailySpec, targetType: "workbook", targetId: "WB1" });
+    expect(ctx.rest.scheduleRefresh).toHaveBeenCalledWith(
+      { kind: "workbook", id: "WB1" },
+      "FullRefresh",
+      expect.anything(),
+    );
+  });
+
+  it("list_refresh_schedules returns the mapped schedule list", async () => {
+    const res = await invoke("list_refresh_schedules", {});
+    expect(res.structuredContent).toEqual({
+      schedules: [
+        {
+          taskId: "TASK1",
+          type: "FullRefresh",
+          targetKind: "datasource",
+          targetId: "DS",
+          frequency: "Daily",
+          nextRunAt: "2026-07-18T03:30:00Z",
+        },
+      ],
+    });
+  });
+
+  it("delete_refresh_schedule refuses without confirm=true", async () => {
+    await expect(invoke("delete_refresh_schedule", { taskId: "TASK1" })).rejects.toThrow(
+      /confirm=true/,
+    );
+    expect(ctx.rest.deleteRefreshSchedule).not.toHaveBeenCalled();
+  });
+
+  it("delete_refresh_schedule proceeds with confirm=true", async () => {
+    const res = await invoke("delete_refresh_schedule", { taskId: "TASK1", confirm: true });
+    expect(ctx.rest.deleteRefreshSchedule).toHaveBeenCalledWith("TASK1");
+    expect(res.structuredContent).toEqual({ deleted: true, taskId: "TASK1" });
+  });
+});
+
+describe("create_webhook / list_webhooks / delete_webhook (E2 slice B)", () => {
+  it("create_webhook validates HTTPS and forwards to the REST client", async () => {
+    const res = await invoke("create_webhook", {
+      name: "On refresh",
+      event: "DatasourceRefreshSucceeded",
+      url: "https://example.com/hook",
+    });
+    expect(ctx.rest.createWebhook).toHaveBeenCalledWith({
+      name: "On refresh",
+      event: "DatasourceRefreshSucceeded",
+      url: "https://example.com/hook",
+    });
+    expect(res.structuredContent).toEqual({
+      webhookId: "WH1",
+      name: "On refresh",
+      event: "DatasourceRefreshSucceeded",
+    });
+  });
+
+  it("create_webhook rejects a non-HTTPS url", async () => {
+    await expect(
+      invoke("create_webhook", {
+        name: "Insecure",
+        event: "DatasourceRefreshSucceeded",
+        url: "http://example.com/hook",
+      }),
+    ).rejects.toThrow(/HTTPS/);
+    expect(ctx.rest.createWebhook).not.toHaveBeenCalled();
+  });
+
+  it("create_webhook rejects an event outside the enum", async () => {
+    await expect(
+      invoke("create_webhook", {
+        name: "Bad event",
+        event: "SomethingMadeUp",
+        url: "https://example.com/hook",
+      }),
+    ).rejects.toThrow();
+    expect(ctx.rest.createWebhook).not.toHaveBeenCalled();
+  });
+
+  it("list_webhooks returns the mapped webhook list", async () => {
+    const res = await invoke("list_webhooks", {});
+    expect(res.structuredContent).toEqual({
+      webhooks: [
+        { webhookId: "WH1", name: "On refresh", event: "DatasourceRefreshSucceeded", url: "https://example.com/hook" },
+      ],
+    });
+  });
+
+  it("delete_webhook refuses without confirm=true", async () => {
+    await expect(invoke("delete_webhook", { webhookId: "WH1" })).rejects.toThrow(/confirm=true/);
+    expect(ctx.rest.deleteWebhook).not.toHaveBeenCalled();
+  });
+
+  it("delete_webhook proceeds with confirm=true", async () => {
+    const res = await invoke("delete_webhook", { webhookId: "WH1", confirm: true });
+    expect(ctx.rest.deleteWebhook).toHaveBeenCalledWith("WH1");
+    expect(res.structuredContent).toEqual({ deleted: true, webhookId: "WH1" });
   });
 });

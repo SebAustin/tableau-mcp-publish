@@ -390,3 +390,30 @@ republished (overwrite) in 4.7s → https://10ax.online.tableau.com/#/site/sebau
 
 **Pending live proofs (need user resources):** Snowflake scheduled server-side refresh (needs
 account creds); the four VERIFY-LIVE schedule-XML details.
+
+---
+
+# E4 — Stories live (2026-07-17)
+
+A generated Tableau STORY workbook published and accepted by Tableau Cloud:
+
+| Artifact | URL |
+|---|---|
+| Story workbook ("Superstore Executive Story (demo)") | https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2523370 |
+
+6-point persona-toned arc over the exec sheets (headline KPIs → Profit → Quantity → Discount →
+Sales by Category → Sales by State). Structure: `<dashboard type='storyboard'>` + paired
+flipboard-nav/flipboard + `<story-points captured-sheet=…>`, mirroring the real reference
+workbook and XSD-validated. En route, a latent XSD violation was found and fixed (one shared
+`<dashboards>` container instead of per-call sibling wrappers).
+
+# E3 — Pulse (code-complete; live proof blocked on fixture)
+
+All 4 Pulse tools shipped (27 tools) with the exact researched payload + VDS pre-flight. Live
+attempt: datasource republished with REAL date columns (VDS: `Order Date: DATETIME` — the date-
+coercion fix proven live), but `POST /api/-/pulse/definitions` returns a bare 400: the
+`basic_specification` internals are specified-by-example only (Tableau's own utilities repo
+clones, never constructs, this block). Pending: user creates ONE metric in the Pulse UI → we GET
+it, lock the fixture, correct the client, re-prove live.
+
+Gate at this point: **521 TS + 338 Python = 859 tests.**

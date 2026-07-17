@@ -54,5 +54,9 @@ and self-contained.
 a follow-up issue). Snowflake/Postgres drivers are optional `connectors` extras so CI exercises the
 authoring path without DB drivers; CSV always works.
 
+> **SUPERSEDED (2026-07-17):** the deferral was lifted — `create_live_datasource` ships live
+> Snowflake/Presto datasources with embedded credentials. See
+> [ADR-0009](adr/0009-live-connection-credential-handling.md) for the current decision.
+
 **Consequences.** Smaller, reliable surface for v0.1; CI stays fast and driver-free; live
 connections are a clean future addition.

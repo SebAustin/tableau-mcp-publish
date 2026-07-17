@@ -34,7 +34,7 @@ separately.
 
 ## Capability comparison
 
-| Capability | Official `@tableau/mcp-server` (v2.18.x) | `tableau-mcp-publish` (this, 14 tools) |
+| Capability | Official `@tableau/mcp-server` (v2.18.x) | `tableau-mcp-publish` (this, 27 tools) |
 |---|---|---|
 | Query a published datasource (VizQL Data Service) | ✅ web variant | — (use the official server) |
 | Read column metadata (Metadata API) | ✅ web variant | — |

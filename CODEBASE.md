@@ -2,12 +2,23 @@
 
 ## Overview
 
-`tableau-mcp-publish` is the **write side** of Tableau MCP. It exposes 14 MCP tools over stdio that let an AI agent turn a SQL query, CSV file, or inline records into a fully governed, published Tableau datasource and starter workbook on Tableau Cloud — in a single tool call. It is architecturally complementary to `tableau/tableau-mcp`, which covers reading, querying, Desktop-local workbook editing, and admin-gated content lifecycle.
+`tableau-mcp-publish` is the **write side** of Tableau MCP — **vibe-BI on Tableau Cloud**. It
+exposes **27** MCP tools over stdio that let an AI agent go from a prompt to governed datasources
+(files, queries, or live Snowflake/Presto connections), branded persona-aware dashboards, Tableau
+Stories, Pulse metrics, and scheduled/cron-automated refresh — in a handful of tool calls. It is
+architecturally complementary to `tableau/tableau-mcp`, which covers reading, querying,
+Desktop-local workbook editing, and admin-gated content lifecycle.
 
 The system has two layers:
 
-1. **TypeScript MCP server** (`src/`) — handles MCP protocol, Tableau REST API authentication, project resolution, and publish (single-request or chunked). Spawns the Python sidecar on startup.
-2. **Python FastAPI sidecar** (`sidecar/`) — does all binary file authoring: Hyper extract creation (via pantab), `.tdsx` packaging (hand-built TDS XML + zip), and `.twbx` workbook XML generation. Lives at `http://127.0.0.1:8899`, bound loopback-only, guarded by a per-spawn random token.
+1. **TypeScript MCP server** (`src/`) — MCP protocol, Tableau REST/VDS/Pulse API access (with
+   bounded retry/backoff), project resolution, publish (single-request or chunked), the
+   deterministic BI planner, and brand-kit/persona resolution. Spawns the Python sidecar on
+   startup.
+2. **Python FastAPI sidecar** (`sidecar/`) — does all binary file authoring: Hyper extract creation
+   (via pantab), `.tdsx`/`.tds` packaging (hand-built XML + zip), and `.twbx` workbook XML
+   generation (including branded output and Tableau Stories). Bound loopback-only, guarded by a
+   per-spawn random token.
 
 ---
 
@@ -21,6 +32,7 @@ The system has two layers:
 | MCP SDK | `@modelcontextprotocol/sdk` | 1.29.0 |
 | HTTP client | `undici` | 7.28.0 |
 | Schema validation | `zod` | 3.25.76 |
+| YAML parsing | `yaml` | 2.9.0 — added for `brand.yaml` (Phase E1) |
 | Test runner | Vitest | 2.1.8 |
 | Linter | ESLint 9 + `typescript-eslint` | 9.17.0 / 8.18.2 |
 | Python sidecar | Python | 3.12.x (uv-pinned; 3.12/3.13 both tested in CI) |
@@ -30,13 +42,15 @@ The system has two layers:
 | Hyper extract | tableauhyperapi | 0.0.21408 |
 | DataFrame bridge | pantab | 5.2.0 |
 | DataFrames | pandas | 2.2.3 |
+| Excel read | openpyxl | 3.1.5 |
+| Parquet read | pyarrow | (transitive via pantab) |
 | Python linter | ruff | 0.8.4 |
 | Python type check | mypy | 1.13.0 (strict) |
 | Python test | pytest | 8.3.4 |
 | Package manager (TS) | npm | — |
 | Package manager (Py) | uv | 0.11.18+ |
 
-Optional Python extras (`uv sync --extra connectors`): `snowflake-connector-python`, `psycopg[binary]`, `sqlalchemy` — not required for CI or the authoring path.
+Optional Python extras (`uv sync --extra connectors`): `snowflake-connector-python`, `psycopg[binary]`, `sqlalchemy` — used only by the `connection: {type: snowflake|postgres}` branch of `create_datasource_from_query`; not required for CI, the file-ingest path, or `create_live_datasource` (which builds a live `.tds` without a driver — Tableau's own connector handles the live query at render time, not this process).
 
 ---
 
@@ -46,22 +60,31 @@ Optional Python extras (`uv sync --extra connectors`): `snowflake-connector-pyth
 # TypeScript
 npm install
 npm run build         # tsc -> dist/
-npm run lint          # eslint .
-npm run typecheck     # tsc --noEmit
-npm test              # vitest run (87 tests)
+npm run lint           # eslint .
+npm run typecheck      # tsc --noEmit
+npm test                # vitest run (525 tests)
 
 # Python sidecar
 cd sidecar
-uv sync --all-extras  # create .venv with dev + connectors
-uv run ruff check .   # lint
-uv run mypy --strict . # type check
-uv run pytest -q      # 114 tests
+uv sync --all-extras   # create .venv with dev + connectors
+uv run ruff check .     # lint
+uv run mypy --strict .  # type check
+uv run pytest -q       # 338 tests
 
 # Full CI gate (equivalent to GitHub Actions)
 make ci               # build + lint + test + sidecar-lint + sidecar-typecheck + sidecar-test
 ```
 
-The `make ci` target does **not** run `npm run typecheck` separately; the `build` step already runs `tsc` (which is a full type + emit check). The `lint` step does not run `eslint` with `--max-warnings 0`; it exits non-zero only on errors.
+Real counts as of this branch (`feat/exec-dashboards`, re-run directly for this doc pass):
+**525 TypeScript tests across 23 files** (`npm test`) + **338 Python tests across 20 files**
+(`cd sidecar && uv run pytest -q`) = **863 tests total**. `ACCEPTANCE.md`'s last recorded gate
+(859) predates one small follow-up security-hardening commit (VB-02, shell-quoting the cron
+templates) that added 4 TypeScript tests — see `git log` for `fix(security): shell-quote cron-line
+interpolations`.
+
+The `make ci` target does **not** run `npm run typecheck` separately; the `build` step already runs
+`tsc` (which is a full type + emit check). The `lint` step does not run `eslint` with
+`--max-warnings 0`; it exits non-zero only on errors.
 
 ---
 
@@ -70,17 +93,32 @@ The `make ci` target does **not** run `npm run typecheck` separately; the `build
 ```
 tableau-mcp-publish/
 ├── src/
-│   ├── index.ts              # Entry point — registers all 14 tools, signs in, spawns sidecar, starts stdio transport
+│   ├── index.ts              # Entry point — registers all 27 tools, signs in, spawns sidecar, starts stdio transport
 │   ├── config.ts             # Zod schema for env-based config (SERVER, SITE_NAME, PAT_NAME, PAT_VALUE…)
-│   ├── restClient.ts         # TableauRestClient: signIn/signOut, publish (single + chunked), CRUD, permissions
+│   ├── restClient.ts         # TableauRestClient: signIn/signOut, publish (single + chunked), CRUD, permissions,
+│   │                         #   delegates schedule/webhook/Pulse/VDS request-building to rest/
 │   ├── sidecar.ts            # AuthoringSidecar: spawns uv/uvicorn, health-polls, posts to /datasource/*, /workbook/*
-│   ├── planner/              # Deterministic BI planner (no LLM calls)
-│   │   ├── schema.ts         # DashboardPlan Zod types
-│   │   ├── fields.ts         # Field-role inference from column hints
-│   │   ├── marks.ts          # Mark-type selection logic
-│   │   ├── audience.ts       # Audience → canvas size + sheet-count clamps
-│   │   ├── questions.ts      # Interview-mode clarifying-question generation
-│   │   └── plan.ts           # planDashboard() entry point
+│   ├── rest/                 # REST/VDS/Pulse module family (Phase E2/E3) — see docs/architecture.md
+│   │   ├── xml.ts            #   xmlEscape / asArray shared helpers
+│   │   ├── errors.ts         #   TableauApiError, parseTableauErrorBody, parseRetryAfterMs
+│   │   ├── retry.ts          #   withRetry() — shared bounded exponential-backoff loop
+│   │   ├── vds.ts            #   readDatasourceMetadata() — VizQL Data Service field metadata
+│   │   ├── schedules.ts      #   extract-refresh task XML + frequency/interval validation
+│   │   ├── webhooks.ts       #   webhook create/list/delete XML + HTTPS-only validation
+│   │   ├── credentials.ts    #   <connectionCredentials> XML fragment for live datasources
+│   │   └── pulse.ts          #   Pulse definition/metric JSON bodies + VDS-backed pre-flight check
+│   ├── branding/              # Brand-kit loading + persona resolution (Phase E1)
+│   │   ├── schema.ts         #   Zod schema for brand.yaml (every field defaulted)
+│   │   ├── load.ts           #   loadBrand() / resolvePersona() — the ONLY I/O in this layer
+│   │   └── builderBrand.ts   #   Pure projection: BrandFile → sidecar's flat BuilderBrand wire shape
+│   ├── planner/               # Deterministic BI planner (no LLM calls)
+│   │   ├── schema.ts         #   DashboardPlan / ClarifyingQuestions / DashboardProposal Zod types
+│   │   ├── fields.ts         #   Field-role inference from column hints
+│   │   ├── marks.ts          #   Mark-type selection, KPI-strip/color/scatter/geo encoding, Few/Tufte hints
+│   │   ├── audience.ts       #   Audience + persona-override clamp (chartDeny, kpiEmphasis, maxSheets)
+│   │   ├── questions.ts      #   Interview-mode clarifying-question generation
+│   │   ├── plan.ts           #   generatePlan()/generateInterview() — wires the stages, builds storyArc
+│   │   └── proposal.ts       #   buildProposal() — DashboardPlan → human-readable DashboardProposal
 │   └── tools/
 │       ├── context.ts        # ToolContext interface + toolResult() helper
 │       ├── projects.ts       # list_projects, create_project
@@ -89,42 +127,64 @@ tableau-mcp-publish/
 │       ├── createDatasourceFromQuery.ts  # create_datasource_from_query
 │       ├── createDatasourceFromTable.ts  # create_datasource_from_table
 │       ├── createDatasourceFromFile.ts   # create_datasource_from_file (csv/json/jsonl/xlsx/parquet)
+│       ├── createLiveDatasource.ts       # create_live_datasource (Snowflake/Presto, no extract)
 │       ├── createStarterWorkbook.ts      # create_starter_workbook
-│       ├── designDashboard.ts            # design_dashboard (autonomous/interview/interview_followup/directed)
-│       ├── buildFromPlan.ts              # build_from_plan (DashboardPlan → embedded .twbx → publish)
+│       ├── designDashboard.ts            # design_dashboard (propose→confirm; persona-aware)
+│       ├── buildFromPlan.ts              # build_from_plan (DashboardPlan → embedded .twbx + story → publish)
+│       ├── validateBrand.ts              # validate_brand
+│       ├── getDatasourceFields.ts        # get_datasource_fields (VDS)
+│       ├── schedules.ts                  # schedule_refresh, list_refresh_schedules, delete_refresh_schedule
+│       ├── webhooks.ts                   # create_webhook, list_webhooks, delete_webhook
+│       ├── pulse.ts                      # create_pulse_definition, list_pulse_definitions, create_pulse_metric, delete_pulse_definition
 │       ├── publishDatasource.ts          # publish_datasource (pre-built file)
 │       └── publishWorkbook.ts            # publish_workbook (pre-built file)
-├── tests/
-│   ├── restClient.test.ts      # Unit: chunk math, strategy boundary, signIn, publish, resolveProjectId (11 tests)
-│   ├── secrets.test.ts         # PAT-never-logged assertions (3 tests)
-│   ├── sidecar.test.ts         # AuthoringSidecar: startup, health, build calls (7 tests)
-│   ├── sidecar-columns.test.ts # Column-schema pass-through from /datasource/from-file (3 tests)
-│   ├── planner.test.ts         # planDashboard(): autonomous/interview/directed × audiences (29 tests)
-│   └── tools.test.ts           # Integration: all 14 tools via FakeServer + mock ctx (34 tests)
+├── tests/                     # 23 files, 525 tests (vitest) — one file per src/ module, roughly
+│   ├── restClient.test.ts, restRetry.test.ts, retry.test.ts   # publish strategy, retry policy
+│   ├── secrets.test.ts, credentials.test.ts                    # PAT/password never logged
+│   ├── sidecar.test.ts, sidecar-columns.test.ts                 # AuthoringSidecar wiring
+│   ├── vds.test.ts, schedules.test.ts, webhooks.test.ts, pulse.test.ts  # rest/ module tests
+│   ├── branding.test.ts, builderBrand.test.ts                   # brand.yaml load + projection
+│   ├── planner.test.ts, planner-slice4.test.ts, planner-slice5.test.ts,
+│   │   planner-slice6.test.ts, planner-storyArc.test.ts         # planner pipeline + proposal + storyArc
+│   ├── schema-growth.test.ts                                    # DashboardPlan schema backward-compat
+│   ├── cronTemplates.test.ts, generateCron.test.ts, refreshLocalArgs.test.ts  # local-file automation
+│   └── tools.test.ts                                            # integration: all 27 tools registered
+├── scripts/
+│   ├── demo.ts                 # npm run demo — datasource + starter workbook
+│   ├── demo-dashboard.ts       # npm run demo:dashboard — propose→build pipeline
+│   ├── demo-superstore.ts      # npm run demo:superstore — rich exec dashboard + optional persona brand
+│   ├── refresh-local.ts        # npm run refresh:local — re-ingest + republish a local-file datasource
+│   ├── generate-cron.ts        # npm run cron:generate — emit crontab/launchd artifacts (never installs)
+│   ├── cronTemplates.ts        # pure template builders for generate-cron.ts (no I/O; shell-quoted)
+│   ├── mcp-smoke.ts             # npm run test:mcp-smoke — stdio handshake + tool listing
+│   └── verify-setup.ts         # npm run verify-setup — pre-flight config/sign-in/sidecar check
 ├── sidecar/
 │   ├── server.py             # FastAPI app — token guard, /health, /datasource/from-query,
-│   │                         #   /datasource/from-table, /datasource/from-file, /workbook/starter,
-│   │                         #   /workbook/dashboard
-│   ├── hyper_builder.py      # DataFrame/SQL/CSV/JSON/XLSX/Parquet → .hyper extract (pantab + tableauhyperapi)
-│   ├── tds_builder.py        # .hyper → .tdsx (hand-built TDS XML + zip)
+│   │                         #   /datasource/from-table, /datasource/from-file, /datasource/live,
+│   │                         #   /workbook/starter, /workbook/dashboard  (7 routes)
+│   ├── hyper_builder.py      # DataFrame/SQL/CSV/JSON/XLSX/Parquet → .hyper extract (pantab + tableauhyperapi),
+│   │                         #   numeric/date-string coercion
+│   ├── tds_builder.py        # .hyper → .tdsx (hand-built TDS XML + zip); build_live_tds() for live connections
 │   ├── twb_builder.py        # build_twb_xml() / build_starter_twbx() / build_embedded_twb_xml() /
-│   │                         #   build_embedded_twbx() — worksheets + optional <dashboards> block
+│   │                         #   build_embedded_twbx() — worksheets + <dashboards> block + _build_story()
 │   ├── pyproject.toml        # uv project config, ruff/mypy/pytest settings
-│   └── tests/
-│       ├── test_hyper_builder.py        # 12 tests: round-trip, column roles, CSV, max_rows, records_to_df
-│       ├── test_hyper_builder_formats.py# 16 tests: csv/json/jsonl/xlsx/parquet format round-trips, byte cap
-│       ├── test_tds_builder.py          # 3 tests: zip structure, dbname path, column roles
-│       ├── test_twb_builder.py          # 13 tests: datasource ref, worksheets, mark classes, A2 structural pins
-│       ├── test_twb_dashboard.py        # 21 tests: zone count/names, geometry invariants, canvas size, regression
-│       ├── test_twb_embedded.py         # 16 tests: federated datasource, field refs, zip structure, XSD gate
-│       ├── test_twb_schema_validation.py# 4 tests: XSD-valid output + XXE-safe parser guard
-│       ├── test_server.py               # 5 tests: health, from-table, 400 guard, workbook starter, token guard
-│       └── test_server_new_routes.py    # 24 tests: /datasource/from-file (5 formats), /workbook/dashboard
-├── Makefile                  # CI gate: build lint test sidecar-lint sidecar-typecheck sidecar-test
+│   └── tests/                # 20 files, 338 tests
+│       ├── test_hyper_builder.py, test_hyper_builder_formats.py  # extract round-trips, format coverage
+│       ├── test_tds_builder.py, test_tds_builder_live.py         # .tdsx / live .tds packaging
+│       ├── test_twb_builder.py, test_twb_dashboard.py, test_twb_dashboard_layout.py,
+│       │   test_twb_embedded.py, test_twb_encodings.py, test_twb_kpi_tile.py,
+│       │   test_twb_map_filled.py, test_twb_scatter.py, test_twb_branding.py, test_twb_story.py
+│       │                                                          # worksheet/dashboard/story XML structure
+│       ├── test_twb_schema_validation.py                          # official TWB XSD gate + XXE guard
+│       ├── test_schema_growth.py                                   # sidecar Pydantic models backward-compat
+│       └── test_server.py, test_server_new_routes.py,
+│           test_server_live_datasource.py, test_server_rich_dashboard.py  # FastAPI route integration
+├── brand.yaml                 # Brand kit: palette/typography/formats/rules/personas (Phase E1)
+├── Makefile                    # CI gate: build lint test sidecar-lint sidecar-typecheck sidecar-test
 ├── package.json
-├── tsconfig.json             # strict, NodeNext, rootDir=src, outDir=dist
-├── eslint.config.js          # ignores: dist/, node_modules/, sidecar/, coverage/  (NOT .cursor/)
-└── vitest.config.ts          # tests/**/*.test.ts, extensionAlias .js->.ts
+├── tsconfig.json               # strict, NodeNext, rootDir=src, outDir=dist
+├── eslint.config.js            # ignores: dist/, node_modules/, sidecar/, coverage/  (NOT .cursor/)
+└── vitest.config.ts            # tests/**/*.test.ts, extensionAlias .js->.ts
 ```
 
 ---
@@ -137,7 +197,7 @@ AI agent (Claude / Cursor / etc.)
         ▼
   src/index.ts  ──────────── McpServer (MCP SDK)
         │                          │
-        │ registers 14 tools       │
+        │ registers 27 tools       │
         ▼                          │
   ToolContext { config, rest, sidecar }
         │                          │
@@ -145,27 +205,29 @@ AI agent (Claude / Cursor / etc.)
   │ TableauRest │       │  AuthoringSidecar     │
   │ Client      │       │  uv run uvicorn       │
   │ (undici)    │       │  server:app           │
-  │             │       │  :8899 loopback only  │
-  │ Tableau     │       │                       │
-  │ REST API    │       │  FastAPI routes:      │
-  │ v3.28       │       │  /health              │
-  │             │       │  /datasource/from-query│
-  └─────────────┘       │  /datasource/from-table│
-                        │  /datasource/from-file│
-                        │  /workbook/starter    │
-                        │  /workbook/dashboard  │
+  │ + rest/*.ts │       │  loopback only,       │
+  │ (retry-     │       │  per-spawn token      │
+  │  hardened)  │       │                       │
+  │             │       │  FastAPI routes:      │
+  │ Tableau     │       │  /health              │
+  │ REST API    │       │  /datasource/from-query│
+  │ v3.28       │       │  /datasource/from-table│
+  │ + VDS       │       │  /datasource/from-file│
+  │ + Pulse     │       │  /datasource/live     │
+  │             │       │  /workbook/starter    │
+  └─────────────┘       │  /workbook/dashboard  │
                         │                       │
-                        │  hyper_builder.py     │
-                        │   pandas + pantab     │
-                        │   -> .hyper           │
-                        │                       │
-                        │  tds_builder.py       │
-                        │   XML + zip           │
-                        │   -> .tdsx            │
+  branding/load.ts ─┐   │  hyper_builder.py     │
+  (reads brand.yaml,│   │   pandas + pantab     │
+   only I/O in the  │   │   -> .hyper (+ coercion)│
+   branding layer)  │   │                       │
+        │            │  │  tds_builder.py       │
+        ▼            └─▶│   XML + zip           │
+   planner/* (pure) ────┤   -> .tdsx / .tds     │
                         │                       │
                         │  twb_builder.py       │
                         │   XML + zip           │
-                        │   -> .twbx            │
+                        │   -> .twbx (+ story)  │
                         └──────────────────────┘
 ```
 
@@ -173,9 +235,12 @@ AI agent (Claude / Cursor / etc.)
 - The sidecar is spawned with `stdio: ['ignore','ignore','pipe']` — its stdout never reaches the MCP channel.
 - The sidecar binds `127.0.0.1` only. A random 24-byte hex token is generated per spawn, injected as `SIDECAR_TOKEN` env, and required as `X-Sidecar-Token` on every request (constant-time `hmac.compare_digest`).
 - The Tableau PAT secret is sent only in the sign-in body, never logged (asserted in `tests/secrets.test.ts`). Config validation errors print the offending field path, never the value.
+- Live-connection database credentials (`create_live_datasource`) are embedded only at publish time via an in-memory `<connectionCredentials>` XML fragment — never written to the `.tds` file or logged (asserted in `tests/credentials.test.ts`).
 - `resolveProjectId` hard-refuses the `"Default"` project by name and empty names, preventing silent publishes to ungoverned space.
 
 **Publish strategy:** `selectPublishStrategy()` in `src/restClient.ts` — files `< 64 MiB` use a single `multipart/mixed` POST; files `>= 64 MiB` (incl. exactly 64 MiB) use the `fileUploads` chunked session (TSC-aligned). Mid-stream abort does not issue a finalize POST.
+
+**Retry policy:** `withRetry()` (`src/rest/retry.ts`), shared by `restClient.ts`, `rest/vds.ts`, and `rest/pulse.ts`. Retries only 429/502/503/504, only for calls marked idempotent by their caller, with full-jitter exponential backoff (max 3 attempts, ~8s total budget by default) honoring an upstream `Retry-After` header. See `docs/architecture.md` and `docs/adr/0008-rest-retry-hardening.md`.
 
 ---
 
@@ -187,23 +252,25 @@ two non-adoptions, so they are not re-evaluated on every review.
 ### Divergences from `tableau/server-client-python` (TSC)
 
 TSC is the canonical Python REST client for Tableau Server/Cloud. Our publish path aligns with its
-semantics. The chunking boundary was aligned to TSC's `>=` in A3 (exact 64 MiB now takes the chunked
-path); two deliberate differences remain:
+semantics.
 
 | Aspect | TSC | `tableau-mcp-publish` | Rationale |
 |---|---|---|---|
-| Chunking boundary | `file_size >= 64 MB` (exact 64 MB → chunked) | `file_size >= 64 MB` — **aligned to TSC (A3)** | Was previously `>` (exact 64 MB single); a single multipart request at exactly 64 MB exceeds the cap once boundary overhead is added, so `>=` is correct. |
+| Chunking boundary | `file_size >= 64 MB` (exact 64 MB → chunked) | `file_size >= 64 MB` — **aligned to TSC** | A single multipart request at exactly 64 MB exceeds the cap once boundary overhead is added, so `>=` is correct. |
 | Chunk size | 50 MB per chunk | 64 MB per chunk | Larger chunks reduce round-trips; acceptable on Cloud. |
 | REST API version | Auto-negotiated (latest supported by the server) | Pinned to 3.28 | Predictability over auto-negotiation; update explicitly when new endpoints are needed. |
 | Abort / unfinalized session | Aborts unfinalized upload sessions | Does not issue a `finalize` POST on mid-stream abort | Behaviour matches TSC: an unfinalized session is automatically discarded by the server. |
+| Retry policy | TSC does not retry by default | Bounded idempotency-aware retry (429/5xx only, GET/idempotent-POST only) | Cloud rate-limits aggressively under the tool surface's higher call volume (scheduling, webhooks, Pulse, VDS); see `docs/adr/0008-rest-retry-hardening.md`. |
 
 ### Official TWB XSD (`tableau/tableau-document-schemas`)
 
 `tableau/tableau-document-schemas` publishes `schemas/2026_1/twb_2026.1.0.xsd` — a W3C XSD that
 describes the `.twb` XML format, maintained by the official Tableau team as a machine-validatable
-fidelity gate. The sidecar test suite vendors this schema and validates `build_twb_xml()` output
-against it via `lxml`. This catches the class of "parses but won't render" defects that are
-invisible to structural assertions about expected elements.
+fidelity gate. The sidecar test suite vendors this schema and validates every builder output
+(regular dashboards, embedded extracts, and Stories) against it via `lxml`. This catches the class
+of "parses but won't render" defects that are invisible to structural assertions about expected
+elements — it caught a real bug during Story implementation (two sibling `<dashboards>` wrappers;
+see `docs/adr/0012-story-shared-dashboards-container.md`).
 
 ### Non-adoption: `tableau/document-api-python`
 
@@ -211,8 +278,8 @@ invisible to structural assertions about expected elements.
 states it "doesn't support creating files from scratch"; `Workbook.__init__` only opens existing
 files; `_prepare_dashboards()` returns names only (no zone writer); worksheets are name stubs
 (`# TODO: A real worksheet object`). It cannot author the XML we need to emit. We hand-roll the
-TWB XML in `sidecar/twb_builder.py`. No re-evaluation is needed unless the library gains
-create-from-scratch capability.
+TWB/TDS XML in `sidecar/twb_builder.py`/`sidecar/tds_builder.py`. No re-evaluation is needed unless
+the library gains create-from-scratch capability.
 
 ### Non-adoption: `tableau/tableau-ui`
 
@@ -230,103 +297,108 @@ as FUTURE-ONLY.
 - ESM-only; `.js` import extensions pointing at `.ts` source (NodeNext resolution).
 - All tools follow the same pattern: a single `registerXxx(server, ctx)` function in `src/tools/`, calling `server.registerTool(name, { title, description, inputSchema, outputSchema }, handlerFn)`. Input and output schemas are Zod objects. The handler calls `ctx.sidecar.*` and/or `ctx.rest.*`, then returns `toolResult(text, structuredContent)`.
 - `process.stderr.write(...)` is used for structured logging — `console.*` is never used (stdout is the MCP channel).
-- Errors thrown from handlers propagate as MCP error responses.
+- Errors thrown from handlers propagate as MCP error responses. REST/VDS/Pulse failures throw a typed `TableauApiError` (`src/rest/errors.ts`).
+- Destructive tools follow a uniform `confirm: boolean` gate pattern (`delete_content`, `delete_refresh_schedule`, `delete_webhook`, `delete_pulse_definition`); permission-elevation follows a uniform `confirmElevated` pattern (`set_permissions`).
 
 **Python:**
 - All modules use `from __future__ import annotations`.
-- Pydantic v2 models with `model_config = ConfigDict(populate_by_name=True)` and camelCase aliases for the JSON API boundary.
+- Pydantic v2 models with `model_config = ConfigDict(populate_by_name=True)` and camelCase aliases for the JSON API boundary — but `.model_dump()` always yields snake_case field names, never the aliases ("the model_dump lesson," documented at each affected model in `server.py`).
 - Ruff line-length 100, target py312, rules E/F/I/UP/B/SIM.
 - mypy `--strict`, excludes `tests/`.
 - Output files go to `tempfile.gettempdir()/tableau-mcp-publish/<uuid4>.<ext>`.
 
-**Git/commit conventions:** Conventional commits (`feat`, `fix`, `docs`, `ci`, `chore`, `perf`). Scope tags used, e.g. `feat(demo)`, `fix(pkg)`, `docs:`. Co-authored attribution in commit footers.
+**Git/commit conventions:** Conventional commits (`feat`, `fix`, `docs`, `ci`, `chore`, `perf`). Scope tags used, e.g. `feat(pulse)`, `fix(security)`, `docs(acceptance)`.
 
 ---
 
 ## Tests
 
-### TypeScript (Vitest) — 87 tests
+Real counts as run for this doc pass (2026-07-17): **525 TypeScript tests** (`npm test`) across 23
+files, **338 Python tests** (`cd sidecar && uv run pytest -q`) across 20 files. See the file map
+above for what each test file covers; the highlights:
 
-| File | Count | What it tests |
-|---|---|---|
-| `tests/restClient.test.ts` | 11 | `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single publish, chunked publish (3 chunks, 3 PUTs + 1 finalize), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known |
-| `tests/secrets.test.ts` | 3 | PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT |
-| `tests/sidecar.test.ts` | 7 | AuthoringSidecar: startup health-poll, buildDatasource, buildStarterWorkbook, buildDashboardWorkbook call wiring |
-| `tests/sidecar-columns.test.ts` | 3 | Column schema pass-through from `/datasource/from-file` response |
-| `tests/planner.test.ts` | 29 | `planDashboard()` autonomous/interview/interview_followup/directed × exec/analyst/operational audiences; field inference; mark-type constraints; question count |
-| `tests/tools.test.ts` | 34 | All 14 tools registered with description+schemas; full wiring for `create_datasource_from_query`, `create_starter_workbook`, `design_dashboard`, `build_from_plan`; guardrails: delete confirm, delete refuses Default project, `set_permissions` elevated gate, allowlist rejection, valid caps; `create_datasource_from_table` input validation; `create_datasource_from_file` unsupported extension (0 sidecar calls) |
-
-### Python (pytest) — 114 tests
-
-| File | Count | What it tests |
-|---|---|---|
-| `sidecar/tests/test_hyper_builder.py` | 12 | Hyper round-trip (row count + types), column roles, CSV source, max_rows cap, records_to_dataframe, read_hyper_columns |
-| `sidecar/tests/test_hyper_builder_formats.py` | 16 | csv/json/jsonl/xlsx/parquet format round-trips; byte cap; `file_to_dataframe` unsupported type error; Excel sheet by index/name |
-| `sidecar/tests/test_tds_builder.py` | 3 | `.tdsx` zip structure (`.tds` + `Data/*.hyper`), dbname path matches, column roles |
-| `sidecar/tests/test_twb_builder.py` | 13 | Published datasource reference (sqlproxy/repository-location), one worksheet per sheet spec, mark class per type, default site path, starter `.twbx` is a valid zip; A2 structural pins (simple-id, cards, viewpoint, aggregation, style, explain-data) |
-| `sidecar/tests/test_twb_dashboard.py` | 21 | Zone count/names match sheets; worksheet zones have `name` and no `type`; tiling geometry (Σ==100000, no overlap, distinct offsets); canvas size element; default-None regression (byte-identical + no `<dashboards>`) |
-| `sidecar/tests/test_twb_embedded.py` | 16 | Federated datasource (not sqlproxy); hyper named-connection; field references use `[federated.*]`; zip contains `Data/*.hyper`; XSD gate (with and without dashboard); FileNotFoundError on missing extract |
-| `sidecar/tests/test_twb_schema_validation.py` | 4 | Official TWB XSD gates sqlproxy + embedded output; XXE-safe parser guard; malformed-XML rejection |
-| `sidecar/tests/test_server.py` | 5 | Health endpoint, from-table (records) returns `.tdsx`, from-table requires input (400), workbook starter returns `.twbx`, token guard blocks/passes |
-| `sidecar/tests/test_server_new_routes.py` | 24 | `/datasource/from-file` for all 5 formats returns valid `.tdsx`; `/workbook/dashboard` returns valid `.twbx` with embedded extract |
-
-Run commands: `npm test` (TS) and `cd sidecar && uv run pytest -q` (Python).
+- `tests/tools.test.ts` — the single integration test asserting all **27** tools register with a
+  description + input/output schemas, plus full call-wiring for the multi-step tools
+  (`design_dashboard`, `build_from_plan`, `create_live_datasource`) and every destructive-tool
+  confirm-gate.
+- `tests/planner*.test.ts` + `tests/planner-storyArc.test.ts` — the full deterministic planning
+  pipeline: field inference, mark selection, audience + persona clamps, KPI-strip/color/scatter/geo
+  encoding, `storyArc` generation, and `DashboardProposal` projection.
+- `tests/restClient.test.ts`, `tests/restRetry.test.ts`, `tests/retry.test.ts` — chunk math,
+  publish-strategy boundary, sign-in parsing, and the shared retry/backoff policy (deterministic
+  via injected `sleep`/`jitterFn`).
+- `tests/vds.test.ts`, `tests/schedules.test.ts`, `tests/webhooks.test.ts`, `tests/pulse.test.ts` —
+  each `rest/` module's request-building, response-parsing, and error-classification behavior.
+- `tests/branding.test.ts`, `tests/builderBrand.test.ts` — `brand.yaml` load/default/validation and
+  the pure projection to the sidecar's wire shape.
+- `tests/secrets.test.ts`, `tests/credentials.test.ts` — standing assertions that the PAT and live-
+  connection passwords never appear in logs, sign-in output, or redacted API errors.
+- `tests/cronTemplates.test.ts`, `tests/generateCron.test.ts`, `tests/refreshLocalArgs.test.ts` —
+  local-file refresh automation, including adversarial shell-injection test cases (`$(id)`, quote
+  breakout) for the crontab-line template.
+- Sidecar: `test_twb_schema_validation.py` gates every builder output path (starter, embedded,
+  branded, story) against the official TWB XSD; `test_twb_story.py`, `test_twb_branding.py`,
+  `test_twb_kpi_tile.py`, `test_twb_scatter.py`, `test_twb_map_filled.py`,
+  `test_twb_dashboard_layout.py` cover each Phase-1/E1/E4 encoding and layout feature end-to-end
+  through the actual XML output.
 
 ---
 
 ## Dependencies & Risk
 
-**Production TypeScript deps (3):**
+**Production TypeScript deps (4):**
 - `@modelcontextprotocol/sdk@1.29.0` — Anthropic's official MCP server SDK.
-- `undici@7.28.0` — Node.js HTTP client; bumped to 7.28.0 in the most recent security fix cycle; `npm audit --omit=dev` reports 0 vulnerabilities.
+- `undici@7.28.0` — Node.js HTTP client; `npm audit --omit=dev` reports 0 vulnerabilities.
+- `yaml@2.9.0` — `brand.yaml` parsing (added Phase E1).
 - `zod@3.25.76` — schema validation.
 
 **Python deps of note:**
 - `tableauhyperapi@0.0.21408` — Tableau-proprietary Hyper engine; binary wheel; no Python 3.13 wheel yet (uv uses Python 3.12 inside the venv).
 - `pantab@5.2.0` — thin pandas/Arrow bridge over tableauhyperapi.
-- Database connectors are optional extras, not in the default install.
+- `starlette==0.49.3` (transitive via `fastapi==0.121.0`) — pinned explicitly to clear a set of transitive advisories flagged in an earlier ecosystem review.
+- Database connectors are optional extras, not in the default install; `create_live_datasource` needs none of them (it builds connection-topology XML only — Tableau's own server-side connector executes the live query).
 
 **License:** MIT (repo). Dependencies are MIT/BSD/Apache except `tableauhyperapi` (Tableau proprietary).
+
+**npm tarball (`npm pack --dry-run`):** 130 files, ~269 kB packed / ~1.1 MB unpacked. Includes:
+`dist/` (all tools + planner + branding + rest/), `brand.yaml`, `sidecar/*.py` (4 files),
+`sidecar/pyproject.toml`, `sidecar/uv.lock`, `LICENSE`, `README.md`, `package.json`. Excludes:
+`sidecar/tests/`, `sidecar/.venv/`, `scripts/`, `tests/`, caches, logs, `.cursor/`.
 
 ---
 
 ## Tech Debt / Issues
 
-1. **Lint gate broken by `.cursor/` directory.** `eslint.config.js:7` ignores `dist/`, `node_modules/`, `sidecar/`, `coverage/` — but not `.cursor/`. The `.cursor/` directory was added to the working tree after the last green CI run. ESLint now reports ~200 errors on those CJS hook scripts, so `make ci` (`npm run lint`) exits non-zero **locally**. The upstream GitHub CI never saw `.cursor/` (it is `.gitignore`d), so CI remains green. The fix is one line: add `".cursor/**"` to the `ignores` array. This must be done before the next feature branch runs `make ci` locally.
+1. **Lint gate broken by `.cursor/` directory.** `eslint.config.js` ignores `dist/`,
+   `node_modules/`, `sidecar/`, `coverage/` — but not `.cursor/`. If `.cursor/` is present in the
+   working tree (it is `.gitignore`d, so this affects local runs only, not upstream CI), ESLint
+   reports errors on those CJS hook scripts and `make ci` (`npm run lint`) exits non-zero locally.
+   The fix is one line: add `".cursor/**"` to the `ignores` array.
 
-2. **No `typecheck` step in `make ci`.** The Makefile runs `build` (which emits JS and catches type errors), but a standalone `typecheck` (`tsc --noEmit`) step is absent from the `ci` target. In practice, `tsc` errors block `build`, so this is not a real gap, but a dedicated `typecheck` step would catch import-only type errors without producing artifacts.
+2. **No standalone `typecheck` step in `make ci`.** The Makefile runs `build` (which emits JS and
+   catches type errors via `tsc`), but a dedicated `typecheck` (`tsc --noEmit`) step is absent from
+   the `ci` target. In practice `tsc` errors already block `build`, so this is not a real coverage
+   gap, just a missing explicit step for import-only type errors that produce no artifacts.
 
-3. ~~**`twb_builder.py` emits worksheets only — no dashboard block.**~~ **Shipped.** `build_twb_xml()` / `build_embedded_twb_xml()` now emit an optional `<dashboards>` + `<viewpoints>` block; `build_from_plan` drives the embedded-extract path end-to-end.
+3. **`getDatasource` has a fallback list-all-datasources** when `contentUrl` is missing from the
+   GET response (`src/restClient.ts`). Correct but can be slow on large sites and is a fragility
+   point if `contentUrl` is reliably missing.
 
-4. ~~**File-format support is CSV-only.**~~ **Shipped.** `create_datasource_from_file` (`/datasource/from-file`) accepts csv, json, jsonl, xlsx, and parquet via `hyper_builder.file_to_dataframe()`.
+4. **Structured logging is `process.stderr.write` concatenation** — no log levels, no JSON format,
+   no correlation IDs, and no persistent metrics/telemetry surface. Adequate for an MCP stdio
+   server today (see `docs/runbook.md`'s monitoring section for the practical workaround) but would
+   need a real logger (e.g., `structlog` on the Python side is already in the deps but unused) for
+   anything beyond single-session debugging.
 
-5. **`getDatasource` has a fallback list-all-datasources** when `contentUrl` is missing from the GET response (`src/restClient.ts:401–416`). This is correct but can be slow on large sites and is a fragility point if `contentUrl` is reliably missing.
+5. **Pulse's create-definition payload shape is unconfirmed against a live site** (`400` with no
+   field-level detail on the one live attempt so far). Code-complete and honestly flagged; see
+   `docs/adr/0011-pulse-best-effort-payload.md` and `docs/tool_reference.md`'s Pulse section for the
+   concrete next step.
 
-6. **Structured logging is `process.stderr.write` concatenation** — no log levels, no JSON format, no correlation IDs. Adequate for an MCP stdio server today but would need a real logger (e.g., `structlog` on the Python side is already in the deps but unused).
+6. **Live-connection XML attribute mapping is VERIFY-LIVE.** `sidecar/tds_builder.py`'s
+   `SNOWFLAKE_ATTRS`/`PRESTO_ATTRS` are this project's best-documented guess at the connector-class
+   attribute spelling and have not yet been confirmed against a Desktop-exported `.tds`.
 
----
-
----
-
-## Regression-Guard Tests That Must Keep Passing
-
-All 201 tests must stay green on `make ci`:
-
-**TypeScript (87 tests — `npm test`):**
-- `tests/restClient.test.ts`: `splitIntoChunks` math, `selectPublishStrategy` 64 MB boundary, `signIn` parsing, single-request publish, 3-chunk upload (3 PUTs + 1 finalize POST), mid-stream abort (no finalize), `resolveProjectId` rejects empty/Default/resolves known.
-- `tests/secrets.test.ts`: PAT not in sign-in output, PAT not in redacted API error, config error does not echo PAT.
-- `tests/sidecar.test.ts`: AuthoringSidecar startup, health-poll, build* call wiring.
-- `tests/sidecar-columns.test.ts`: column schema pass-through from `/datasource/from-file`.
-- `tests/planner.test.ts`: `planDashboard()` autonomous/interview/directed × all audiences; field inference; mark constraints; question count.
-- `tests/tools.test.ts`: 14-tool registration count, all tool names present, `create_datasource_from_query` full wiring, `create_starter_workbook` wiring, `design_dashboard` wiring, `build_from_plan` wiring; all guardrails (delete confirm, delete Default refusal, elevated-capability gate, allowlist rejection), `create_datasource_from_table` input validation, `create_datasource_from_file` unsupported extension.
-
-**Python (114 tests — `cd sidecar && uv run pytest -q`):**
-- `sidecar/tests/test_hyper_builder.py`: hyper round-trip row count + all column types, column role assignment, CSV source read, max_rows cap, records_to_dataframe, read_hyper_columns.
-- `sidecar/tests/test_hyper_builder_formats.py`: csv/json/jsonl/xlsx/parquet round-trips; byte cap; unsupported type error; Excel sheet by index/name.
-- `sidecar/tests/test_tds_builder.py`: `.tdsx` zip has exactly one `.tds` and one `Data/*.hyper`, dbname path format, column role attributes.
-- `sidecar/tests/test_twb_builder.py`: sqlproxy datasource reference present, repository-location attributes, one worksheet per sheet spec with correct datasource-dependencies, mark class mapping (bar/line/text), default site path, `.twbx` is a valid zip containing a parseable `<workbook>`; A2 structural pins (simple-id, cards with shelf content, viewpoint, aggregation, style, explain-data).
-- `sidecar/tests/test_twb_dashboard.py`: zone count/names match sheets; worksheet zones have `name` and no `type`/`type-v2`; tiling geometry invariants (Σ==100000, no overlap, distinct offsets); canvas size element matches inputs; default-None regression (byte-identical, no `<dashboards>`).
-- `sidecar/tests/test_twb_embedded.py`: federated datasource (not sqlproxy); hyper named-connection; `[federated.*]` field references in rows/cols; zip contains `Data/*.hyper`; XSD gate (with and without dashboard); FileNotFoundError on missing extract.
-- `sidecar/tests/test_twb_schema_validation.py`: official TWB XSD gates sqlproxy and embedded output; XXE-safe parser config; malformed-XML rejected by schema.
-- `sidecar/tests/test_server.py`: health returns `{"status":"ok"}`, from-table (records) produces a valid `.tdsx` zip, from-table without input returns 400, workbook starter produces `.twbx`, token guard blocks requests without header and passes with matching header.
-- `sidecar/tests/test_server_new_routes.py`: `/datasource/from-file` for all 5 formats returns valid `.tdsx`; `/workbook/dashboard` returns valid `.twbx` with embedded extract.
+7. **`IncrementalRefresh`'s exact token spelling is VERIFY-LIVE** in `schedule_refresh` — reference
+   material is inconsistent between `IncrementalRefresh` and `IncrementalExtract`. The tool defaults
+   every caller to `FullRefresh` and only emits `IncrementalRefresh` on explicit request.

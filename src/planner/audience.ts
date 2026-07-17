@@ -9,6 +9,13 @@
  * - map_filled added to exec allowedMarkTypes (exec gets filled maps)
  * - kpi_tile sheets are exempt from per-sheet measure/dimension caps (STEP 5)
  * - stepEnsureKpiStrip: for exec, ensures the KPI band leads (STEP 3 variant)
+ *
+ * Phase E1 (Slice C — BI_DESIGN §9, Few/visionary layer) additions:
+ * - `chartDeny` override: persona-denied mark types fall back to "bar" with a
+ *   rationale note naming the `chartDeny` rule (new STEP, runs right after
+ *   STEP 1 TRUNCATE and before the audience-level STEP 2 mark-type drop).
+ * - `kpiEmphasis` override: caps the number of `kpi_tile` sheets in the KPI
+ *   band (high=4 / medium=3 / low=2; new STEP, runs after STEP 3 KPI lead).
  */
 
 import type { Audience, DashboardLayout, MarkType, SheetSpec } from "./schema.js";
@@ -141,6 +148,42 @@ function stepTruncate(sheets: SheetSpec[], constraints: AudienceConstraints): Sh
 }
 
 // ---------------------------------------------------------------------------
+// STEP 1.5 — APPLY PERSONA chartDeny (BI_DESIGN §9, Few/visionary layer)
+//
+// A persona can veto specific mark types via brand.yaml's `chartDeny` list
+// (e.g. `["scatter", "map"]` for a client-facing dashboard). Denied marks
+// fall back to "bar" — the same universal fallback used elsewhere in this
+// module — with a rationale note naming the `chartDeny` rule so the agent
+// can relay *why* a chart type changed. Matching is case-insensitive since
+// brand.yaml is free-text YAML edited by non-engineers.
+//
+// This step is independent of (and runs before) STEP 2's audience-level
+// `allowedMarkTypes` drop: STEP 2 enforces what the *audience* can perceive;
+// this step enforces what the *persona* explicitly never wants to see.
+// ---------------------------------------------------------------------------
+
+function stepApplyChartDeny(
+  sheets: SheetSpec[],
+  chartDeny: readonly string[] | undefined,
+): SheetSpec[] {
+  if (!chartDeny || chartDeny.length === 0) return sheets;
+  const denySet = new Set(chartDeny.map((m) => m.toLowerCase()));
+
+  return sheets.map((sheet) => {
+    if (!denySet.has(sheet.markType.toLowerCase())) return sheet;
+    return {
+      ...sheet,
+      markType: "bar" as MarkType,
+      geo: undefined,
+      scatter: undefined,
+      rationale:
+        (sheet.rationale ? sheet.rationale + " " : "") +
+        `Mark type "${sheet.markType}" is denied for this persona (chartDeny rule); replaced with bar.`,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // STEP 2 — DROP DISALLOWED MARK TYPES
 // ---------------------------------------------------------------------------
 
@@ -194,6 +237,46 @@ function stepEnsureKpiLead(
     return [...kpiTileSheets, ...withKpi.slice(0, constraints.maxSheets)];
   }
   return [...kpiTileSheets, ...withKpi];
+}
+
+// ---------------------------------------------------------------------------
+// STEP 3.5 — CAP KPI TILES BY kpiEmphasis (BI_DESIGN §9, Few/visionary layer)
+//
+// A persona's `kpiEmphasis` (high | medium | low, from brand.yaml) caps how
+// many kpi_tile sheets survive in the KPI band: high=4 (the existing default
+// band size), medium=3, low=2. Extra tiles are dropped from the tail (lowest-
+// priority measures — buildKpiStrip/rankMeasures already ordered the band by
+// relevance) and a rationale note is appended to the last surviving tile.
+// ---------------------------------------------------------------------------
+
+/** Max KPI tiles per `kpiEmphasis` level (BI_DESIGN §9 FEW-2 / persona layer). */
+export const KPI_EMPHASIS_MAX_TILES: Readonly<Record<"high" | "medium" | "low", number>> = {
+  high: 4,
+  medium: 3,
+  low: 2,
+};
+
+/** Default KPI-tile cap when no `kpiEmphasis` override is supplied (matches the historical band size). */
+export const DEFAULT_MAX_KPI_TILES = KPI_EMPHASIS_MAX_TILES.high;
+
+function stepCapKpiTiles(sheets: SheetSpec[], maxKpiTiles: number): SheetSpec[] {
+  const kpiTileSheets = sheets.filter((s) => s.kind === "kpi_tile");
+  const otherSheets = sheets.filter((s) => s.kind !== "kpi_tile");
+
+  if (kpiTileSheets.length <= maxKpiTiles) return sheets;
+
+  const removed = kpiTileSheets.length - maxKpiTiles;
+  const truncated = kpiTileSheets.slice(0, maxKpiTiles);
+  const last = truncated[truncated.length - 1];
+  if (!last) return [...truncated, ...otherSheets];
+
+  const updatedLast: SheetSpec = {
+    ...last,
+    rationale:
+      (last.rationale ? last.rationale + " " : "") +
+      `Dropped ${removed} KPI tile(s) to respect this persona's kpiEmphasis setting.`,
+  };
+  return [...truncated.slice(0, -1), updatedLast, ...otherSheets];
 }
 
 // ---------------------------------------------------------------------------
@@ -311,24 +394,35 @@ export interface ClampResult {
 
 /**
  * Persona-driven overrides layered onto an audience's base constraints
- * (Phase E1, Slice A). Currently only `maxSheets` is threaded through; more
- * fields can be added here as later phases need them — every field is
- * optional so an absent override is a no-op.
+ * (Phase E1, Slice A + Slice C). Every field is optional so an absent
+ * override is a no-op.
  */
 export interface AudienceConstraintOverrides {
   /** Override the audience's default max chart-sheet count. */
   maxSheets?: number;
+  /**
+   * BI_DESIGN §9 (Few/visionary layer): mark types this persona never wants
+   * to see (from brand.yaml's `chartDeny`). Denied marks fall back to "bar"
+   * with a rationale note (STEP 1.5). Matching is case-insensitive.
+   */
+  chartDeny?: string[];
+  /**
+   * BI_DESIGN §9: how prominent the KPI band should be (from brand.yaml's
+   * `kpiEmphasis`). Caps the number of `kpi_tile` sheets: high=4 (default),
+   * medium=3, low=2 (STEP 3.5).
+   */
+  kpiEmphasis?: "high" | "medium" | "low";
 }
 
 /**
- * Apply all 6 audience clamp steps in order (BI_DESIGN §3.2).
+ * Apply all audience clamp steps in order (BI_DESIGN §3.2, extended by §9).
  *
  * @param rawSheets           Sheet list from chart selection.
  * @param audience            Target audience.
  * @param firstMeasure        Name of the first available measure (for KPI insertion).
  * @param requestedLayout     Caller-supplied layout override (ignored for operational).
  * @param constraintOverrides Optional persona-driven overrides layered onto the
- *                            audience's base constraints (e.g. maxSheets).
+ *                            audience's base constraints (maxSheets, chartDeny, kpiEmphasis).
  */
 export function applyAudienceClamps(
   rawSheets: SheetSpec[],
@@ -342,10 +436,15 @@ export function applyAudienceClamps(
     constraintOverrides?.maxSheets !== undefined
       ? { ...baseConstraints, maxSheets: constraintOverrides.maxSheets }
       : baseConstraints;
+  const maxKpiTiles = constraintOverrides?.kpiEmphasis
+    ? KPI_EMPHASIS_MAX_TILES[constraintOverrides.kpiEmphasis]
+    : DEFAULT_MAX_KPI_TILES;
 
   let sheets = stepTruncate(rawSheets, constraints);
+  sheets = stepApplyChartDeny(sheets, constraintOverrides?.chartDeny);
   sheets = stepDropDisallowedMarkTypes(sheets, audience, constraints);
   sheets = stepEnsureKpiLead(sheets, constraints, firstMeasure);
+  sheets = stepCapKpiTiles(sheets, maxKpiTiles);
   const dashboardLayout = stepEnforceLayout(audience, constraints, requestedLayout);
   sheets = stepCapPerSheet(sheets, constraints);
   sheets = stepMapMarkGuard(sheets, audience, constraints);

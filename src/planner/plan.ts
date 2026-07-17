@@ -14,7 +14,7 @@
 
 import { classifyFields, usableFields } from "./fields.js";
 import type { FieldHint, FieldClassification } from "./fields.js";
-import { applyMarkHeuristic, buildKpiStrip } from "./marks.js";
+import { applyMarkHeuristic, buildKpiStrip, appendSmallMultiplesHintIfApplicable } from "./marks.js";
 import { applyAudienceClamps } from "./audience.js";
 import type { AudienceConstraintOverrides } from "./audience.js";
 import {
@@ -26,6 +26,8 @@ import {
   type SheetSpec,
   type DatasourceSpec,
   type LayoutGrammar,
+  type PersonaPreferredArtifact,
+  type PersonaTone,
   DashboardPlanSchema,
 } from "./schema.js";
 import { selectQuestions, type InterviewInput } from "./questions.js";
@@ -319,7 +321,10 @@ function buildExecKpiBandPlan(
         ? { field: colorDim.name, kind: "dimension" as const }
         : { field: primaryMeasure, kind: "measure" as const },
     };
-    chartSheets.push(barSheet);
+    // FEW-7 (BI_DESIGN §9): note the small-multiples alternative when the
+    // bar is colored by a second dimension AND the question signals a
+    // cross-dimension comparison.
+    chartSheets.push(appendSmallMultiplesHintIfApplicable(barSheet, questionText));
   }
 
   // 2b. Filled map if a geo field is present
@@ -425,6 +430,19 @@ export interface PlanInput {
   personaName?: string;
   /** Brand name (from brand.yaml), for provenance alongside `personaName`. */
   brandName?: string;
+  /**
+   * Phase E1 (Slice C): the resolved persona's `preferredArtifact` (from
+   * brand.yaml), for provenance. `buildProposal` surfaces an honest
+   * openQuestion when this is "story" or "pulse" (those artifact types are
+   * not yet buildable — Phase E4 / E3 respectively).
+   */
+  personaPreferredArtifact?: PersonaPreferredArtifact;
+  /**
+   * Phase E1 (Slice C): the resolved persona's `tone` (from brand.yaml), for
+   * provenance. `buildProposal` trims the proposal summary to its first
+   * sentence + layout line when this is "concise".
+   */
+  personaTone?: PersonaTone;
 }
 
 /** Generate a DashboardPlan from a finalized set of inputs. */
@@ -590,6 +608,10 @@ export function generatePlan(input: PlanInput): DashboardPlan {
     ...(layoutGrammar !== undefined ? { layoutGrammar } : {}),
     ...(input.personaName !== undefined ? { personaName: input.personaName } : {}),
     ...(input.brandName !== undefined ? { brandName: input.brandName } : {}),
+    ...(input.personaPreferredArtifact !== undefined
+      ? { personaPreferredArtifact: input.personaPreferredArtifact }
+      : {}),
+    ...(input.personaTone !== undefined ? { personaTone: input.personaTone } : {}),
   });
 
   return plan;

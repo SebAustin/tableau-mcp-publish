@@ -229,17 +229,23 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       requestedLayout,
     }) => {
       // ---------------------------------------------------------------------
-      // Phase E1 (Slice A): resolve `persona` against brand.yaml.
+      // Phase E1 (Slice A + Slice C): resolve `persona` against brand.yaml.
       //
       // This is the ONLY I/O in this tool — brand.yaml is read here, once,
       // and the resolved values (audience, constraint overrides, persona
-      // name, brand name) are passed into the pure planner. The planner
-      // itself never touches the filesystem.
+      // name, brand name, artifact/tone) are passed into the pure planner.
+      // The planner itself never touches the filesystem.
+      //
+      // Slice C additionally threads `chartDeny` and `kpiEmphasis` into the
+      // audience clamp (BI_DESIGN §9, Few/visionary layer), and surfaces
+      // `preferredArtifact` / `tone` for `buildProposal` to honestly consume.
       // ---------------------------------------------------------------------
       let resolvedAudience: Audience | undefined = audience;
       let constraintOverrides: AudienceConstraintOverrides | undefined;
       let personaName: string | undefined;
       let brandName: string | undefined;
+      let personaPreferredArtifact: PlanInput["personaPreferredArtifact"];
+      let personaTone: PlanInput["personaTone"];
 
       if (persona) {
         const { brand } = loadBrand(brandPath);
@@ -248,8 +254,16 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         resolvedAudience = audience ?? personaAudience;
         personaName = persona;
         brandName = brand.brand.name;
-        if (overrides.maxSheets !== undefined) {
-          constraintOverrides = { maxSheets: overrides.maxSheets };
+        personaPreferredArtifact = overrides.preferredArtifact;
+        personaTone = overrides.tone;
+
+        const overridesToApply: AudienceConstraintOverrides = {
+          ...(overrides.maxSheets !== undefined ? { maxSheets: overrides.maxSheets } : {}),
+          ...(overrides.chartDeny !== undefined ? { chartDeny: overrides.chartDeny } : {}),
+          ...(overrides.kpiEmphasis !== undefined ? { kpiEmphasis: overrides.kpiEmphasis } : {}),
+        };
+        if (Object.keys(overridesToApply).length > 0) {
+          constraintOverrides = overridesToApply;
         }
       }
 
@@ -299,6 +313,8 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         constraintOverrides,
         personaName,
         brandName,
+        personaPreferredArtifact,
+        personaTone,
       };
 
       const plan = generatePlan(planInput);

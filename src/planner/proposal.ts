@@ -315,8 +315,16 @@ function buildSummary(plan: DashboardPlan): string {
   // Phase E1 (Slice A): surface persona/brand provenance when design_dashboard
   // resolved a named persona from brand.yaml.
   if (plan.personaName) {
-    summary += ` Tailored for the "${plan.personaName}" persona`;
-    summary += plan.brandName ? ` (${plan.brandName} brand).` : ".";
+    if (plan.personaTone === "concise") {
+      // Phase E1 (Slice C): concise tone folds the persona mention into the
+      // same sentence (instead of appending a second one) so the later
+      // first-sentence trim in `applyToneToSummary` still preserves
+      // provenance rather than discarding it.
+      summary = summary.replace(/\.$/, ` (persona: "${plan.personaName}").`);
+    } else {
+      summary += ` Tailored for the "${plan.personaName}" persona`;
+      summary += plan.brandName ? ` (${plan.brandName} brand).` : ".";
+    }
   }
 
   return summary;
@@ -364,6 +372,47 @@ function detectOpenQuestions(plan: DashboardPlan): string[] | undefined {
 }
 
 // ---------------------------------------------------------------------------
+// Phase E1 (Slice C) — persona `preferredArtifact` / `tone` consumption
+// (BI_DESIGN §9)
+// ---------------------------------------------------------------------------
+
+/**
+ * When the resolved persona prefers an artifact type this server cannot
+ * build yet ("story" or "pulse"), surface an honest openQuestion naming the
+ * phase where that capability lands, rather than silently ignoring the
+ * preference or pretending to honor it. "dashboard" (or no preference) needs
+ * no note — this proposal already is a dashboard.
+ */
+function detectPersonaArtifactQuestion(plan: DashboardPlan): string | undefined {
+  const artifact = plan.personaPreferredArtifact;
+  if (artifact === undefined || artifact === "dashboard") return undefined;
+
+  const personaLabel = plan.personaName ? `The "${plan.personaName}" persona` : "This persona";
+  const phase = artifact === "story" ? "Phase E4" : "Phase E3";
+  return (
+    `${personaLabel} prefers a "${artifact}" artifact; ${artifact} generation lands in ${phase} ` +
+    "and is not yet available — this proposal is a dashboard."
+  );
+}
+
+/**
+ * `tone: "concise"` trims the proposal summary down to its first sentence
+ * plus the layout line, dropping the (often long) per-chart description list
+ * — appropriate for a persona who wants headline numbers only, not prose.
+ * Any other tone (or no tone) leaves `summary` unchanged.
+ */
+function applyToneToSummary(
+  summary: string,
+  layoutSummary: string,
+  tone: DashboardPlan["personaTone"],
+): string {
+  if (tone !== "concise") return summary;
+  const firstSentenceMatch = summary.match(/^[^.]*\.?/);
+  const firstSentence = firstSentenceMatch?.[0]?.trim() || summary;
+  return `${firstSentence} ${layoutSummary}`.trim();
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -381,8 +430,14 @@ export function buildProposal(plan: DashboardPlan): DashboardProposal {
   const kpiStrip = buildKpiStripItems(plan);
   const views = buildViews(plan);
   const layoutSummary = buildLayoutSummary(plan);
-  const summary = buildSummary(plan);
-  const openQuestions = detectOpenQuestions(plan);
+  const summary = applyToneToSummary(buildSummary(plan), layoutSummary, plan.personaTone);
+
+  const artifactNote = detectPersonaArtifactQuestion(plan);
+  const combinedOpenQuestions = [
+    ...(detectOpenQuestions(plan) ?? []),
+    ...(artifactNote ? [artifactNote] : []),
+  ];
+  const openQuestions = combinedOpenQuestions.length > 0 ? combinedOpenQuestions : undefined;
 
   const raw = {
     schemaVersion: plan.schemaVersion,

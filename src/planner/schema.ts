@@ -51,6 +51,23 @@ export const DashboardLayoutEnum = z.enum(["tiled_vertical", "tiled_horizontal"]
 export type DashboardLayout = z.infer<typeof DashboardLayoutEnum>;
 
 /**
+ * Persona artifact preference (Phase E1, Slice C — BI_DESIGN §9). Mirrors
+ * `PersonaOverrides.preferredArtifact` in `../branding/schema.ts`, redeclared
+ * here (rather than imported) so the planner never depends on the branding
+ * module — the tool layer resolves brand.yaml and passes the plain value in.
+ */
+export const PersonaPreferredArtifactEnum = z.enum(["dashboard", "story", "pulse"]);
+export type PersonaPreferredArtifact = z.infer<typeof PersonaPreferredArtifactEnum>;
+
+/**
+ * Persona tone preference (Phase E1, Slice C — BI_DESIGN §9). Mirrors
+ * `PersonaOverrides.tone` in `../branding/schema.ts`; redeclared for the same
+ * planner-purity reason as `PersonaPreferredArtifactEnum` above.
+ */
+export const PersonaToneEnum = z.enum(["concise", "detailed"]);
+export type PersonaTone = z.infer<typeof PersonaToneEnum>;
+
+/**
  * Sheet kind — distinguishes a standard chart from a KPI tile.
  * Defaults to "chart" so plain {title, markType, rows, cols, measures} sheets
  * are backward-compatible without explicitly setting this field.
@@ -246,6 +263,20 @@ export const DashboardPlanSchema = z.object({
   personaName: z.string().optional(),
   /** Brand name (from brand.yaml) applied when a persona was resolved, if any. */
   brandName: z.string().optional(),
+  // --- Phase E1 (Slice C): persona artifact/tone provenance (BI_DESIGN §9) ---
+  /**
+   * The resolved persona's preferred artifact type (from brand.yaml), if any.
+   * `buildProposal` surfaces an honest openQuestion when this is "story" or
+   * "pulse" — those artifact types are not yet buildable by this server
+   * (Phase E4 / E3 respectively); this plan always describes a dashboard.
+   */
+  personaPreferredArtifact: PersonaPreferredArtifactEnum.optional(),
+  /**
+   * The resolved persona's tone preference (from brand.yaml), if any.
+   * `buildProposal` trims the proposal summary to its first sentence + the
+   * layout line when this is "concise".
+   */
+  personaTone: PersonaToneEnum.optional(),
 });
 
 export type DashboardPlan = z.infer<typeof DashboardPlanSchema>;

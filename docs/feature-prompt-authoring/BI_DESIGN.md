@@ -737,4 +737,52 @@ Each row below is a concrete assertion a test can make without an LLM call:
 
 ---
 
+## 9. Design-excellence rules (Few/visionary layer)
+
+Phase E1 (Pillar B, "Branding system + design-excellence layer") encodes a set of
+deterministic rules inspired by the Stephen Few / Edward Tufte school of analytical
+dashboard design — minimize non-data ink, favor direct comparison over decoration, size
+KPIs with context rather than as bare numbers, and prefer perceptually accurate encodings
+(position/length) over perceptually weak ones (angle/area). Each rule below states its
+**source lineage** (the general principle it descends from, described rather than quoted —
+no copyrighted text is reproduced), its **rationale**, and whether it is **ENFORCED**
+(the planner or schema makes the violation structurally impossible or produces a
+deterministic annotation, backed by a unit test) or **DOCUMENTED-only** (recorded in
+`brand.yaml`'s free-text `rules:` list and/or this file, but not mechanically checked).
+Honesty about which is which matters more than the count of "enforced" rules — several of
+these are aspirational until a later phase adds the missing builder support (tracked via
+the existing Gap Register in §2.3).
+
+| ID | Rule | Source lineage | Status | Where |
+|---|---|---|---|---|
+| **FEW-1** | No-pie default: part-to-whole questions always resolve to a bar (or its text/KPI downgrade), never a pie. | Few/Tufte: pie charts rely on angle/area judgment, the weakest perceptual channels; position/length (bar) is read far more accurately at more than a handful of slices. | **ENFORCED** | `MarkTypeEnum` (`src/planner/schema.ts`) has no `"pie"` member at all — a pie is structurally unrepresentable, not merely discouraged. §6 priority-7 rule (`share\|proportion\|composition\|part-to-whole\|percentage of`) routes explicitly to `"bar"`. Regression-tested across all four audiences in `tests/planner-slice6.test.ts`. |
+| **FEW-2** | Every KPI tile carries a comparison/delta when the underlying data offers one (CP/PP/Difference columns), instead of a bare number with no context. | Few: a number alone answers "what" but not "so what" — pairing it with a prior-period or target comparison turns a statistic into a judgment. | **ENFORCED** (pre-existing, formalized here) | `buildKpiStrip()` + `findPeriodPair()` (`src/planner/marks.ts`, `src/planner/fields.ts`) bind `comparisonMeasure`/`deltaMeasure` whenever a PP/CP/Difference counterpart exists; graceful degradation to a bare KPI otherwise (never blocks). Covered by the existing Slice 4/5 KPI-strip and direction tests. |
+| **FEW-3** | No gauge marks are ever emitted; bullet graphs are the documented alternative. | Few: gauges (speedometer-style dials) waste area on decoration and are hard to compare side-by-side; the bullet graph he designed communicates the same target/actual/range semantics in a fraction of the space. | **ENFORCED** (negative rule, by omission) / **DOCUMENTED-only** (positive rule) | Negative: `MarkTypeEnum` has no `"gauge"` member — structurally impossible, same guarantee as FEW-1. Positive: bullet graphs are **not** implemented either (no `"bullet"` mark class in `twb_builder.py`'s `_MARK_CLASS`) — this is a real gap, not a silent substitution; `brand.yaml`'s default `rules:` list states the preference ("Don't use gauges — prefer bullet graphs") as guidance for a human/agent, and it is tracked as a future builder gap alongside G-03 (treemap) in §2.3. |
+| **FEW-4** | Data-ink discipline: no gridline/border/shading options exist to emit; minimal axis labeling and a direct-labeling preference are documented for low-cardinality series. | Tufte: maximize the data-ink ratio — every mark that isn't data is a candidate for removal. | **ENFORCED** (structural, by omission) / **DOCUMENTED-only** (the labeling preference) | `SheetSpecSchema` (`src/planner/schema.ts`) has no gridline/border/shading/drop-shadow field anywhere in its shape, so the planner cannot emit one even accidentally. The exec audience note ("Axis labels are minimal", §3.3) and `brand.yaml`'s default rule ("use direct labeling on bars instead of a legend when there are 5 or fewer categories") are prose guidance, not mechanically checked — no builder-side legend/label toggle exists yet to check against. |
+| **FEW-5** | Measure-colored marks (a bar or filled map colored by a quantitative field) always use continuous/sequential color semantics, never the categorical palette. | Few/Tufte: magnitude should map to a perceptually ordered ramp (light→dark), not to arbitrary hue cycling, which implies unordered categories. | **ENFORCED** (structural) / gap noted | `_color_column_instance()` (`sidecar/twb_builder.py`) resolves `color.kind === "measure"` to `_measure_instance()` (a continuous quantitative field reference) — it can never resolve to the categorical dimension path, so Tableau always renders it with its built-in continuous ramp. **Gap (documented, not this phase):** the brand's custom `palette.sequential`/`palette.diverging` stops are validated and threaded to the sidecar (`toBuilderBrand()`) but are not yet bound to a per-encoding `<color-palette type='ordered-sequential'>` override — today Tableau's default built-in ramp renders, not the brand's custom stops. Tracked as a future builder gap. |
+| **FEW-6** | High-cardinality dimensions carry a top-N discipline note (formerly ad-hoc "Top 10" prose, now a named constant). | Few: dense categorical axes with dozens of unlabeled or overlapping ticks are illegible; truncating to the top N plus an "Other" bucket keeps the comparison readable. | **ENFORCED** | `TOP_N_LIMIT` (`src/planner/marks.ts`, value `10`) is the single source of truth for the N in the `GAP_G05` rationale text ("apply Top 10 filter…"); `annotateHighCardinality()` still fires deterministically whenever a shelf field's `cardinalityHint === "high"` (BI_DESIGN §1.3). Verified end-to-end (via `generatePlan`) and as a named-constant assertion in `tests/planner-slice6.test.ts`. |
+| **FEW-7** | Small-multiples hint: when a bar is colored by a second low-cardinality dimension (the C-09 "2 dims + 1 measure" pattern, §2.1) AND the question explicitly signals a cross-dimension comparison (`compare`/`comparison`/`versus`/`vs`/`across`/`breakdown by`), the rationale notes small multiples (one chart per category) as a legibility alternative to a single color-coded bar. | Tufte: small multiples let the eye compare shape-to-shape at a fixed scale, avoiding the color-decoding step a legend requires once more than a few categories are stacked into one chart. | **ENFORCED** | `appendSmallMultiplesHintIfApplicable()` (`src/planner/marks.ts`) is applied in both the keyword-heuristic path (`applyMarkHeuristic`) and the exec KPI-band path (`buildExecKpiBandPlan`, `src/planner/plan.ts`). Documentational only — no new mark type is emitted and no existing shelf assignment changes. Tested in `tests/planner-slice6.test.ts`. |
+
+### 9.1 Persona-driven overrides (brand.yaml, consumed by the audience clamp)
+
+Phase E1 Slice A scaffolded `personas.<name>.{chartDeny, kpiEmphasis, preferredArtifact,
+tone}` in `brand.yaml` (validated by `PersonaOverridesSchema`,
+`src/branding/schema.ts`) but did not yet wire them into the planner. Slice C consumes all
+four:
+
+| Override | Consumed by | Effect |
+|---|---|---|
+| `chartDeny: string[]` | `AudienceConstraintOverrides.chartDeny` → `applyAudienceClamps` STEP 1.5 (`src/planner/audience.ts`) | Any sheet whose `markType` (case-insensitive) appears in the list is replaced with `"bar"` (clearing `geo`/`scatter`), with a rationale note naming the `chartDeny` rule. Runs independently of, and before, the audience-level `allowedMarkTypes` drop (STEP 2) — this is a *persona* veto, not an *audience* capability check. |
+| `kpiEmphasis: "high" \| "medium" \| "low"` | `AudienceConstraintOverrides.kpiEmphasis` → `applyAudienceClamps` STEP 3.5 | Caps the number of `kpi_tile` sheets in the KPI band: `high` = 4 (the historical default, unchanged), `medium` = 3, `low` = 2 (`KPI_EMPHASIS_MAX_TILES`). Extra tiles are dropped from the tail (lowest-ranked measures — `rankMeasures` already ordered the band by relevance) with a rationale note on the last surviving tile. |
+| `preferredArtifact: "dashboard" \| "story" \| "pulse"` | `DashboardPlan.personaPreferredArtifact` → `buildProposal` (`src/planner/proposal.ts`) | `"dashboard"` (or unset) is a no-op — this tool already produces a dashboard. `"story"` or `"pulse"` appends an honest `openQuestions` entry naming the phase where that capability lands (Phase E4 for stories, Phase E3 for Pulse) — the server never silently ignores the preference or pretends to honor it with a dashboard substitute. |
+| `tone: "concise" \| "detailed"` | `DashboardPlan.personaTone` → `buildProposal` | `"concise"` trims `DashboardProposal.summary` to its first sentence plus the layout-summary line (the persona-tailored provenance mention is folded into that same first sentence rather than dropped, so a concise CEO proposal still names the persona). `"detailed"` (or unset) keeps the full multi-sentence summary — unchanged, backward-compatible default. |
+
+Both the planner (`src/planner/*`) and `sidecar/twb_builder.py` remain decoupled from
+`brand.yaml` directly: `design_dashboard` (`src/tools/designDashboard.ts`) is the only
+place that reads the brand file and resolves a persona's overrides; everything downstream
+receives plain, already-resolved values — the "planner stays pure" invariant from Phase E1
+Slice A holds through Slice C.
+
+---
+
 *End of BI_DESIGN.md — schemaVersion 1*

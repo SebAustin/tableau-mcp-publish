@@ -28,8 +28,17 @@ export const GAP_G02 =
   "Scatter plot requested; rendered as bar until builder adds Circle mark class.";
 export const GAP_G03 = "Treemap not supported; rendered as bar.";
 export const GAP_G04 = "Add reference lines manually in Tableau.";
+
+/**
+ * FEW-6 (BI_DESIGN §9, Few/visionary layer): the "N" in the Top-N filter
+ * instruction below. Named so the G-05 rationale text and any future
+ * enforcement (e.g. an actual builder-side Top-N filter) share a single
+ * source of truth instead of a magic number repeated in prose.
+ */
+export const TOP_N_LIMIT = 10;
+
 export const GAP_G05 =
-  "High-cardinality dimension — apply Top 10 filter in Tableau Desktop: right-click field > Filter > Top > By field.";
+  `High-cardinality dimension — apply Top ${TOP_N_LIMIT} filter in Tableau Desktop: right-click field > Filter > Top > By field.`;
 
 // ---------------------------------------------------------------------------
 // §6 — Priority-ordered keyword→markType table (Phase-1 update)
@@ -302,6 +311,43 @@ function annotateHighCardinality(sheet: RawSheet, fields: FieldClassification[])
 }
 
 // ---------------------------------------------------------------------------
+// FEW-7 — small-multiples hint (BI_DESIGN §9, Few/visionary layer)
+//
+// When a bar sheet is colored by a second low-cardinality dimension (the C-09
+// "2 dims + 1 measure" pattern) AND the business question / directions text
+// signals an explicit comparison across dimensions, note the small-multiples
+// alternative (one chart per category, instead of one color-coded bar) in the
+// sheet's rationale. Documentational only: no new mark type is emitted and no
+// existing shelf assignment changes.
+// ---------------------------------------------------------------------------
+
+const COMPARISON_ACROSS_RE = /\b(compare|comparison|versus|vs\.?|across|breakdown by|broken down by)\b/i;
+
+export const FEW_07_SMALL_MULTIPLES_NOTE =
+  "Two dimensions detected — consider small multiples (one chart per category) as a " +
+  "legibility alternative to a single color-coded bar (Few/visionary layer, FEW-7).";
+
+/**
+ * Append the FEW-7 small-multiples rationale note to `sheet` when it is a bar
+ * colored by a second dimension AND `questionText` signals a cross-dimension
+ * comparison. No-op otherwise. Generic over any sheet-shaped object so it can
+ * be applied to both `RawSheet` (heuristic path) and `SheetSpec` (exec KPI-band
+ * path) without a type-widening cast at the call site.
+ */
+export function appendSmallMultiplesHintIfApplicable<
+  T extends { markType: MarkType; color?: { kind: string }; rationale?: string },
+>(sheet: T, questionText: string): T {
+  const isBarWithSecondDimensionColor = sheet.markType === "bar" && sheet.color?.kind === "dimension";
+  if (!isBarWithSecondDimensionColor) return sheet;
+  if (!COMPARISON_ACROSS_RE.test(questionText)) return sheet;
+
+  return {
+    ...sheet,
+    rationale: (sheet.rationale ? sheet.rationale + " " : "") + FEW_07_SMALL_MULTIPLES_NOTE,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Descriptive sheet title derivation
 // ---------------------------------------------------------------------------
 
@@ -506,7 +552,8 @@ export function applyMarkHeuristic(
 
     // Annotate high-cardinality dimensions (G-05)
     const annotated = annotateHighCardinality(maybeSheet, fields);
-    sheets.push(annotated);
+    // FEW-7: note the small-multiples alternative when applicable (§9)
+    sheets.push(appendSmallMultiplesHintIfApplicable(annotated, text));
   }
 
   // If no sheets produced (e.g. empty text), produce one default bar

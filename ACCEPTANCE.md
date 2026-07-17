@@ -368,3 +368,25 @@ Shipped in E1: `brand.yaml` kit (palette/typography/formats/rules + 5 named pers
 in `design_dashboard`, brand application in the builder (all XSD-valid; no-brand output
 byte-identical), and the tool-vs-demo threading guard (`659181b` — build_from_plan now threads
 kind/color/kpi/scatter/geo + title/layoutGrammar). Gate: **277 TS + 290 Python = 567 tests.**
+
+---
+
+# E2 — Connectivity + automated refresh (2026-07-17)
+
+Shipped (23 tools, gate 433 TS + 308 Python = 741 tests):
+- REST hardening: bounded idempotency-aware retry (429/5xx, Retry-After honored), typed
+  TableauApiError; VDS field-metadata client + `get_datasource_fields`.
+- Scheduling/automation: `schedule_refresh` (Cloud per-task frequency XML + honest Bridge
+  caveat), `list/delete_refresh_schedule`, `create/list/delete_webhook` (HTTPS, admin errors).
+- Live connections: `create_live_datasource` — Snowflake/Presto federated `.tds` (no creds in
+  the file), publish with `<connectionCredentials embed='true'>` (password never logged,
+  asserted); key-pair auth cleanly rejected; Presto defaults to Bridge.
+- Local-file design-around: `refresh:local` + `cron:generate` (crontab + launchd templates,
+  generated never installed).
+
+**Live proof (local-file path):** `npm run refresh:local` re-ingested the Superstore file and
+republished (overwrite) in 4.7s → https://10ax.online.tableau.com/#/site/sebaustin/datasources/27118502
+`cron:generate --daily 06:30` emits the install-ready template.
+
+**Pending live proofs (need user resources):** Snowflake scheduled server-side refresh (needs
+account creds); the four VERIFY-LIVE schedule-XML details.

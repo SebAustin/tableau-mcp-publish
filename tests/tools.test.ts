@@ -736,6 +736,69 @@ describe("build_from_plan (M6)", () => {
 
   // Phase E1, Slice B: "Builder applies branding" — build_from_plan resolves
   // brand.yaml and threads a brand block into buildDashboardWorkbook.
+  describe("rich-field threading (tool-vs-demo divergence guard)", () => {
+    it("build_from_plan threads kind/color/kpi/geo + dashboard title/layoutGrammar to the sidecar", async () => {
+      const richPlan = {
+        ...basePlan,
+        audience: "exec",
+        dashboardTitle: "Executive Overview",
+        dashboardSubtitle: "Period over Period",
+        layoutGrammar: {
+          kind: "kpi_band_over_charts",
+          kpiTileTitles: ["Sales"],
+          chartTitles: ["Rev by Region", "Sales by State"],
+        },
+        sheets: [
+          {
+            title: "Sales",
+            markType: "text",
+            kind: "kpi_tile",
+            cols: [],
+            rows: [],
+            measures: ["Sales"],
+            kpi: { primaryMeasure: "Sales", comparisonMeasure: "PP Sales", deltaMeasure: "Sales Difference" },
+          },
+          {
+            title: "Rev by Region",
+            markType: "bar",
+            cols: ["region"],
+            rows: [],
+            measures: ["revenue"],
+            color: { field: "Category", kind: "dimension" },
+          },
+          {
+            title: "Sales by State",
+            markType: "map_filled",
+            cols: [],
+            rows: ["State"],
+            measures: ["Sales"],
+            geo: { geoField: "State", geoRole: "state", colorMeasure: "Sales" },
+          },
+        ],
+      };
+      await invoke("build_from_plan", { plan: richPlan });
+      expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dashboardTitle: "Executive Overview",
+          dashboardSubtitle: "Period over Period",
+          layoutGrammar: expect.objectContaining({ kind: "kpi_band_over_charts" }),
+          sheets: [
+            expect.objectContaining({
+              kind: "kpi_tile",
+              kpi: expect.objectContaining({ primaryMeasure: "Sales", deltaMeasure: "Sales Difference" }),
+            }),
+            expect.objectContaining({
+              color: expect.objectContaining({ field: "Category", kind: "dimension" }),
+            }),
+            expect.objectContaining({
+              geo: expect.objectContaining({ geoField: "State", geoRole: "state" }),
+            }),
+          ],
+        }),
+      );
+    });
+  });
+
   describe("branding (E1, Slice B)", () => {
     it("plan.personaName set (no explicit brandPath) → brand threaded from the repo-root brand.yaml", async () => {
       await invoke("build_from_plan", {

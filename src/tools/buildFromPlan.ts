@@ -237,12 +237,22 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         datasourceContentUrl: contentUrl,
         site: ctx.config.siteName,
         serverUrl: ctx.config.server,
+        // Thread the FULL sheet spec — the rich encoding fields (kind/color/
+        // kpi/scatter/geo) are what make the dashboard executive-grade; the
+        // dashboard-level fields carry the title/layout grammar. Dropping any
+        // of these here would silently downgrade the tool output vs. the plan
+        // the user confirmed (tool-vs-demo divergence guard).
         sheets: plan.sheets.map((s) => ({
           title: s.title,
           markType: s.markType,
           rows: s.rows,
           cols: s.cols,
           measures: s.measures,
+          ...(s.kind ? { kind: s.kind } : {}),
+          ...(s.color ? { color: s.color } : {}),
+          ...(s.kpi ? { kpi: s.kpi } : {}),
+          ...(s.scatter ? { scatter: s.scatter } : {}),
+          ...(s.geo ? { geo: s.geo } : {}),
         })),
         dashboardSheetTitles: plan.sheets.map((s) => s.title),
         dashboardLayout: plan.dashboardLayout as "tiled_vertical" | "tiled_horizontal",
@@ -250,6 +260,10 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         canvasHeight: constraints.canvasHeight,
         hyperPath,
         brand,
+        ...(plan.dashboardTitle ? { dashboardTitle: plan.dashboardTitle } : {}),
+        ...(plan.dashboardSubtitle ? { dashboardSubtitle: plan.dashboardSubtitle } : {}),
+        ...(plan.textZones ? { textZones: plan.textZones } : {}),
+        ...(plan.layoutGrammar ? { layoutGrammar: plan.layoutGrammar } : {}),
       });
 
       // Publish to Tableau Cloud

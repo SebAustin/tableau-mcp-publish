@@ -346,3 +346,25 @@ accepted by Tableau Cloud on the first attempt after the E0 fixes:
 
 Gate at close: **241 TS + 258 Python = 499 tests.** The propose→confirm proposal shown in the
 demo output is the exact contract an agent presents before build_from_plan publishes.
+
+---
+
+# E1 — Branding system live (2026-06-29)
+
+`npm run demo:superstore -- --persona ceo` resolved the **ceo** persona from `brand.yaml`
+(→ exec base, "My Company" brand), and published the branded dashboard:
+
+| Artifact | URL |
+|---|---|
+| Datasource | https://10ax.online.tableau.com/#/site/sebaustin/datasources/27109700 |
+| Branded exec workbook | https://10ax.online.tableau.com/#/site/sebaustin/workbooks/2519210 |
+
+The workbook carries the brand: `<preferences><color-palette custom='true' name="My Company
+Palette">`, brand-typography title/subtitle runs, and `default-format` on measures (currency/
+percent/number classified by name). The proposal states the persona + brand applied.
+
+Shipped in E1: `brand.yaml` kit (palette/typography/formats/rules + 5 named personas),
+`src/branding` (zod loader + resolvePersona), `validate_brand` tool (15 tools), persona support
+in `design_dashboard`, brand application in the builder (all XSD-valid; no-brand output
+byte-identical), and the tool-vs-demo threading guard (`659181b` — build_from_plan now threads
+kind/color/kpi/scatter/geo + title/layoutGrammar). Gate: **277 TS + 290 Python = 567 tests.**

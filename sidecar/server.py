@@ -13,7 +13,7 @@ import tempfile
 import uuid
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -286,6 +286,59 @@ class FileRequest(BaseModel):
     delimiter: str | None = Field(default=None, alias="delimiter")
 
 
+# ---------------------------------------------------------------------------
+# Live-connection datasource models — Phase E2 slice C (data connectivity +
+# embedded-credential publish). See tds_builder.py's live-connection section
+# for the full VERIFY-LIVE attribute mapping + the known-impossible Snowflake
+# key-pair case. This model NEVER carries credentials — username/password
+# travel separately, at publish time, via the TypeScript layer's
+# `<connectionCredentials>` element (src/rest/credentials.ts); if a caller
+# mistakenly includes them here, Pydantic silently drops the unknown fields
+# (no `extra="forbid"`) since this model simply doesn't declare them.
+# ---------------------------------------------------------------------------
+
+_SNOWFLAKE_AUTH_METHODS = {"username-password", "oauth"}
+# Known-impossible per the Phase E2 plan: Snowflake key-pair auth cannot be
+# embedded via REST (Tableau Desktop-only) — rejected with a clean 400
+# instead of silently emitting XML that will never actually authenticate.
+_SNOWFLAKE_IMPOSSIBLE_AUTH = {"key-pair", "keypair", "key_pair", "jwt"}
+
+
+class LiveConnectionSpec(BaseModel):
+    """Cloud live-connection topology (Snowflake or Presto/Trino) — no credentials, no extract.
+
+    THE MODEL_DUMP LESSON (see ``BrandModel``'s docstring above): this model
+    accepts camelCase on the wire (via ``alias=``) but
+    ``req.connection.model_dump()`` — the only way ``tds_builder`` ever sees
+    this data — produces the snake_case FIELD names below, never the
+    aliases. ``tds_builder.build_live_tds`` reads snake_case keys accordingly
+    (``db_schema``, not ``schema``).
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    type: Literal["snowflake", "presto"]
+    server: str
+    db_schema: str = Field(alias="schema")
+    table: str
+    # Snowflake-only (ignored when type == "presto").
+    warehouse: str | None = None
+    dbname: str | None = None
+    authentication: str = "username-password"
+    role: str | None = None
+    # Presto-only (ignored when type == "snowflake").
+    port: int | None = None
+    catalog: str | None = None
+    ssl: bool = True
+
+
+class LiveDatasourceRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    connection: LiveConnectionSpec
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -486,3 +539,51 @@ def datasource_from_file(req: FileRequest) -> FileResult:
         hyperPath=str(hyper_path),
         columns=[ColumnInfo(name=c["name"], dataType=c["dataType"]) for c in columns],
     )
+
+
+@app.post("/datasource/live")
+def datasource_live(req: LiveDatasourceRequest) -> dict[str, str]:
+    """Build a live-connection .tds (Snowflake or Presto — no extract, no credentials).
+
+    Validates type-specific required fields and rejects the known-impossible
+    Snowflake key-pair authentication case with a clean, actionable 400
+    (Tableau's Publish Datasource API only supports embedding
+    username/password or OAuth credentials — key-pair auth is Desktop-only,
+    see tds_builder.py's live-connection section).
+    """
+    conn = req.connection
+    auth_normalized = conn.authentication.strip().lower().replace(" ", "-").replace("_", "-")
+
+    if conn.type == "snowflake":
+        if auth_normalized in _SNOWFLAKE_IMPOSSIBLE_AUTH:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Snowflake key-pair authentication ({conn.authentication!r}) is not "
+                    "REST-publishable: Tableau's Publish Datasource API only supports embedding "
+                    "username/password or OAuth credentials. Configure key-pair auth in Tableau "
+                    "Desktop and publish from there instead."
+                ),
+            )
+        if auth_normalized not in _SNOWFLAKE_AUTH_METHODS:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Unsupported Snowflake authentication {conn.authentication!r}. "
+                    f"Use one of {sorted(_SNOWFLAKE_AUTH_METHODS)}."
+                ),
+            )
+        missing = [f for f in ("warehouse", "dbname") if getattr(conn, f) is None]
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"snowflake connections require {missing} to be set.",
+            )
+    else:  # presto
+        if conn.catalog is None:
+            raise HTTPException(status_code=400, detail="presto connections require 'catalog'.")
+
+    tds_xml = tds_builder.build_live_tds(req.name, conn.model_dump())
+    out_path = _out("tds")
+    out_path.write_text(tds_xml, encoding="utf-8")
+    return {"path": str(out_path)}

@@ -163,6 +163,67 @@ describe("publishDatasource — chunked (>64MB)", () => {
   });
 });
 
+describe("publishDatasource — embedded credentials (Phase E2 slice C)", () => {
+  it("emits <connectionCredentials> and useRemoteQueryAgent inside the request_payload XML", async () => {
+    const client = await signedInClient();
+    mockedStat.mockResolvedValue({ size: 1000 } as never);
+    mockedReadFile.mockResolvedValue(Buffer.from("filedata") as never);
+    mockedRequest.mockResolvedValueOnce(
+      jsonResponse(201, {
+        datasource: { id: "DS3", webpageUrl: "https://x.online.tableau.com/#/site/s/datasources/DS3" },
+      }) as never,
+    );
+
+    await client.publishDatasource("/tmp/live.tds", "Orders", "PID", false, {
+      credentials: { username: "svc_user", password: "s3cr3t <secret>", embed: true, oauth: false },
+      useRemoteQueryAgent: true,
+    });
+
+    const lastCall = mockedRequest.mock.calls.at(-1)!;
+    const body = (lastCall[1] as { body: Buffer }).body.toString("utf8");
+    // Exact tsRequest body (redacted-value-safe assertion: the raw password is
+    // xml-escaped, never appears unescaped, and never as a bare `<` breakout).
+    expect(body).toContain(
+      '<tsRequest><datasource name="Orders" useRemoteQueryAgent="true">' +
+        '<project id="PID" />' +
+        '<connectionCredentials name="svc_user" password="s3cr3t &lt;secret&gt;" embed="true" oAuth="false" />' +
+        "</datasource></tsRequest>",
+    );
+    expect(body).not.toContain("s3cr3t <secret>"); // never unescaped
+  });
+
+  it("omits <connectionCredentials> and useRemoteQueryAgent when not provided (back-compat)", async () => {
+    const client = await signedInClient();
+    mockedStat.mockResolvedValue({ size: 1000 } as never);
+    mockedReadFile.mockResolvedValue(Buffer.from("filedata") as never);
+    mockedRequest.mockResolvedValueOnce(
+      jsonResponse(201, { datasource: { id: "DS4" } }) as never,
+    );
+
+    await client.publishDatasource("/tmp/x.tdsx", "Plain", "PID", false);
+
+    const lastCall = mockedRequest.mock.calls.at(-1)!;
+    const body = (lastCall[1] as { body: Buffer }).body.toString("utf8");
+    expect(body).toContain('<tsRequest><datasource name="Plain"><project id="PID" /></datasource></tsRequest>');
+    expect(body).not.toContain("connectionCredentials");
+    expect(body).not.toContain("useRemoteQueryAgent");
+  });
+
+  it("never applies credentials/useRemoteQueryAgent to a workbook publish", async () => {
+    const client = await signedInClient();
+    mockedStat.mockResolvedValue({ size: 1000 } as never);
+    mockedReadFile.mockResolvedValue(Buffer.from("filedata") as never);
+    mockedRequest.mockResolvedValueOnce(jsonResponse(201, { workbook: { id: "WB9" } }) as never);
+
+    await client.publishWorkbook("/tmp/x.twbx", "WB", "PID", false);
+
+    const lastCall = mockedRequest.mock.calls.at(-1)!;
+    const body = (lastCall[1] as { body: Buffer }).body.toString("utf8");
+    expect(body).not.toContain("connectionCredentials");
+    expect(body).not.toContain("useRemoteQueryAgent");
+  });
+});
+
 describe("resolveProjectId", () => {
   it("rejects an empty project name (never Default silently)", async () => {
     const client = await signedInClient();

@@ -45,7 +45,9 @@
     "demo:dashboard": "tsx scripts/demo-dashboard.ts",
     "demo:superstore": "tsx scripts/demo-superstore.ts",
     "test:mcp-smoke": "tsx scripts/mcp-smoke.ts",
-    "verify-setup": "tsx scripts/verify-setup.ts"
+    "verify-setup": "tsx scripts/verify-setup.ts",
+    "refresh:local": "tsx scripts/refresh-local.ts",
+    "cron:generate": "tsx scripts/generate-cron.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",

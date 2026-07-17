@@ -75,6 +75,7 @@ function makeCtx() {
       .fn()
       .mockResolvedValue({ tdsxPath: "/tmp/f.tdsx", hyperPath: "/tmp/f.hyper" }),
     buildDashboardWorkbook: vi.fn().mockResolvedValue({ twbxPath: "/tmp/d.twbx" }),
+    buildLiveDatasource: vi.fn().mockResolvedValue({ tdsPath: "/tmp/live.tds" }),
   };
   return { config: cfg, rest, sidecar };
 }
@@ -105,8 +106,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 22 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(22);
+  it("registers all 23 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(23);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -143,6 +144,8 @@ describe("tool registration", () => {
       "create_webhook",
       "list_webhooks",
       "delete_webhook",
+      // E2 slice C — live Cloud connections + embedded credentials
+      "create_live_datasource",
     ]) {
       expect(names).toContain(t);
     }
@@ -1061,5 +1064,125 @@ describe("create_webhook / list_webhooks / delete_webhook (E2 slice B)", () => {
     const res = await invoke("delete_webhook", { webhookId: "WH1", confirm: true });
     expect(ctx.rest.deleteWebhook).toHaveBeenCalledWith("WH1");
     expect(res.structuredContent).toEqual({ deleted: true, webhookId: "WH1" });
+  });
+});
+
+describe("create_live_datasource (E2 slice C)", () => {
+  const snowflakeInput = {
+    name: "Orders (Snowflake)",
+    projectName: "Sales",
+    connection: {
+      type: "snowflake" as const,
+      server: "myaccount.snowflakecomputing.com",
+      schema: "PUBLIC",
+      table: "ORDERS",
+      warehouse: "COMPUTE_WH",
+      dbname: "ANALYTICS",
+    },
+    credentials: { username: "svc_user", password: "svc_secret" },
+  };
+
+  it("builds the live .tds via the sidecar, embeds credentials, and publishes (snowflake)", async () => {
+    const res = await invoke("create_live_datasource", snowflakeInput);
+
+    expect(ctx.sidecar.buildLiveDatasource).toHaveBeenCalledWith({
+      name: "Orders (Snowflake)",
+      connection: expect.objectContaining({
+        type: "snowflake",
+        server: "myaccount.snowflakecomputing.com",
+        schema: "PUBLIC",
+        table: "ORDERS",
+        warehouse: "COMPUTE_WH",
+        dbname: "ANALYTICS",
+        authentication: "username-password",
+      }),
+    });
+    expect(ctx.rest.resolveProjectId).toHaveBeenCalledWith("Sales");
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledWith(
+      "/tmp/live.tds",
+      "Orders (Snowflake)",
+      "PID",
+      false,
+      {
+        credentials: { username: "svc_user", password: "svc_secret", embed: true, oauth: false },
+      },
+    );
+    expect(res.structuredContent).toMatchObject({ datasourceLuid: "DS" });
+    expect((res.structuredContent as { note: string }).note).toMatch(/schedule_refresh/);
+  });
+
+  it("passes useRemoteQueryAgent through for presto and includes the Bridge caveat in the note", async () => {
+    const res = await invoke("create_live_datasource", {
+      name: "Orders (Presto)",
+      projectName: "Sales",
+      connection: {
+        type: "presto" as const,
+        server: "presto.internal.example.com",
+        schema: "default",
+        table: "orders",
+        catalog: "hive",
+      },
+      credentials: { username: "svc_user", password: "svc_secret" },
+    });
+
+    expect(ctx.sidecar.buildLiveDatasource).toHaveBeenCalledWith({
+      name: "Orders (Presto)",
+      connection: expect.objectContaining({ type: "presto", catalog: "hive", port: 8080, ssl: true }),
+    });
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledWith(
+      "/tmp/live.tds",
+      "Orders (Presto)",
+      "PID",
+      false,
+      expect.objectContaining({ useRemoteQueryAgent: true }),
+    );
+    expect((res.structuredContent as { note: string }).note).toMatch(/Bridge/);
+  });
+
+  it("rejects Snowflake key-pair authentication with a clean, actionable error before any sidecar call", async () => {
+    await expect(
+      invoke("create_live_datasource", {
+        ...snowflakeInput,
+        connection: { ...snowflakeInput.connection, authentication: "key-pair" },
+      }),
+    ).rejects.toThrow(/key-pair.*not REST-publishable/i);
+    expect(ctx.sidecar.buildLiveDatasource).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unsupported Snowflake authentication value", async () => {
+    await expect(
+      invoke("create_live_datasource", {
+        ...snowflakeInput,
+        connection: { ...snowflakeInput.connection, authentication: "ldap" },
+      }),
+    ).rejects.toThrow(/Unsupported Snowflake authentication/);
+    expect(ctx.sidecar.buildLiveDatasource).not.toHaveBeenCalled();
+  });
+
+  it("marks embedded credentials as oauth when authentication is oauth", async () => {
+    await invoke("create_live_datasource", {
+      ...snowflakeInput,
+      connection: { ...snowflakeInput.connection, authentication: "oauth" },
+    });
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledWith(
+      "/tmp/live.tds",
+      "Orders (Snowflake)",
+      "PID",
+      false,
+      expect.objectContaining({
+        credentials: expect.objectContaining({ oauth: true }),
+      }),
+    );
+  });
+
+  it("passes overwrite=true through when requested", async () => {
+    await invoke("create_live_datasource", { ...snowflakeInput, overwrite: true });
+    expect(ctx.rest.publishDatasource).toHaveBeenCalledWith(
+      "/tmp/live.tds",
+      "Orders (Snowflake)",
+      "PID",
+      true,
+      expect.anything(),
+    );
   });
 });

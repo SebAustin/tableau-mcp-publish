@@ -129,6 +129,47 @@ export interface FileArgs {
   delimiter?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Live-connection datasource spec (Phase E2 slice C — mirrors the sidecar's
+// LiveConnectionSpec / LiveDatasourceRequest in server.py, kept in sync
+// manually per this file's existing convention). NEVER carries credentials —
+// those travel separately via `TableauRestClient.publishDatasource`'s
+// `credentials` option (see `rest/credentials.ts`).
+// ---------------------------------------------------------------------------
+
+/** Snowflake live-connection topology. VERIFY-LIVE attribute mapping — see `sidecar/tds_builder.py`. */
+export interface LiveSnowflakeConnection {
+  type: "snowflake";
+  /** `<account>.snowflakecomputing.com` */
+  server: string;
+  schema: string;
+  table: string;
+  warehouse: string;
+  dbname: string;
+  /** `"username-password"` (default) | `"oauth"`. Key-pair auth is rejected server-side (Desktop-only). */
+  authentication?: string;
+  role?: string;
+}
+
+/** Presto/Trino live-connection topology. VERIFY-LIVE attribute mapping — see `sidecar/tds_builder.py`. */
+export interface LivePrestoConnection {
+  type: "presto";
+  server: string;
+  schema: string;
+  table: string;
+  port?: number;
+  catalog: string;
+  ssl?: boolean;
+}
+
+export type LiveConnectionSpec = LiveSnowflakeConnection | LivePrestoConnection;
+
+export interface LiveDatasourceArgs {
+  /** Display name of the published datasource. */
+  name: string;
+  connection: LiveConnectionSpec;
+}
+
 export interface WorkbookArgs {
   /** Display name / caption of the published datasource. */
   datasourceName: string;
@@ -477,6 +518,17 @@ export class AuthoringSidecar {
 
     const result = await this.post<FileResult>("/datasource/from-file", payload);
     return { tdsxPath: result.path, columns: result.columns, hyperPath: result.hyperPath };
+  }
+
+  /**
+   * Build a live-connection `.tds` (Snowflake or Presto — no extract, no
+   * credentials; Phase E2 slice C). Credentials are applied separately at
+   * publish time via {@link TableauRestClient.publishDatasource}'s
+   * `credentials` option, never sent to this route.
+   */
+  async buildLiveDatasource(args: LiveDatasourceArgs): Promise<{ tdsPath: string }> {
+    const { path } = await this.post<BuildResult>("/datasource/live", args);
+    return { tdsPath: path };
   }
 
   async buildDatasourceFromQuery(args: QueryArgs): Promise<{ tdsxPath: string }> {

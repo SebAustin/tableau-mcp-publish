@@ -26,11 +26,13 @@ import {
   type CreateWebhookInput,
   type Webhook,
 } from "./rest/webhooks.js";
+import { buildConnectionCredentialsXml, type DatasourceCredentials } from "./rest/credentials.js";
 
 export { TableauApiError } from "./rest/errors.js";
 export type { VdsField } from "./rest/vds.js";
 export type { ExtractRefreshTask, ExtractRefreshType, ScheduleSpec, ScheduleTarget } from "./rest/schedules.js";
 export type { CreateWebhookInput, Webhook, WebhookEvent } from "./rest/webhooks.js";
+export type { DatasourceCredentials } from "./rest/credentials.js";
 
 export interface Session {
   token: string;
@@ -43,6 +45,19 @@ export interface PublishResult {
   url: string;
   /** Server-assigned slug; present when publishing a datasource. */
   contentUrl?: string;
+}
+
+/** Datasource-only publish options (Phase E2 slice C) — see {@link TableauRestClient.publishDatasource}. */
+export interface PublishDatasourceOptions {
+  /** Embedded connection credentials (see `rest/credentials.ts`). Never logged. */
+  credentials?: DatasourceCredentials;
+  /**
+   * Flags this datasource's connection as Bridge-backed (Tableau Remote Query
+   * Agent) — required for sources Cloud can't reach directly (e.g. Presto
+   * behind a private network without a public, allowlisted endpoint). See the
+   * `create_live_datasource` tool description for the Presto Bridge caveat.
+   */
+  useRemoteQueryAgent?: boolean;
 }
 
 export interface ProjectRef {
@@ -361,13 +376,28 @@ export class TableauRestClient {
     return `${this.cfg.server}/#${sitePart}/${seg}/${id}`;
   }
 
+  /**
+   * Publish a `.tdsx`/`.hyper`/live `.tds` file, optionally embedding connection
+   * credentials and/or flagging a Bridge-backed (Remote Query Agent) connection —
+   * Phase E2 slice C. Both are applied only to the `<datasource>` element,
+   * never to `<workbook>` (see {@link publishWorkbook}, which never accepts them).
+   *
+   * `options.credentials` (see `rest/credentials.ts`) emits
+   * `<connectionCredentials name password embed oAuth />` as a sibling of
+   * `<project>` inside `<datasource>`. `options.useRemoteQueryAgent` sets a
+   * same-named attribute directly on `<datasource>` — this is this project's
+   * best-documented placement for the flag (see the `create_live_datasource`
+   * tool description's Presto/Bridge caveat); VERIFY-LIVE before relying on it
+   * against an actual Bridge-enabled site.
+   */
   async publishDatasource(
     filePath: string,
     name: string,
     projectId: string,
     overwrite: boolean,
+    options: PublishDatasourceOptions = {},
   ): Promise<PublishResult> {
-    return this.publish("datasource", filePath, name, projectId, overwrite);
+    return this.publish("datasource", filePath, name, projectId, overwrite, undefined, options);
   }
 
   async publishWorkbook(
@@ -388,6 +418,7 @@ export class TableauRestClient {
     projectId: string,
     overwrite: boolean,
     extraQuery?: Record<string, string | boolean | undefined>,
+    datasourceOptions?: PublishDatasourceOptions,
   ): Promise<PublishResult> {
     const { siteId } = this.requireSession();
     const { size } = await stat(filePath);
@@ -395,9 +426,19 @@ export class TableauRestClient {
     const elem = type === "datasource" ? "datasource" : "workbook";
     const collection = type === "datasource" ? "datasources" : "workbooks";
     const filePartName = type === "datasource" ? "tableau_datasource" : "tableau_workbook";
+    // Datasource-only (Phase E2 slice C): embedded credentials + Bridge flag.
+    // Never applied to <workbook> — publishWorkbook never passes datasourceOptions.
+    const remoteAgentAttr =
+      type === "datasource" && datasourceOptions?.useRemoteQueryAgent !== undefined
+        ? ` useRemoteQueryAgent="${datasourceOptions.useRemoteQueryAgent}"`
+        : "";
+    const credentialsXml =
+      type === "datasource" && datasourceOptions?.credentials
+        ? buildConnectionCredentialsXml(datasourceOptions.credentials)
+        : "";
     const requestXml =
-      `<tsRequest><${elem} name="${xmlEscape(name)}">` +
-      `<project id="${xmlEscape(projectId)}" /></${elem}></tsRequest>`;
+      `<tsRequest><${elem} name="${xmlEscape(name)}"${remoteAgentAttr}>` +
+      `<project id="${xmlEscape(projectId)}" />${credentialsXml}</${elem}></tsRequest>`;
 
     let json: unknown;
     if (selectPublishStrategy(size, this.chunkSize) === "single") {

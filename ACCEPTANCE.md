@@ -417,3 +417,54 @@ clones, never constructs, this block). Pending: user creates ONE metric in the P
 it, lock the fixture, correct the client, re-prove live.
 
 Gate at this point: **521 TS + 338 Python = 859 tests.**
+
+---
+
+## E5 — Hardening, docs, acceptance (vibe-BI expansion close-out)
+
+**Date:** 2026-07-17 · **Branch:** `feat/exec-dashboards` · **Verdict: SOLID (solution-verifier, rubric 100/100)**
+
+### Final gate (independently re-run by the verifier)
+
+| Check | Result |
+|---|---|
+| `npm run build` (tsc) | clean |
+| `npm run lint` (eslint) | clean |
+| `vitest run` | **525 passed** (23 files) |
+| `ruff check` / `mypy --strict` | clean |
+| `pytest -q` | **338 passed** |
+| **Total** | **863 / 863 · exit 0** |
+| `npm audit --omit=dev` | 0 vulnerabilities |
+| Focused/skipped tests | none (grep-verified) |
+
+### Security close-out
+
+- STRIDE expansion audit VB-01..VB-12 recorded in `SECURITY.md`: **0 CRITICAL · 0 HIGH · 1 MEDIUM**.
+- The single MEDIUM (**VB-02**, shell injection via interpolated crontab lines) was **fixed in-branch** (`scripts/cronTemplates.ts` POSIX `shellQuote`) and locked with four adversarial tests (`$(id)`, quote-breakout, embedded single quotes, hostile repoRoot).
+- Credentials discipline verified on both the success path and a 400-error path (`tests/secrets.test.ts`); live-connection `.tds` files provably never contain credentials (`test_tds_builder_live.py`).
+
+### Deliverables confirmed real (verifier evidence, code + tests)
+
+- **E1 branding**: brand.yaml → `<preferences><color-palette>`, branded runs, `default-format`; no-brand output byte-identical (regression-proof). Persona resolution wired into `design_dashboard`; Few rules enforced deterministically (chartDeny, KPI caps, no-pie).
+- **E2 connectivity**: bounded idempotency-aware retry (chunk-append PUT never retried), Cloud extract-refresh schedules, fail-closed HTTPS webhooks, live Snowflake/Presto `.tds` with key-pair auth cleanly rejected, local-file cron design-around (VB-02-hardened).
+- **E3 Pulse**: 4 tools registered, wire payload locked by deep-equal test, VDS pre-flight hard-fails on missing measure/date dimension.
+- **E4 stories**: storyboard/flipboard XML XSD-validated in 6 variants, captured-sheet fail-loud at both layers, single shared `<dashboards>` container regression-guarded.
+- **Docs**: 27 tools consistent across README / tool_reference / CODEBASE / DEPLOYMENT / architecture; ADRs 0006–0012; runbook. Spot-checked tool entries match zod schemas exactly.
+
+### Live proofs (Tableau Cloud dev site) — status ledger
+
+| Phase | Proof | Status |
+|---|---|---|
+| E0 | Superstore exec dashboard (embedded extract) | ✅ recorded above |
+| E1 | Branded persona=ceo rebuild | ✅ recorded above |
+| E2 (local path) | Local-file re-publish refresh chain | ✅ recorded above |
+| E4 | Published story (storyboard) | ✅ recorded above |
+| E2 (Snowflake) | Scheduled Snowflake refresh + VERIFY-LIVE schedule tokens | ⏳ **pending user**: Snowflake credentials in `.env` |
+| E3 (Pulse) | Live definition + metric creation | ⏳ **pending user**: one UI-created metric on "Superstore (exec demo)" → GET fixture → correct `basic_specification` |
+
+No live capability is claimed beyond the ✅ rows; the two ⏳ rows are code-complete and unblocked by a ~2-minute user action each.
+
+### Non-blocking observations (verifier, no fix required)
+
+1. The E3 phase-close record above states the gate at its point-in-time count (521 TS / 859 total); the branch-final count is 525 / 863. Historical snapshot retained as-is.
+2. Webhook HTTPS fail-closed is enforced by exact-prefix check; an explicit uppercase-scheme/whitespace unit test would be a nicety.

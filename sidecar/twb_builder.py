@@ -339,6 +339,7 @@ def _build_worksheet(
     ds_internal: str,
     sheet_index: int,
     design_theme: dict[str, Any] | None = None,
+    brand: dict[str, Any] | None = None,
 ) -> ET.Element:  # noqa: C901 – intentionally long: one function per worksheet type
     """Build a schema-valid ``<worksheet>`` element.
 
@@ -431,11 +432,33 @@ def _build_worksheet(
     XPath provenance. Absent ``design_theme`` (the default): byte-identical
     to before this slice.
 
+    Styled KPI tiles (Design Excellence, Slice D4)
+    -------------------------------------------------
+    When ``sheet["kind"] == "kpi_tile"`` AND ``design_theme["kpi_tile"]`` is
+    present, a field-scoped ``<style-rule element='cell'>`` is appended to
+    the SAME TABLE-level ``<style>`` above (see
+    :func:`_kpi_tile_field_style_rule`): a compact number/currency format on
+    the primary measure (fixes numeric overflow in narrow tiles), BAN
+    font-size/font-family from ``brand["typography"]["ban"]``, BAN color from
+    ``kpi_tile["ban_color"]``, and — when
+    ``kpi_tile["use_semantic_delta_colors"]`` is set — a mined arrow-direction
+    format on the delta measure. A per-worksheet ``element='title'``
+    style-rule (:func:`_kpi_tile_title_style_rule`) is also added when
+    ``kpi_tile["ban_color"]`` is set, fixing dark-on-navy title legibility
+    WITHOUT recoloring every other worksheet's title (unlike D3's
+    workbook-level ``chrome.title_color``). No-op for non-``kpi_tile`` sheets
+    or when ``design_theme["kpi_tile"]`` is absent.
+
     Args:
         sheet:        Sheet spec dict.
         ds_caption:   Human-readable datasource caption.
         ds_internal:  Internal datasource name (``sqlproxy.*``).
         sheet_index:  Zero-based index used to derive a deterministic UUID.
+        brand:        Optional resolved brand block (``model_dump()``
+                      snake_case dict — see ``server.BrandModel``). Only
+                      consumed for ``kpi_tile["ban"]`` font-size/font-family
+                      (Slice D4); absent (the default) leaves those two
+                      attrs unset (byte-identical guard).
         design_theme: Optional resolved design-theme block (``model_dump()``
                       snake_case dict — see ``server.DesignThemeModel``).
                       Absent (the default): byte-identical to before Slice D3.
@@ -451,6 +474,16 @@ def _build_worksheet(
     # and pane-level style-rule builders below. None when design_theme is
     # absent -> every downstream rules list is empty -> byte-identical.
     theme_chrome: dict[str, Any] | None = design_theme.get("chrome") if design_theme else None
+
+    # Slice D4: design_theme.kpi_tile + brand.typography.ban, threaded to the
+    # KPI-tile-only style-rule builders below. Both None when absent -> every
+    # downstream rules list is empty -> byte-identical.
+    theme_kpi_tile: dict[str, Any] | None = design_theme.get("kpi_tile") if design_theme else None
+    brand_formats: dict[str, Any] | None = brand.get("formats") if brand else None
+    brand_ban: dict[str, Any] | None = (
+        (brand.get("typography") or {}).get("ban") if brand else None
+    )
+    ds_ref = f"[{ds_internal}]"
 
     # --- Scatter spec ------------------------------------------------------
     scatter = sheet.get("scatter")  # optional {x, y, breakdown?}
@@ -541,11 +574,28 @@ def _build_worksheet(
     # Slice D3: table-level style-rules (theme-driven axis-tick removal +
     # SheetModel.style_rules pass-through). Byte-identical to the pre-D3 bare
     # <style/> when there is nothing to say (see _build_style_element).
-    table.append(_build_style_element(_table_style_rules(theme_chrome, sheet.get("style_rules"))))
+    table_rules = _table_style_rules(theme_chrome, sheet.get("style_rules"))
+    if is_kpi_tile:
+        # Slice D4: per-worksheet title-legibility rule (KPI band titles on a
+        # dark tile background) — appended to the SAME rules list so it lands
+        # in the SAME <style> as everything else above.
+        kpi_title_rule = _kpi_tile_title_style_rule(theme_kpi_tile)
+        if kpi_title_rule is not None:
+            table_rules = [*table_rules, kpi_title_rule]
+    style_el = _build_style_element(table_rules)
+    if is_kpi_tile:
+        # Slice D4: field-scoped compact-format/BAN-typography/delta-arrow
+        # rule for the KPI tile's own measures — a SECOND style-rule inside
+        # the SAME <style> element (style-rule is maxOccurs="unbounded").
+        kpi_cell_rule = _kpi_tile_field_style_rule(
+            kpi_spec, theme_kpi_tile, brand_ban, brand_formats, ds_ref
+        )
+        if kpi_cell_rule is not None:
+            style_el.append(kpi_cell_rule)
+    table.append(style_el)
 
     # --- <panes> ------------------------------------------------------
     panes = ET.SubElement(table, "panes")
-    ds_ref = f"[{ds_internal}]"
 
     if is_map_filled and geo_spec:
         # Filled-map (choropleth) pane structure — mirrors wb1 ~4786-4848:
@@ -1219,6 +1269,243 @@ def _table_style_rules(
     return rules
 
 
+# ---------------------------------------------------------------------------
+# Styled KPI tiles (Design Excellence, Slice D4)
+#
+# Fixes three live-probe #1 findings on the KPI band: (a) numeric overflow
+# (### in narrow tiles) via a compact number/currency format; (b) illegible
+# dark-on-navy titles via a per-worksheet title-color rule; (c) unstyled
+# tiles via the D2 zone-style box model, now also applied to kpi_tile zones.
+#
+# BAN typography/compact-format/delta-direction all land at the SAME mined
+# location: a field-scoped ``<format attr='...' field='[ds].[col]'
+# value='...'/>`` inside the worksheet's own TABLE-level
+# ``<style><style-rule element='cell'>`` — mirrors WB-117's
+# ``worksheet[10]/table/style/style-rule[1]`` (``text-format
+# field='[Sample - Superstore].[sum:Sales:qk]' value='c"$"#,##0;("$"#,##0)'``,
+# ``font-size field='[...].[:Measure Names]' value='9'``) and WB-015's
+# ``worksheet[5]/table/style/style-rule[2]`` (``text-format
+# value='n#,##0,.0K;-#,##0,.0K'``, unscoped — cited for the compact NUMBER
+# pattern). See design/corpus/recipes/chrome_rules.yaml for both shapes.
+#
+# Deliberately NOT the exemplars' ``<customized-label>`` construct: that
+# REPLACES a mark's entire rendered label, which would silently drop this
+# builder's comparison/delta <text> encodings from the visible tile (see the
+# D4 report for the full assessment). Field-scoped <format> overrides are
+# strictly additive.
+# ---------------------------------------------------------------------------
+
+# Mined compact-number pattern (WB-015, /workbook/worksheets/
+# worksheet[5]/table/style/style-rule[2], element='cell' attr='text-format',
+# no field= -- see design/corpus/recipes/chrome_rules.yaml).
+_KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
+
+# Mined delta arrow-direction pattern (WB-117's
+# WB-117.twbx, default-format='*▲ #,##;▼ #,##'
+# on [MOM - Sales (copy)_233624247371403264] et al.) -- the D7-deferred
+# fallback for true color-by-sign (see _kpi_tile_field_style_rule's
+# docstring). Direction is visible (▲/▼) without any new calc-field
+# machinery.
+_KPI_DELTA_ARROW_FORMAT = "*▲ #,##;▼ #,##"
+
+_CURRENCY_SYMBOL_RE = re.compile(r"^([^#0-9]*)")
+
+
+def _extract_currency_symbol(currency_format: str) -> str:
+    """Return the leading currency-symbol prefix of a Tableau currency format.
+
+    E.g. ``"$#,##0"`` -> ``"$"``. Falls back to ``"$"`` when the format has
+    no leading non-numeric prefix (defensive; brand.formats.currency is
+    expected to always have one).
+    """
+    match = _CURRENCY_SYMBOL_RE.match(currency_format)
+    symbol = match.group(1) if match else ""
+    return symbol or "$"
+
+
+def _compact_currency_format(currency_format: str) -> str:
+    """Return the mined compact-currency pattern for *currency_format*'s symbol.
+
+    Mirrors WB-117's ``c"R$ "#,##0,.0K;-"R$ "#,##0,.0K`` and WB-118's
+    ``c"$"#,##0,.0K;-"$"#,##0,.0K`` (WB-118.twbx)
+    -- the ONLY parameterization this builder permits is the currency SYMBOL
+    itself; the surrounding ``#,##0,.0K`` compaction grammar is copied
+    verbatim (Tableau's format-code grammar is opaque to us — same discipline
+    as :func:`classify_measure_format`).
+    """
+    symbol = _extract_currency_symbol(currency_format)
+    return f'c"{symbol}"#,##0,.0K;-"{symbol}"#,##0,.0K'
+
+
+def _kpi_compact_format(field_name: str, formats: dict[str, Any]) -> str:
+    """Return the compact ``text-format`` value for a KPI tile's PRIMARY measure.
+
+    Uses the SAME word-hint classification as :func:`classify_measure_format`
+    (currency/percent/number), but a DIFFERENT, per-worksheet output — this
+    must never be written to the datasource-GLOBAL ``default-format`` (that
+    would change :func:`classify_measure_format`'s existing, already-shipped
+    behavior for every OTHER sheet referencing the same measure).
+
+    - currency-hinted -> the mined compact-currency pattern
+      (:func:`_compact_currency_format`), symbol parameterized from
+      ``formats["currency"]``.
+    - percent-hinted -> UNCHANGED (:func:`classify_measure_format`'s own
+      percent output) — percents don't overflow a ~250px tile, so no K-suffix
+      compaction is applied.
+    - everything else -> :data:`_KPI_COMPACT_NUMBER_FORMAT`.
+    """
+    words = set(re.findall(r"[a-z]+", field_name.lower()))
+    if words & _PERCENT_MEASURE_HINTS:
+        return classify_measure_format(field_name, formats)
+    if words & _CURRENCY_MEASURE_HINTS:
+        currency_format = str(formats.get("currency") or _DEFAULT_CURRENCY_FORMAT)
+        return _compact_currency_format(currency_format)
+    return _KPI_COMPACT_NUMBER_FORMAT
+
+
+def _kpi_tile_zone_style_formats(kpi_tile: dict[str, Any] | None) -> dict[str, str]:
+    """Map ``design_theme["kpi_tile"]`` onto the mined zone-style vocabulary.
+
+    Design Excellence, Slice D4. Same attribute-mapping discipline as
+    :func:`_chart_card_zone_style_formats` (Slice D2), applied to
+    ``ThemeKpiTileModel``: ``background`` -> ``background-color``,
+    ``border.{color,style,width}`` -> ``border-{color,style,width}``,
+    ``padding`` -> ``padding``. ``ThemeKpiTileModel`` carries no
+    ``margin``/``corner_radius`` fields (unlike ``chart_card``), so those
+    attrs are never emitted here. Unset keys are omitted entirely — never
+    written as an empty-string or zero placeholder.
+    """
+    formats: dict[str, str] = {}
+    tile = kpi_tile or {}
+
+    background = tile.get("background")
+    if background:
+        formats["background-color"] = str(background)
+
+    border = tile.get("border") or {}
+    if border.get("color"):
+        formats["border-color"] = str(border["color"])
+    if border.get("style"):
+        formats["border-style"] = str(border["style"])
+    if border.get("width") is not None:
+        formats["border-width"] = str(border["width"])
+
+    if tile.get("padding") is not None:
+        formats["padding"] = str(tile["padding"])
+
+    return formats
+
+
+def _kpi_tile_title_style_rule(
+    kpi_tile: dict[str, Any] | None,
+) -> tuple[str, dict[str, str]] | None:
+    """Return a worksheet-scoped ``("title", {"color": ...})`` rule, or ``None``.
+
+    Design Excellence, Slice D4 — fixes live-probe #1 finding (b): KPI title
+    labels dark-on-navy. Mirrors the mined PER-WORKSHEET (not workbook-level)
+    ``element='title'`` table-level style-rule location:
+    ``/workbook/worksheets/worksheet[9]/table/style/style-rule[3]``
+    (attr='color') and ``worksheet[1]/table/style/style-rule[4]``
+    (attr='font-family') in ``design/corpus/recipes/chrome_rules.yaml`` —
+    confirming a per-worksheet ``element='title'`` rule is a real, mined
+    construct, distinct from D3's WORKBOOK-level ``_workbook_style_rules``
+    (``chrome.title_color``), which would incorrectly recolor every
+    worksheet's title in the workbook, not just this KPI tile's. Scoping to
+    the worksheet's OWN table-level ``<style>`` keeps chart worksheets on the
+    light canvas unaffected.
+
+    Returns ``None`` when *kpi_tile* is falsy or ``ban_color`` is unset.
+    """
+    tile = kpi_tile or {}
+    ban_color = tile.get("ban_color")
+    if not ban_color:
+        return None
+    return ("title", {"color": str(ban_color)})
+
+
+def _kpi_tile_field_style_rule(
+    kpi_spec: dict[str, Any] | None,
+    kpi_tile: dict[str, Any] | None,
+    ban_font: dict[str, Any] | None,
+    brand_formats: dict[str, Any] | None,
+    ds_ref: str,
+) -> ET.Element | None:
+    """Return a field-scoped ``<style-rule element='cell'>`` for the KPI tile's
+    primary (and, when semantic-delta-colors is on, delta) measure.
+
+    Design Excellence, Slice D4. Combines, all scoped to the PRIMARY
+    measure's column-instance field:
+
+    - ``text-format``: the compact number/currency format from
+      :func:`_kpi_compact_format` (fixes numeric overflow — live-probe #1
+      finding (a)). ALWAYS emitted once *kpi_tile* + a primary measure are
+      present, independent of *ban_font*/``ban_color``.
+    - ``font-size``/``font-family``: from ``brand.typography.ban`` (Phase E1
+      wire, never consumed by the builder before this slice).
+    - ``color``: from ``kpi_tile["ban_color"]``.
+
+    And, scoped to the DELTA measure's column-instance field (only when
+    ``kpi_spec["delta_measure"]`` is set AND
+    ``kpi_tile["use_semantic_delta_colors"]`` is true):
+
+    - ``text-format``: :data:`_KPI_DELTA_ARROW_FORMAT` — the mined
+      arrow-direction pattern. This is a DELIBERATE fallback for true
+      color-by-sign: coloring the delta by its numeric sign needs either a
+      NEW calculated boolean field plus the mined value-to-color
+      ``<encoding attr='color' type='palette'>`` map (WB-133), or a
+      format-code trick. This builder emits no calculated fields anywhere
+      today, so adding that machinery is out of scope for a styling slice;
+      the arrow format ships direction (▲/▼) with zero new capability.
+
+    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy, or
+    *kpi_spec* has no ``primary_measure`` — a themed build with nothing to
+    say about this specific tile emits no rule at all.
+    """
+    if not kpi_tile or not kpi_spec:
+        return None
+    primary = kpi_spec.get("primary_measure")
+    if not primary:
+        return None
+
+    entries: list[dict[str, str]] = []
+    primary_field = f"{ds_ref}.{_measure_instance(str(primary))}"
+
+    entries.append(
+        {
+            "attr": "text-format",
+            "field": primary_field,
+            "value": _kpi_compact_format(str(primary), brand_formats or {}),
+        }
+    )
+    if ban_font:
+        ban_size = ban_font.get("size")
+        if ban_size is not None:
+            entries.append(
+                {"attr": "font-size", "field": primary_field, "value": str(int(ban_size))}
+            )
+        ban_font_name = ban_font.get("font")
+        if ban_font_name:
+            entries.append(
+                {"attr": "font-family", "field": primary_field, "value": str(ban_font_name)}
+            )
+    ban_color = kpi_tile.get("ban_color")
+    if ban_color:
+        entries.append({"attr": "color", "field": primary_field, "value": str(ban_color)})
+
+    delta = kpi_spec.get("delta_measure")
+    if delta and kpi_tile.get("use_semantic_delta_colors"):
+        delta_field = f"{ds_ref}.{_measure_instance(str(delta))}"
+        entries.append(
+            {"attr": "text-format", "field": delta_field, "value": _KPI_DELTA_ARROW_FORMAT}
+        )
+
+    entries.sort(key=lambda e: (e["attr"], e["field"]))
+    rule_el = ET.Element("style-rule", {"element": "cell"})
+    for entry in entries:
+        ET.SubElement(rule_el, "format", entry)
+    return rule_el
+
+
 def _build_dashboard(
     name: str,
     layout: str,
@@ -1317,21 +1604,27 @@ def _build_dashboard(
                          subtitle runs keep the pre-brand hardcoded values
                          (byte-identical determinism guard).
         design_theme:    Optional resolved design-theme block (Design Excellence,
-                         Slice D2; ``model_dump()`` snake_case dict — see
+                         Slice D2+; ``model_dump()`` snake_case dict — see
                          ``server.DesignThemeModel``).  When present:
                          ``design_theme["dashboard_background"]`` becomes a
                          ``background-color`` ``<zone-style>`` on the canvas
                          (``layout-basic``) zone; ``design_theme["chart_card"]``
                          becomes a ``<zone-style>`` on every chart/worksheet
-                         zone EXCEPT kpi-tile zones in a
-                         ``kpi_band_over_charts`` layout (KPI tiles are styled
-                         starting Slice D4); ``design_theme["spacing"]["gutter"]``
+                         zone; ``design_theme["spacing"]["gutter"]``
                          supplies each chart zone's ``margin`` when
                          ``chart_card["margin"]`` is unset (an explicit
                          ``chart_card["margin"]`` always wins); and
                          ``design_theme["spacing"]["outer_margin"]`` becomes a
                          ``margin`` ``<zone-style>`` on the outer
-                         ``layout-flow`` zone.  Absent (``None``, the default):
+                         ``layout-flow`` zone. In a ``kpi_band_over_charts``
+                         layout, ``design_theme["kpi_tile"]`` (Slice D4) gives
+                         every KPI-tile zone the full box model
+                         (background/border/padding) AND gives the KPI band's
+                         OWN container zone ``kpi_tile["background"]`` alone
+                         (continuous band look) — absent ``kpi_tile``, KPI
+                         tiles stay fully unstyled even when other
+                         ``design_theme`` blocks are set. Absent
+                         ``design_theme`` entirely (``None``, the default):
                          no ``<zone-style>`` is ever emitted (byte-identical
                          determinism guard, same discipline as ``brand``).
     """
@@ -1370,6 +1663,17 @@ def _build_dashboard(
     theme_gutter = theme_spacing.get("gutter")
     theme_chart_card = design_theme.get("chart_card") if design_theme else None
     chart_zone_style_formats = _chart_card_zone_style_formats(theme_chart_card, theme_gutter)
+
+    # Design Excellence, Slice D4: KPI-tile zone-style inputs. ``design_theme``
+    # absent/``kpi_tile`` unset -> both dicts empty -> no <zone-style> is ever
+    # appended below (same byte-identical guard as chart_zone_style_formats).
+    theme_kpi_tile = design_theme.get("kpi_tile") if design_theme else None
+    kpi_zone_style_formats = _kpi_tile_zone_style_formats(theme_kpi_tile)
+    kpi_band_background_formats: dict[str, str] = (
+        {"background-color": str(theme_kpi_tile["background"])}
+        if theme_kpi_tile and theme_kpi_tile.get("background")
+        else {}
+    )
 
     # -----------------------------------------------------------------------
     # Determine whether we are using the extended path (title/grammar) or the
@@ -1549,9 +1853,16 @@ def _build_dashboard(
                         "y": "0",
                     },
                 )
-                # Slice D2: KPI tiles are NOT themed here (deferred to Slice D4)
-                # — no zone_style_formats passed.
-                _append_worksheet_zones(kpi_flow, effective_kpi, id_start=3)
+                # Slice D2 deferred KPI-tile theming to Slice D4; it now
+                # applies here: each tile gets the full kpi_tile box model
+                # (background/border/padding), AND the band container itself
+                # gets kpi_tile.background ONLY (continuous band look) as its
+                # OWN zone-style, appended LAST (after its tile children) per
+                # the XSD's "zone-style is the last child of a zone" rule.
+                _append_worksheet_zones(
+                    kpi_flow, effective_kpi, id_start=3, zone_style_formats=kpi_zone_style_formats
+                )
+                _append_zone_style(kpi_flow, kpi_band_background_formats)
 
             # Charts band (param='horz', one zone per chart).
             if effective_charts:
@@ -2029,7 +2340,9 @@ def build_twb_xml(
     worksheets = ET.SubElement(workbook, "worksheets")
     for i, sheet in enumerate(sheets):
         worksheets.append(
-            _build_worksheet(sheet, datasource_name, ds_internal, i, design_theme=design_theme)
+            _build_worksheet(
+                sheet, datasource_name, ds_internal, i, design_theme=design_theme, brand=brand
+            )
         )
 
     # --- Optional dashboard + story block (BEFORE <windows> per XSD) --------
@@ -2444,7 +2757,9 @@ def build_embedded_twb_xml(
     worksheets_el = ET.SubElement(workbook, "worksheets")
     for i, sheet in enumerate(sheets):
         worksheets_el.append(
-            _build_worksheet(sheet, datasource_name, ds_internal, i, design_theme=design_theme)
+            _build_worksheet(
+                sheet, datasource_name, ds_internal, i, design_theme=design_theme, brand=brand
+            )
         )
 
     # --- Optional dashboards + stories ---------------------------------------

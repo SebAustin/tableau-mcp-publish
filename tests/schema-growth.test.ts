@@ -593,7 +593,17 @@ const FULL_DESIGN_THEME = {
     hideZeroline: true,
     hideAxisTicks: true,
     showMarkLabels: true,
-    datalabel: { fontSize: 11, fontWeight: "bold", colorMode: "auto" },
+    datalabel: {
+      fontSize: 11,
+      fontWeight: "bold",
+      colorMode: "auto",
+      // Design Excellence, Slice D4: wire completion — the sidecar builder
+      // already read this defensively via .get() since D3.
+      color: "#ffffff",
+    },
+    // Design Excellence, Slice D4: wire completion for a field the sidecar
+    // builder already read defensively via .get() since D3.
+    titleColor: "#2f2e41",
   },
 };
 

@@ -321,6 +321,10 @@ class ThemeDatalabelModel(BaseModel):
     font_size: int | None = Field(default=None, alias="fontSize")
     font_weight: str | None = Field(default=None, alias="fontWeight")
     color_mode: str | None = Field(default=None, alias="colorMode")
+    # Design Excellence, Slice D4: wire completion — the builder has read
+    # this defensively via .get() since Slice D3 (_theme_datalabel_formats);
+    # this field just makes it reachable through the typed wire schema.
+    color: str | None = None
 
 
 class ThemeChromeModel(BaseModel):
@@ -333,6 +337,10 @@ class ThemeChromeModel(BaseModel):
     hide_axis_ticks: bool = Field(default=False, alias="hideAxisTicks")
     show_mark_labels: bool = Field(default=False, alias="showMarkLabels")
     datalabel: ThemeDatalabelModel | None = None
+    # Design Excellence, Slice D4: wire completion — the builder has read
+    # this defensively via .get() since Slice D3 (_workbook_style_rules);
+    # this field just makes it reachable through the typed wire schema.
+    title_color: str | None = Field(default=None, alias="titleColor")
 
 
 class ThemeSpacingModel(BaseModel):

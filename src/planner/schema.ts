@@ -282,6 +282,8 @@ export const ThemeDatalabelSchema = z.object({
   fontSize: z.number().optional(),
   fontWeight: z.string().optional(),
   colorMode: z.string().optional(),
+  // Design Excellence, Slice D4: wire completion (builder-consumed since D3).
+  color: z.string().optional(),
 });
 export type ThemeDatalabel = z.infer<typeof ThemeDatalabelSchema>;
 
@@ -292,6 +294,8 @@ export const ThemeChromeSchema = z.object({
   hideAxisTicks: z.boolean().optional(),
   showMarkLabels: z.boolean().optional(),
   datalabel: ThemeDatalabelSchema.optional(),
+  // Design Excellence, Slice D4: wire completion (builder-consumed since D3).
+  titleColor: z.string().optional(),
 });
 export type ThemeChrome = z.infer<typeof ThemeChromeSchema>;
 

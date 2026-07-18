@@ -316,10 +316,23 @@ def test_zone_style_is_last_child_of_canvas_zone() -> None:
 
 # ---------------------------------------------------------------------------
 # D2-5  KPI tiles are NOT styled in D2; chart zones ARE
+#
+# Slice D4 (Design Excellence) later CONSUMES ``design_theme["kpi_tile"]`` to
+# style KPI tiles too (see ``test_twb_kpi_styling.py``) — but that is
+# conditioned on a ``kpi_tile`` block actually being present on the theme.
+# ``THEME_FULL`` here has NO ``kpi_tile`` block (see ``_theme()``'s base
+# dict above), so the "KPI tiles stay unstyled" assertion below remains true
+# from D2 onward AS A "NO KPI_TILE BLOCK" GUARD, not a "D2 in general" fact —
+# renamed accordingly per the D4 plan's instruction to adjust this test
+# honestly rather than delete it silently.
 # ---------------------------------------------------------------------------
 
 
-def test_kpi_tiles_not_styled_in_d2() -> None:
+def test_kpi_tiles_unstyled_without_kpi_tile_block() -> None:
+    """Chart zones ARE styled by ``chart_card``; KPI tile zones stay fully
+    unstyled when the theme carries no ``kpi_tile`` block at all (D2's
+    original behavior, still correct post-D4 — see ``test_twb_kpi_styling.py``
+    for the "kpi_tile block present -> tiles ARE styled" positive case)."""
     xml = twb_builder.build_twb_xml(
         "DS", "ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_FULL
     )
@@ -327,7 +340,9 @@ def test_kpi_tiles_not_styled_in_d2() -> None:
 
     kpi_zone = root.find(".//dashboards/dashboard/zones//zone[@name='KPI Revenue']")
     assert kpi_zone is not None
-    assert kpi_zone.find("zone-style") is None, "KPI tiles must NOT be styled in Slice D2"
+    assert kpi_zone.find("zone-style") is None, (
+        "KPI tiles must NOT be styled when design_theme has no kpi_tile block"
+    )
 
     chart_zone = root.find(".//dashboards/dashboard/zones//zone[@name='Revenue by Region']")
     assert chart_zone is not None

@@ -291,6 +291,8 @@ export interface ThemeDatalabel {
   fontSize?: number;
   fontWeight?: string;
   colorMode?: string;
+  /** Design Excellence, Slice D4: wire completion (builder-consumed since D3). */
+  color?: string;
 }
 
 /** Chrome-removal rules: gridlines/zeroline/ticks/mark-labels. */
@@ -300,6 +302,8 @@ export interface ThemeChrome {
   hideAxisTicks?: boolean;
   showMarkLabels?: boolean;
   datalabel?: ThemeDatalabel;
+  /** Design Excellence, Slice D4: wire completion (builder-consumed since D3). */
+  titleColor?: string;
 }
 
 /** Canvas spacing (outer margin + gutter between zones). */

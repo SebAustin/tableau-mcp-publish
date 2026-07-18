@@ -390,7 +390,13 @@ FULL_DESIGN_THEME_PAYLOAD: dict[str, object] = {
             "fontSize": 11,
             "fontWeight": "bold",
             "colorMode": "auto",
+            # Design Excellence, Slice D4: wire completion — the builder
+            # already read this defensively via .get() since D3.
+            "color": "#ffffff",
         },
+        # Design Excellence, Slice D4: wire completion for a field the
+        # builder already read defensively via .get() since D3.
+        "titleColor": "#2f2e41",
     },
 }
 
@@ -417,8 +423,10 @@ def test_design_theme_round_trips() -> None:
     assert req.design_theme.header.title_color == "#ffffff"
     assert req.design_theme.chrome is not None
     assert req.design_theme.chrome.hide_gridlines is True
+    assert req.design_theme.chrome.title_color == "#2f2e41"
     assert req.design_theme.chrome.datalabel is not None
     assert req.design_theme.chrome.datalabel.font_size == 11
+    assert req.design_theme.chrome.datalabel.color == "#ffffff"
 
     dumped = req.model_dump()
     assert dumped["design_theme"] == {
@@ -453,7 +461,9 @@ def test_design_theme_round_trips() -> None:
                 "font_size": 11,
                 "font_weight": "bold",
                 "color_mode": "auto",
+                "color": "#ffffff",
             },
+            "title_color": "#2f2e41",
         },
     }
 

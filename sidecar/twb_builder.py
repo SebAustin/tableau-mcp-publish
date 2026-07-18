@@ -268,8 +268,27 @@ def _quuid(n: int) -> str:
 
 
 def _add_dependency_columns(
-    parent: ET.Element, dimensions: list[str], measures: list[str]
+    parent: ET.Element,
+    dimensions: list[str],
+    measures: list[str],
+    measure_default_formats: dict[str, str] | None = None,
 ) -> None:
+    """Append dimension/measure ``<column>``/``<column-instance>`` pairs to *parent*.
+
+    Args:
+        parent:                  The ``<datasource-dependencies>`` element to append into.
+        dimensions:               Dimension field names.
+        measures:                 Measure field names.
+        measure_default_formats:  Optional ``{raw field name: default-format value}``
+                                  map (Design Excellence, Slice D4 hotfix — see
+                                  :func:`_kpi_tile_local_default_formats`). When a
+                                  measure's name is a key, its WORKSHEET-LOCAL
+                                  ``<column>`` declaration (NOT the shared/global
+                                  datasource ``<column>`` :func:`classify_measure_format`
+                                  writes to) gets a ``default-format`` attribute.
+                                  Absent/no match (the default): no attribute is
+                                  added, unchanged from before this param existed.
+    """
     for field in dimensions:
         ET.SubElement(
             parent,
@@ -288,11 +307,15 @@ def _add_dependency_columns(
             },
         )
     for field in measures:
-        ET.SubElement(
-            parent,
-            "column",
-            {"datatype": "real", "name": f"[{field}]", "role": "measure", "type": "quantitative"},
-        )
+        measure_attrs: dict[str, str] = {
+            "datatype": "real",
+            "name": f"[{field}]",
+            "role": "measure",
+            "type": "quantitative",
+        }
+        if measure_default_formats and field in measure_default_formats:
+            measure_attrs["default-format"] = measure_default_formats[field]
+        ET.SubElement(parent, "column", measure_attrs)
         ET.SubElement(
             parent,
             "column-instance",
@@ -432,22 +455,33 @@ def _build_worksheet(
     XPath provenance. Absent ``design_theme`` (the default): byte-identical
     to before this slice.
 
-    Styled KPI tiles (Design Excellence, Slice D4)
-    -------------------------------------------------
+    Styled KPI tiles (Design Excellence, Slice D4; number-format hotfix
+    after live probe #2)
+    ---------------------------------------------------------------------
     When ``sheet["kind"] == "kpi_tile"`` AND ``design_theme["kpi_tile"]`` is
-    present, a field-scoped ``<style-rule element='cell'>`` is appended to
-    the SAME TABLE-level ``<style>`` above (see
-    :func:`_kpi_tile_field_style_rule`): a compact number/currency format on
-    the primary measure (fixes numeric overflow in narrow tiles), BAN
-    font-size/font-family from ``brand["typography"]["ban"]``, BAN color from
-    ``kpi_tile["ban_color"]``, and — when
-    ``kpi_tile["use_semantic_delta_colors"]`` is set — a mined arrow-direction
-    format on the delta measure. A per-worksheet ``element='title'``
-    style-rule (:func:`_kpi_tile_title_style_rule`) is also added when
-    ``kpi_tile["ban_color"]`` is set, fixing dark-on-navy title legibility
-    WITHOUT recoloring every other worksheet's title (unlike D3's
-    workbook-level ``chrome.title_color``). No-op for non-``kpi_tile`` sheets
-    or when ``design_theme["kpi_tile"]`` is absent.
+    present:
+
+    - The compact number/currency format on the primary measure (fixes
+      numeric overflow in narrow tiles) and the mined arrow-direction format
+      on the delta measure (when ``kpi_tile["use_semantic_delta_colors"]``
+      is set) are stamped as a plain ``default-format`` attribute on this
+      worksheet's OWN ``<datasource-dependencies><column>`` declaration —
+      see :func:`_kpi_tile_local_default_formats` for why (live probe #2
+      found the original cell-level ``text-format`` approach does not
+      reliably override a competing ``default-format`` on a naked BAN view).
+    - A field-scoped ``<style-rule element='cell'>`` is appended to the SAME
+      TABLE-level ``<style>`` above (see :func:`_kpi_tile_field_style_rule`)
+      for BAN font-size/font-family (from ``brand["typography"]["ban"]``)
+      and BAN color (from ``kpi_tile["ban_color"]``) — confirmed rendering
+      correctly by the live probe.
+    - A per-worksheet ``element='title'`` style-rule
+      (:func:`_kpi_tile_title_style_rule`) is also added when
+      ``kpi_tile["ban_color"]`` is set, fixing dark-on-navy title legibility
+      WITHOUT recoloring every other worksheet's title (unlike D3's
+      workbook-level ``chrome.title_color``).
+
+    No-op for non-``kpi_tile`` sheets or when ``design_theme["kpi_tile"]``
+    is absent.
 
     Args:
         sheet:        Sheet spec dict.
@@ -566,7 +600,17 @@ def _build_worksheet(
         if geo_color and str(geo_color) not in dep_measures:
             dep_measures.append(str(geo_color))
 
-    _add_dependency_columns(deps, dep_dims, dep_measures)
+    # Design Excellence, Slice D4 hotfix (live probe #2): stamp the compact
+    # format directly on the KPI tile's OWN worksheet-local dependency
+    # <column> (see _kpi_tile_local_default_formats's docstring for why the
+    # element='cell' text-format override alone does not take effect on a
+    # naked/gridless BAN view).
+    kpi_local_default_formats = _kpi_tile_local_default_formats(
+        kpi_spec if is_kpi_tile else None, theme_kpi_tile, brand_formats
+    )
+    _add_dependency_columns(
+        deps, dep_dims, dep_measures, measure_default_formats=kpi_local_default_formats
+    )
     # <aggregation> is required by the XSD (last mandatory child of <view>)
     ET.SubElement(view, "aggregation", {"value": "true"})
 
@@ -584,12 +628,12 @@ def _build_worksheet(
             table_rules = [*table_rules, kpi_title_rule]
     style_el = _build_style_element(table_rules)
     if is_kpi_tile:
-        # Slice D4: field-scoped compact-format/BAN-typography/delta-arrow
-        # rule for the KPI tile's own measures — a SECOND style-rule inside
-        # the SAME <style> element (style-rule is maxOccurs="unbounded").
-        kpi_cell_rule = _kpi_tile_field_style_rule(
-            kpi_spec, theme_kpi_tile, brand_ban, brand_formats, ds_ref
-        )
+        # Slice D4: field-scoped BAN-typography rule for the KPI tile's
+        # primary measure — a SECOND style-rule inside the SAME <style>
+        # element (style-rule is maxOccurs="unbounded"). Number formatting
+        # (compact/delta-arrow) is NOT here — see kpi_local_default_formats
+        # above (live-probe-#2 hotfix).
+        kpi_cell_rule = _kpi_tile_field_style_rule(kpi_spec, theme_kpi_tile, brand_ban, ds_ref)
         if kpi_cell_rule is not None:
             style_el.append(kpi_cell_rule)
     table.append(style_el)
@@ -1277,22 +1321,31 @@ def _table_style_rules(
 # dark-on-navy titles via a per-worksheet title-color rule; (c) unstyled
 # tiles via the D2 zone-style box model, now also applied to kpi_tile zones.
 #
-# BAN typography/compact-format/delta-direction all land at the SAME mined
-# location: a field-scoped ``<format attr='...' field='[ds].[col]'
-# value='...'/>`` inside the worksheet's own TABLE-level
-# ``<style><style-rule element='cell'>`` — mirrors WB-117's
-# ``worksheet[10]/table/style/style-rule[1]`` (``text-format
-# field='[Sample - Superstore].[sum:Sales:qk]' value='c"$"#,##0;("$"#,##0)'``,
-# ``font-size field='[...].[:Measure Names]' value='9'``) and WB-015's
-# ``worksheet[5]/table/style/style-rule[2]`` (``text-format
-# value='n#,##0,.0K;-#,##0,.0K'``, unscoped — cited for the compact NUMBER
-# pattern). See design/corpus/recipes/chrome_rules.yaml for both shapes.
+# TWO SEPARATE mined locations (split after live-probe #2 found compact
+# numbers still overflowing — see _kpi_tile_local_default_formats's
+# docstring for the full root-cause writeup):
+#
+# 1. NUMBER FORMATTING (compact primary + delta arrow-direction): a plain
+#    ``default-format`` attribute on the KPI tile's OWN WORKSHEET-LOCAL
+#    ``<datasource-dependencies><column>`` declaration — mirrors WB-118's
+#    real, published "Sales KPI (BAN) New" worksheet
+#    (WB-118.twbx), whose primary BAN measure
+#    carries ``default-format='c"$"#,##0,.0K;-"$"#,##0,.0K'`` there (NOT a
+#    cell-level override). This is the mechanism that actually takes effect
+#    for a naked (rows/cols empty) BAN view.
+# 2. COSMETIC TYPOGRAPHY (font-size/font-family/color) + TITLE COLOR: a
+#    field-scoped ``<format attr='...' field='[ds].[col]' value='...'/>``
+#    inside the worksheet's own TABLE-level ``<style><style-rule
+#    element='cell'>`` — mirrors WB-117's
+#    ``worksheet[10]/table/style/style-rule[1]`` (``font-size
+#    field='[...].[:Measure Names]' value='9'``). This DID render correctly
+#    per the live probe — only the number-format half of the original
+#    single-rule design needed to move.
 #
 # Deliberately NOT the exemplars' ``<customized-label>`` construct: that
 # REPLACES a mark's entire rendered label, which would silently drop this
 # builder's comparison/delta <text> encodings from the visible tile (see the
-# D4 report for the full assessment). Field-scoped <format> overrides are
-# strictly additive.
+# D4 report for the full assessment).
 # ---------------------------------------------------------------------------
 
 # Mined compact-number pattern (WB-015, /workbook/worksheets/
@@ -1423,43 +1476,91 @@ def _kpi_tile_title_style_rule(
     return ("title", {"color": str(ban_color)})
 
 
+def _kpi_tile_local_default_formats(
+    kpi_spec: dict[str, Any] | None,
+    kpi_tile: dict[str, Any] | None,
+    brand_formats: dict[str, Any] | None,
+) -> dict[str, str]:
+    """Return ``{raw field name: default-format}`` for the KPI tile's OWN
+    WORKSHEET-LOCAL ``<datasource-dependencies><column>`` declarations.
+
+    Design Excellence, Slice D4 HOTFIX (live probe #2 — workbook 2527341:
+    KPI tiles still rendered ``###`` after the original D4 land). ROOT CAUSE:
+    ``<style-rule element='cell'><format attr='text-format' field='...'/>``
+    (this slice's original mechanism) does NOT reliably override a field's
+    RENDERED number format for a naked (rows/cols empty) BAN-style Text mark
+    when that field ALSO carries a ``default-format`` — verified against
+    WB-118's real, published ``"Sales KPI (BAN) New"`` worksheet
+    (WB-118.twbx): its PRIMARY BAN measure
+    (``[Calculation_1864208809275256837]``) carries the compact pattern
+    ``c"$"#,##0,.0K;-"$"#,##0,.0K`` as a plain ``default-format`` on BOTH its
+    shared-datasource ``<column>`` AND its worksheet-LOCAL ``<column>``
+    declaration inside ITS OWN ``<datasource-dependencies>`` — NOT a
+    cell-level ``text-format`` override. The ONE field in that SAME
+    worksheet that DOES carry a cell-level ``text-format`` override
+    (``[Calculation_1864208809278013448]``, "Prev Year (BANs)") has NO
+    ``default-format`` anywhere: the cell-level override is used there
+    ONLY because nothing else governs that field's format. Once a
+    ``default-format`` exists on a field referenced by a naked BAN view,
+    it wins over any competing cell-level ``text-format``.
+
+    Fix: stamp ``default-format`` directly on the KPI tile's OWN
+    worksheet-local dependency ``<column>`` — NOT the shared/global
+    datasource ``<column>`` :func:`classify_measure_format` still writes to
+    (via ``brand``) — so every OTHER worksheet referencing the same raw
+    field keeps its normal (non-compact) brand format, while THIS
+    worksheet's own BAN rendering actually reflects the compact pattern.
+
+    Returns:
+        ``{primary_measure: compact format}`` (via :func:`_kpi_compact_format`,
+        always, once *kpi_tile* + a primary measure are present) plus
+        ``{delta_measure: _KPI_DELTA_ARROW_FORMAT}`` when
+        ``kpi_spec["delta_measure"]`` is set AND
+        ``kpi_tile["use_semantic_delta_colors"]`` is true. Empty when
+        *kpi_tile* is falsy, *kpi_spec* is falsy, or *kpi_spec* has no
+        ``primary_measure``.
+    """
+    formats: dict[str, str] = {}
+    if not kpi_tile or not kpi_spec:
+        return formats
+    primary = kpi_spec.get("primary_measure")
+    if not primary:
+        return formats
+
+    formats[str(primary)] = _kpi_compact_format(str(primary), brand_formats or {})
+
+    delta = kpi_spec.get("delta_measure")
+    if delta and kpi_tile.get("use_semantic_delta_colors"):
+        formats[str(delta)] = _KPI_DELTA_ARROW_FORMAT
+
+    return formats
+
+
 def _kpi_tile_field_style_rule(
     kpi_spec: dict[str, Any] | None,
     kpi_tile: dict[str, Any] | None,
     ban_font: dict[str, Any] | None,
-    brand_formats: dict[str, Any] | None,
     ds_ref: str,
 ) -> ET.Element | None:
-    """Return a field-scoped ``<style-rule element='cell'>`` for the KPI tile's
-    primary (and, when semantic-delta-colors is on, delta) measure.
+    """Return a field-scoped ``<style-rule element='cell'>`` for the KPI
+    tile's primary measure's BAN typography, or ``None``.
 
-    Design Excellence, Slice D4. Combines, all scoped to the PRIMARY
-    measure's column-instance field:
+    Design Excellence, Slice D4 (hotfix in D4's live-probe-#2 follow-up
+    REMOVED the ``text-format`` entries this originally carried — see
+    :func:`_kpi_tile_local_default_formats`'s docstring for why; number
+    formatting now lives on the worksheet-local dependency ``<column>``
+    instead). This rule now ONLY carries cosmetic (non-number-format)
+    attributes, all scoped to the PRIMARY measure's column-instance field —
+    which the live probe confirmed DO render correctly for a naked BAN view:
 
-    - ``text-format``: the compact number/currency format from
-      :func:`_kpi_compact_format` (fixes numeric overflow — live-probe #1
-      finding (a)). ALWAYS emitted once *kpi_tile* + a primary measure are
-      present, independent of *ban_font*/``ban_color``.
     - ``font-size``/``font-family``: from ``brand.typography.ban`` (Phase E1
-      wire, never consumed by the builder before this slice).
+      wire, never consumed by the builder before Slice D4).
     - ``color``: from ``kpi_tile["ban_color"]``.
 
-    And, scoped to the DELTA measure's column-instance field (only when
-    ``kpi_spec["delta_measure"]`` is set AND
-    ``kpi_tile["use_semantic_delta_colors"]`` is true):
-
-    - ``text-format``: :data:`_KPI_DELTA_ARROW_FORMAT` — the mined
-      arrow-direction pattern. This is a DELIBERATE fallback for true
-      color-by-sign: coloring the delta by its numeric sign needs either a
-      NEW calculated boolean field plus the mined value-to-color
-      ``<encoding attr='color' type='palette'>`` map (WB-133), or a
-      format-code trick. This builder emits no calculated fields anywhere
-      today, so adding that machinery is out of scope for a styling slice;
-      the arrow format ships direction (▲/▼) with zero new capability.
-
-    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy, or
-    *kpi_spec* has no ``primary_measure`` — a themed build with nothing to
-    say about this specific tile emits no rule at all.
+    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy,
+    *kpi_spec* has no ``primary_measure``, or neither *ban_font* nor
+    ``kpi_tile["ban_color"]`` is set — a themed build with nothing
+    cosmetic to say about this specific tile emits no rule at all.
     """
     if not kpi_tile or not kpi_spec:
         return None
@@ -1470,13 +1571,6 @@ def _kpi_tile_field_style_rule(
     entries: list[dict[str, str]] = []
     primary_field = f"{ds_ref}.{_measure_instance(str(primary))}"
 
-    entries.append(
-        {
-            "attr": "text-format",
-            "field": primary_field,
-            "value": _kpi_compact_format(str(primary), brand_formats or {}),
-        }
-    )
     if ban_font:
         ban_size = ban_font.get("size")
         if ban_size is not None:
@@ -1492,12 +1586,8 @@ def _kpi_tile_field_style_rule(
     if ban_color:
         entries.append({"attr": "color", "field": primary_field, "value": str(ban_color)})
 
-    delta = kpi_spec.get("delta_measure")
-    if delta and kpi_tile.get("use_semantic_delta_colors"):
-        delta_field = f"{ds_ref}.{_measure_instance(str(delta))}"
-        entries.append(
-            {"attr": "text-format", "field": delta_field, "value": _KPI_DELTA_ARROW_FORMAT}
-        )
+    if not entries:
+        return None
 
     entries.sort(key=lambda e: (e["attr"], e["field"]))
     rule_el = ET.Element("style-rule", {"element": "cell"})

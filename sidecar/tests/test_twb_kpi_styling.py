@@ -229,6 +229,49 @@ def _cell_formats(worksheet: ET.Element) -> list[dict[str, str | None]]:
     return [dict(f.attrib) for f in rule.findall("format")]
 
 
+def _text_encoding_columns(worksheet: ET.Element) -> list[str]:
+    """The worksheet's ACTUAL ``<text>`` encoding column values.
+
+    Live-probe #2 tightening: tests cross-check style/format targets against
+    THIS (an independent read of what the mark really encodes) rather than
+    only recomputing the expected value via the same ``_measure_instance()``
+    helper the implementation itself uses — recomputing via the same helper
+    cannot catch a future divergence between the encoding-building and
+    format-building code paths (exactly the class of bug this hotfix closes).
+    """
+    return [t.get("column") for t in worksheet.findall(".//panes/pane/encodings/text")]
+
+
+def _local_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
+    """``{raw bracketed field name: default-format}`` for THIS worksheet's own
+    ``<datasource-dependencies><column>`` declarations (the live-probe #2
+    hotfix location — see ``twb_builder._kpi_tile_local_default_formats``)."""
+    return {
+        c.get("name"): c.get("default-format")
+        for c in worksheet.findall(".//datasource-dependencies/column")
+    }
+
+
+def _shared_default_formats(root: ET.Element) -> dict[str, str | None]:
+    """``{raw bracketed field name: default-format}`` for the SHARED/global
+    ``<datasources><datasource><column>`` declarations (brand-driven,
+    Slice D3/E1's ``classify_measure_format`` — must stay UNCHANGED by the
+    KPI-tile-local override, proving "don't disturb brand's default-format
+    behavior" for every other worksheet referencing the same raw field)."""
+    ds = root.find(".//datasources/datasource")
+    assert ds is not None
+    return {c.get("name"): c.get("default-format") for c in ds.findall("column")}
+
+
+def _raw_field_from_instance(column: str) -> str:
+    """Decode the raw field name embedded in an instance-qualified column
+    string like ``"[ds].[sum:Sales:qk]"`` -> ``"Sales"`` — used to
+    independently verify a local default-format target against what a
+    ``<text>`` encoding ACTUALLY references, not what a test fixture assumes."""
+    instance = column.split(".", 1)[1]  # "[sum:Sales:qk]" (or "[sum:Sales Delta:qk]")
+    return instance[1:-1].split(":", 1)[1].rsplit(":", 1)[0]
+
+
 # ---------------------------------------------------------------------------
 # D4-1  Tile zone-style from kpi_tile (background/border/padding)
 # ---------------------------------------------------------------------------
@@ -289,6 +332,12 @@ def test_kpi_band_flow_gets_background_color_only() -> None:
 
 # ---------------------------------------------------------------------------
 # D4-3  BAN font-size / font-family / color at the mined per-field cell rule
+#
+# Live-probe #2 confirmed these DO render correctly on a naked BAN view —
+# this cosmetic cell rule is unchanged by the hotfix. ``text-format`` is
+# explicitly asserted ABSENT here (it moved to the worksheet-local
+# default-format — see D4-4) so a regression that re-adds it to this
+# ineffective location fails CI instead of silently reintroducing the bug.
 # ---------------------------------------------------------------------------
 
 
@@ -306,24 +355,39 @@ def test_ban_font_size_font_family_and_color_on_primary_measure() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     formats = _cell_formats(worksheet)
+
+    # Independent cross-check: the field these formats target must be one of
+    # the worksheet's OWN <text> encoding columns (read from the live XML),
+    # not merely a value re-derived via the same helper the implementation
+    # uses internally.
+    encoded_columns = _text_encoding_columns(worksheet)
     primary_field = _field("Sales")
+    assert primary_field in encoded_columns
 
     font_size = next(f for f in formats if f["attr"] == "font-size")
     assert font_size["field"] == primary_field
+    assert font_size["field"] in encoded_columns
     assert font_size["value"] == "36"
 
     font_family = next(f for f in formats if f["attr"] == "font-family")
     assert font_family["field"] == primary_field
+    assert font_family["field"] in encoded_columns
     assert font_family["value"] == "Tableau Bold"
 
     color = next(f for f in formats if f["attr"] == "color")
     assert color["field"] == primary_field
+    assert color["field"] in encoded_columns
     assert color["value"] == "#ffffff"
+
+    # Tightened per live-probe #2's root-cause fix: text-format must NEVER
+    # be emitted at this (ineffective, for naked BAN views) location again.
+    assert {f["attr"] for f in formats} == {"font-size", "font-family", "color"}
 
 
 def test_ban_font_absent_without_brand_typography() -> None:
     """kpi_tile present but no brand -> font-size/font-family absent; color
-    (from kpi_tile.ban_color, independent of brand) still present."""
+    (from kpi_tile.ban_color, independent of brand) still present; no
+    text-format at this location regardless (it lives elsewhere — D4-4)."""
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
@@ -331,10 +395,7 @@ def test_ban_font_absent_without_brand_typography() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     formats = _cell_formats(worksheet)
-    attrs = {f["attr"] for f in formats}
-    assert "font-size" not in attrs
-    assert "font-family" not in attrs
-    assert "color" in attrs
+    assert {f["attr"] for f in formats} == {"color"}
 
 
 def test_cell_style_rule_formats_sorted_deterministic() -> None:
@@ -367,6 +428,15 @@ def test_cell_style_rule_formats_sorted_deterministic() -> None:
 
 # ---------------------------------------------------------------------------
 # D4-4  Compact format per classification (currency/number/percent)
+#
+# Live-probe #2 hotfix: the compact format lives on THIS worksheet's own
+# ``<datasource-dependencies><column default-format=...>`` declaration (a
+# plain WORKSHEET-LOCAL default-format), NOT the ``element='cell'
+# text-format`` rule (D4-3's cell rule is cosmetic-only now — see its
+# section header). Root cause: verified against WB-118's real, published
+# "Sales KPI (BAN) New" worksheet (WB-118.twbx)
+# — its primary BAN measure carries the compact pattern as a plain
+# default-format on its OWN worksheet-local <column>, not a cell override.
 # ---------------------------------------------------------------------------
 
 
@@ -383,11 +453,17 @@ def test_compact_currency_format_on_currency_classified_primary() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    text_format = next(
-        f for f in formats if f["attr"] == "text-format" and f["field"] == _field("Sales")
-    )
-    assert text_format["value"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+
+    # Independent cross-check: decode the raw field name from the worksheet's
+    # OWN <text> encoding (not from the test fixture) and confirm THAT exact
+    # name is what carries the local default-format.
+    encoded_columns = _text_encoding_columns(worksheet)
+    assert _field("Sales") in encoded_columns
+    raw_primary = _raw_field_from_instance(_field("Sales"))
+    assert raw_primary == "Sales"
+
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats[f"[{raw_primary}]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
 
 
 def test_compact_number_format_on_number_classified_primary() -> None:
@@ -397,11 +473,8 @@ def test_compact_number_format_on_number_classified_primary() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Quantity']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    text_format = next(
-        f for f in formats if f["attr"] == "text-format" and f["field"] == _field("Quantity")
-    )
-    assert text_format["value"] == "n#,##0,.0K;-#,##0,.0K"
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats["[Quantity]"] == "n#,##0,.0K;-#,##0,.0K"
 
 
 def test_percent_format_unchanged_not_compacted() -> None:
@@ -419,12 +492,9 @@ def test_percent_format_unchanged_not_compacted() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Discount']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    text_format = next(
-        f for f in formats if f["attr"] == "text-format" and f["field"] == _field("Discount")
-    )
+    local_formats = _local_default_formats(worksheet)
     expected = twb_builder.classify_measure_format("Discount", BRAND["formats"])
-    assert text_format["value"] == expected == "0.0%"
+    assert local_formats["[Discount]"] == expected == "0.0%"
 
 
 def test_compact_currency_symbol_parameterized_from_brand() -> None:
@@ -446,11 +516,8 @@ def test_compact_currency_symbol_parameterized_from_brand() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    text_format = next(
-        f for f in formats if f["attr"] == "text-format" and f["field"] == _field("Sales")
-    )
-    assert text_format["value"] == 'c"€"#,##0,.0K;-"€"#,##0,.0K'
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats["[Sales]"] == 'c"€"#,##0,.0K;-"€"#,##0,.0K'
 
 
 def test_compact_format_absent_without_kpi_tile_block_even_with_brand() -> None:
@@ -467,6 +534,50 @@ def test_compact_format_absent_without_kpi_tile_block_even_with_brand() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     assert _cell_formats(worksheet) == []
+    # No kpi_tile block -> no LOCAL default-format override is stamped either
+    # (same as any ordinary, non-kpi_tile sheet); rendering falls back to the
+    # SHARED datasource's brand-driven default-format ("$#,##0").
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats.get("[Sales]") is None
+    shared_formats = _shared_default_formats(root)
+    assert shared_formats["[Sales]"] == "$#,##0"
+
+
+def test_local_default_format_does_not_disturb_shared_datasource_default_format() -> None:
+    """The critical non-regression guard: the KPI tile's LOCAL compact
+    override must NEVER touch the SHARED/global datasource <column> that
+    every OTHER worksheet referencing the same raw field relies on
+    (Slice D3/E1's classify_measure_format via brand.formats)."""
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_MIXED,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    shared_formats = _shared_default_formats(root)
+    assert shared_formats["[Sales]"] == "$#,##0", (
+        "Shared datasource default-format must stay the brand's NORMAL "
+        "(uncompacted) format — the compact pattern lives only on the KPI "
+        "tile worksheet's own LOCAL dependency column"
+    )
+
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert local_formats["[Sales]"] != shared_formats["[Sales]"]
+
+    # The chart worksheet also references "Sales" but is NOT a kpi_tile — it
+    # gets NO local default-format override at all (unaffected, same as
+    # before this slice); it renders via the SHARED datasource's format above.
+    chart_ws = root.find(".//worksheets/worksheet[@name='Revenue by Region']")
+    assert chart_ws is not None
+    chart_local_formats = _local_default_formats(chart_ws)
+    assert chart_local_formats.get("[Sales]") is None
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +634,10 @@ def test_title_color_rule_absent_when_ban_color_unset() -> None:
 
 # ---------------------------------------------------------------------------
 # D4-6  Delta arrow-format (mined fallback for color-by-sign)
+#
+# Same live-probe #2 relocation as D4-4: the arrow-direction pattern lives
+# on the delta measure's own WORKSHEET-LOCAL default-format, not the
+# (ineffective, for naked BAN views) cell-level text-format rule.
 # ---------------------------------------------------------------------------
 
 
@@ -533,12 +648,17 @@ def test_delta_arrow_format_when_semantic_delta_colors_true() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    delta_field = _field("Sales Delta")
-    delta_format = next(
-        f for f in formats if f["attr"] == "text-format" and f["field"] == delta_field
-    )
-    assert delta_format["value"] == "*▲ #,##;▼ #,##"
+
+    # Independent cross-check against the worksheet's OWN <text> encoding.
+    encoded_columns = _text_encoding_columns(worksheet)
+    assert _field("Sales Delta") in encoded_columns
+    raw_delta = _raw_field_from_instance(_field("Sales Delta"))
+    assert raw_delta == "Sales Delta"
+
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats[f"[{raw_delta}]"] == "*▲ #,##;▼ #,##"
+    # Not present in the cell rule (that location is proven ineffective).
+    assert not any(f["field"] == _field("Sales Delta") for f in _cell_formats(worksheet))
 
 
 def test_delta_arrow_format_absent_when_semantic_delta_colors_false() -> None:
@@ -557,9 +677,11 @@ def test_delta_arrow_format_absent_when_semantic_delta_colors_false() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    delta_field = _field("Sales Delta")
-    assert not any(f["field"] == delta_field for f in formats)
+    local_formats = _local_default_formats(worksheet)
+    assert local_formats.get("[Sales Delta]") is None
+    # Primary measure's own compact format is unaffected by the flag (no
+    # brand passed here -> default "$" symbol, still the compact pattern).
+    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
 
 
 def test_delta_arrow_format_absent_when_no_delta_measure() -> None:
@@ -569,10 +691,13 @@ def test_delta_arrow_format_absent_when_no_delta_measure() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Quantity']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    # Only the primary measure's own formats should be present (no delta field
-    # exists on this sheet's kpi spec at all).
-    fields = {f["field"] for f in formats}
+    local_formats = _local_default_formats(worksheet)
+    # Only the primary measure's own local override is present — no delta
+    # field exists on this sheet's kpi spec at all.
+    assert local_formats == {"[Quantity]": "n#,##0,.0K;-#,##0,.0K"}
+    # Cosmetic cell rule targets only the primary field (color, from
+    # kpi_tile.ban_color — no brand passed in this test).
+    fields = {f["field"] for f in _cell_formats(worksheet)}
     assert fields == {_field("Quantity")}
 
 

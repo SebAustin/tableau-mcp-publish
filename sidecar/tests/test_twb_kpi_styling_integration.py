@@ -259,10 +259,26 @@ def test_post_workbook_dashboard_with_kpi_tile_theme_returns_200(tmp_path: Path)
 
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
+
+    # Cosmetic BAN typography: the field-scoped cell rule (live probe #2
+    # confirmed this DOES render on a naked BAN view).
     cell_rule = worksheet.find("table/style/style-rule[@element='cell']")
     assert cell_rule is not None
     attrs = {f.get("attr") for f in cell_rule.findall("format")}
-    assert {"text-format", "font-size", "font-family", "color"} <= attrs
+    assert {"font-size", "font-family", "color"} <= attrs
+
+    # Number formatting: the worksheet-LOCAL default-format override (live
+    # probe #2 hotfix location — the cell rule above does NOT carry
+    # text-format; a competing default-format silently wins over it on a
+    # naked BAN view, so the compact/arrow patterns live here instead).
+    local_columns = {
+        c.get("name"): c.get("default-format")
+        for c in worksheet.findall(".//datasource-dependencies/column")
+    }
+    assert local_columns.get("[Sales]") == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert local_columns.get("[Sales Delta]") == "*▲ #,##;▼ #,##"
+    assert "text-format" not in attrs
+
     assert worksheet.find("table/style/style-rule[@element='title']") is not None
 
 

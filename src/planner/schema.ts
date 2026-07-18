@@ -140,6 +140,18 @@ export const SheetGeoSchema = z.object({
 });
 export type SheetGeo = z.infer<typeof SheetGeoSchema>;
 
+/**
+ * A single worksheet style-rule override (Design Excellence, Slice D1 —
+ * carry-only; mirrors sidecar's SheetStyleRuleModel / sidecar.ts's
+ * SheetStyleRule). `formats` is a flat string-keyed map of Tableau format
+ * attribute name → value (e.g. `{ "font-color": "#0b1f3a" }`).
+ */
+export const SheetStyleRuleSchema = z.object({
+  element: z.string().min(1),
+  formats: z.record(z.string(), z.string()),
+});
+export type SheetStyleRule = z.infer<typeof SheetStyleRuleSchema>;
+
 // ---------------------------------------------------------------------------
 // SheetSpec — superset of the existing sidecar.ts SheetSpec
 // ---------------------------------------------------------------------------
@@ -162,6 +174,8 @@ export const SheetSpecSchema = z.object({
   scatter: SheetScatterSchema.optional(),
   /** Geographic encoding (for markType = "map_filled"). */
   geo: SheetGeoSchema.optional(),
+  // --- Design Excellence, Slice D1: optional per-sheet style-rule overrides (carry-only) ---
+  styleRules: z.array(SheetStyleRuleSchema).optional(),
 });
 
 export type SheetSpec = z.infer<typeof SheetSpecSchema>;
@@ -248,6 +262,91 @@ export const StoryArcPointSchema = z.object({
 export type StoryArcPoint = z.infer<typeof StoryArcPointSchema>;
 
 // ---------------------------------------------------------------------------
+// Design-theme sub-schemas (Design Excellence, Slice D1 — wire plumbing,
+// carry-only). Mirrors the flat wire shape sidecar.ts's DesignTheme family
+// and sidecar/server.py's DesignThemeModel family will consume in Slice D2
+// onward. All fields optional except `name`, so this is additive and never
+// required by an existing plan.
+// ---------------------------------------------------------------------------
+
+/** Hairline border spec for a themed zone. */
+export const ThemeBorderSchema = z.object({
+  color: z.string().optional(),
+  style: z.string().optional(),
+  width: z.number().optional(),
+});
+export type ThemeBorder = z.infer<typeof ThemeBorderSchema>;
+
+/** Datalabel styling (size / weight / color mode). */
+export const ThemeDatalabelSchema = z.object({
+  fontSize: z.number().optional(),
+  fontWeight: z.string().optional(),
+  colorMode: z.string().optional(),
+});
+export type ThemeDatalabel = z.infer<typeof ThemeDatalabelSchema>;
+
+/** Chrome-removal rules: gridlines/zeroline/ticks/mark-labels. */
+export const ThemeChromeSchema = z.object({
+  hideGridlines: z.boolean().optional(),
+  hideZeroline: z.boolean().optional(),
+  hideAxisTicks: z.boolean().optional(),
+  showMarkLabels: z.boolean().optional(),
+  datalabel: ThemeDatalabelSchema.optional(),
+});
+export type ThemeChrome = z.infer<typeof ThemeChromeSchema>;
+
+/** Canvas spacing (outer margin + gutter between zones). */
+export const ThemeSpacingSchema = z.object({
+  outerMargin: z.number().optional(),
+  gutter: z.number().optional(),
+});
+export type ThemeSpacing = z.infer<typeof ThemeSpacingSchema>;
+
+/** Chart-card zone-style box model (background/border/padding/margin/corner-radius). */
+export const ThemeChartCardSchema = z.object({
+  background: z.string().optional(),
+  border: ThemeBorderSchema.optional(),
+  padding: z.number().optional(),
+  margin: z.number().optional(),
+  cornerRadius: z.number().optional(),
+});
+export type ThemeChartCard = z.infer<typeof ThemeChartCardSchema>;
+
+/** KPI-tile zone-style box model. */
+export const ThemeKpiTileSchema = z.object({
+  background: z.string().optional(),
+  border: ThemeBorderSchema.optional(),
+  padding: z.number().optional(),
+  banColor: z.string().optional(),
+  useSemanticDeltaColors: z.boolean().optional(),
+});
+export type ThemeKpiTile = z.infer<typeof ThemeKpiTileSchema>;
+
+/** Header-band styling. */
+export const ThemeHeaderSchema = z.object({
+  background: z.string().optional(),
+  titleColor: z.string().optional(),
+  subtitleColor: z.string().optional(),
+});
+export type ThemeHeader = z.infer<typeof ThemeHeaderSchema>;
+
+/**
+ * Resolved design theme block. Design Excellence, Slice D1 — carry-only:
+ * embedded on a DashboardPlan but not read by the builder yet (lands in
+ * Slice D2 onward). Absent → unchanged behavior.
+ */
+export const DesignThemeSchema = z.object({
+  name: z.string().min(1),
+  dashboardBackground: z.string().optional(),
+  spacing: ThemeSpacingSchema.optional(),
+  chartCard: ThemeChartCardSchema.optional(),
+  kpiTile: ThemeKpiTileSchema.optional(),
+  header: ThemeHeaderSchema.optional(),
+  chrome: ThemeChromeSchema.optional(),
+});
+export type DesignTheme = z.infer<typeof DesignThemeSchema>;
+
+// ---------------------------------------------------------------------------
 // DashboardPlan
 // ---------------------------------------------------------------------------
 
@@ -272,6 +371,13 @@ export const DashboardPlanSchema = z.object({
   textZones: z.array(TextZoneSchema).optional(),
   /** Structured layout grammar used by the builder to emit multi-zone XML. */
   layoutGrammar: LayoutGrammarSchema.optional(),
+  // --- Design Excellence, Slice D1: resolved design-theme block (carry-only) ---
+  /**
+   * Resolved design theme block (from the corpus theme layer, once it
+   * lands). Carry-only in this slice: `build_from_plan` forwards it to the
+   * sidecar unread by the builder. Absent → unchanged behavior.
+   */
+  designTheme: DesignThemeSchema.optional(),
   // --- Phase E1 (Slice A): brand/persona provenance, resolved by the tool layer ---
   /** Named persona (from brand.yaml) that resolved this plan's audience + overrides, if any. */
   personaName: z.string().optional(),

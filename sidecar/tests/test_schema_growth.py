@@ -9,6 +9,9 @@ Verifies that:
    (dashboard_title / dashboard_subtitle / text_zones / layout_grammar) and they
    survive model_dump().
 4. Old minimal DashboardWorkbookRequest payloads still parse (backward-compat).
+5. Design Excellence, Slice D1: DashboardWorkbookRequest.design_theme and
+   SheetModel.style_rules — full camelCase-in / snake_case-out round-trips,
+   absent-is-None, carry-only (unread by the endpoint handler).
 """
 
 from __future__ import annotations
@@ -57,6 +60,7 @@ def test_sheet_model_minimal_parses() -> None:
     assert sheet.kpi is None
     assert sheet.scatter is None
     assert sheet.geo is None
+    assert sheet.style_rules is None
 
 
 def test_sheet_model_minimal_round_trips() -> None:
@@ -69,6 +73,7 @@ def test_sheet_model_minimal_round_trips() -> None:
     assert dumped["kpi"] is None
     assert dumped["scatter"] is None
     assert dumped["geo"] is None
+    assert dumped["style_rules"] is None
 
 
 # ===========================================================================
@@ -254,6 +259,7 @@ def test_dashboard_request_minimal_parses() -> None:
     assert req.dashboard_subtitle is None
     assert req.text_zones is None
     assert req.layout_grammar is None
+    assert req.design_theme is None
 
 
 # ===========================================================================
@@ -345,3 +351,157 @@ def test_dashboard_request_with_all_new_fields() -> None:
     assert sheet.kpi.primary_measure == "Sales"
     assert sheet.geo is not None
     assert sheet.geo.geo_role == "state"
+
+
+# ===========================================================================
+# Design Excellence, Slice D1 — DashboardWorkbookRequest.design_theme
+# (carry-only: full camelCase-in / snake_case-out round-trip)
+# ===========================================================================
+
+FULL_DESIGN_THEME_PAYLOAD: dict[str, object] = {
+    "name": "executive_dark",
+    "dashboardBackground": "#0b1f3a",
+    "spacing": {"outerMargin": 16, "gutter": 8},
+    "chartCard": {
+        "background": "#ffffff",
+        "border": {"color": "#d9d9d9", "style": "solid", "width": 1},
+        "padding": 12,
+        "margin": 8,
+        "cornerRadius": 6,
+    },
+    "kpiTile": {
+        "background": "#132b4d",
+        "border": {"color": "#25406b", "style": "solid", "width": 1},
+        "padding": 10,
+        "banColor": "#ffffff",
+        "useSemanticDeltaColors": True,
+    },
+    "header": {
+        "background": "#0b1f3a",
+        "titleColor": "#ffffff",
+        "subtitleColor": "#c9d4e3",
+    },
+    "chrome": {
+        "hideGridlines": True,
+        "hideZeroline": True,
+        "hideAxisTicks": True,
+        "showMarkLabels": True,
+        "datalabel": {
+            "fontSize": 11,
+            "fontWeight": "bold",
+            "colorMode": "auto",
+        },
+    },
+}
+
+
+def test_design_theme_round_trips() -> None:
+    """A full camelCase designTheme payload parses and model_dump()s to snake_case, deep-equal."""
+    payload = {**MINIMAL_DASHBOARD_PAYLOAD, "designTheme": FULL_DESIGN_THEME_PAYLOAD}
+    req = DashboardWorkbookRequest.model_validate(payload)
+
+    assert req.design_theme is not None
+    assert req.design_theme.name == "executive_dark"
+    assert req.design_theme.dashboard_background == "#0b1f3a"
+    assert req.design_theme.spacing is not None
+    assert req.design_theme.spacing.outer_margin == 16
+    assert req.design_theme.spacing.gutter == 8
+    assert req.design_theme.chart_card is not None
+    assert req.design_theme.chart_card.corner_radius == 6
+    assert req.design_theme.chart_card.border is not None
+    assert req.design_theme.chart_card.border.color == "#d9d9d9"
+    assert req.design_theme.kpi_tile is not None
+    assert req.design_theme.kpi_tile.ban_color == "#ffffff"
+    assert req.design_theme.kpi_tile.use_semantic_delta_colors is True
+    assert req.design_theme.header is not None
+    assert req.design_theme.header.title_color == "#ffffff"
+    assert req.design_theme.chrome is not None
+    assert req.design_theme.chrome.hide_gridlines is True
+    assert req.design_theme.chrome.datalabel is not None
+    assert req.design_theme.chrome.datalabel.font_size == 11
+
+    dumped = req.model_dump()
+    assert dumped["design_theme"] == {
+        "name": "executive_dark",
+        "dashboard_background": "#0b1f3a",
+        "spacing": {"outer_margin": 16, "gutter": 8},
+        "chart_card": {
+            "background": "#ffffff",
+            "border": {"color": "#d9d9d9", "style": "solid", "width": 1},
+            "padding": 12,
+            "margin": 8,
+            "corner_radius": 6,
+        },
+        "kpi_tile": {
+            "background": "#132b4d",
+            "border": {"color": "#25406b", "style": "solid", "width": 1},
+            "padding": 10,
+            "ban_color": "#ffffff",
+            "use_semantic_delta_colors": True,
+        },
+        "header": {
+            "background": "#0b1f3a",
+            "title_color": "#ffffff",
+            "subtitle_color": "#c9d4e3",
+        },
+        "chrome": {
+            "hide_gridlines": True,
+            "hide_zeroline": True,
+            "hide_axis_ticks": True,
+            "show_mark_labels": True,
+            "datalabel": {
+                "font_size": 11,
+                "font_weight": "bold",
+                "color_mode": "auto",
+            },
+        },
+    }
+
+
+def test_design_theme_absent_is_none() -> None:
+    """When designTheme is omitted, req.design_theme is None and model_dump() carries None."""
+    req = DashboardWorkbookRequest.model_validate(MINIMAL_DASHBOARD_PAYLOAD)
+    assert req.design_theme is None
+    assert req.model_dump()["design_theme"] is None
+
+
+def test_design_theme_only_required_name_parses() -> None:
+    """A designTheme with only the required `name` field parses; all blocks default to None."""
+    payload = {**MINIMAL_DASHBOARD_PAYLOAD, "designTheme": {"name": "analyst_clean"}}
+    req = DashboardWorkbookRequest.model_validate(payload)
+    assert req.design_theme is not None
+    assert req.design_theme.name == "analyst_clean"
+    assert req.design_theme.dashboard_background is None
+    assert req.design_theme.spacing is None
+    assert req.design_theme.chart_card is None
+    assert req.design_theme.kpi_tile is None
+    assert req.design_theme.header is None
+    assert req.design_theme.chrome is None
+
+
+# ===========================================================================
+# Design Excellence, Slice D1 — SheetModel.style_rules (carry-only round-trip)
+# ===========================================================================
+
+
+def test_sheet_style_rules_round_trip() -> None:
+    """styleRules list parses and model_dump()s to snake_case element/formats."""
+    payload = {
+        **MINIMAL_SHEET_PAYLOAD,
+        "styleRules": [
+            {"element": "worksheet-title", "formats": {"font-color": "#0b1f3a", "bold": "true"}},
+            {"element": "axis-label", "formats": {"font-size": "10"}},
+        ],
+    }
+    sheet = SheetModel.model_validate(payload)
+    assert sheet.style_rules is not None
+    assert len(sheet.style_rules) == 2
+    assert sheet.style_rules[0].element == "worksheet-title"
+    assert sheet.style_rules[0].formats == {"font-color": "#0b1f3a", "bold": "true"}
+    assert sheet.style_rules[1].element == "axis-label"
+
+    dumped = sheet.model_dump()
+    assert dumped["style_rules"] == [
+        {"element": "worksheet-title", "formats": {"font-color": "#0b1f3a", "bold": "true"}},
+        {"element": "axis-label", "formats": {"font-size": "10"}},
+    ]

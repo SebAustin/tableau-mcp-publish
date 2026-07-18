@@ -23,6 +23,7 @@ import {
   DashboardPlanSchema,
   DashboardProposalSchema,
   ClarifyingQuestionsSchema,
+  DesignThemeSchema,
   MarkTypeEnum,
   SheetKindEnum,
   isDashboardPlan,
@@ -556,5 +557,154 @@ describe("ClarifyingQuestions max raised to 10", () => {
       questions: Array.from({ length: 7 }, (_, i) => makeQuestion(`q${i + 1}`)),
     });
     expect(result.success).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §9 — Design Excellence, Slice D1: designTheme (carry-only wire plumbing)
+// ---------------------------------------------------------------------------
+
+/** A complete designTheme payload exercising every optional block. */
+const FULL_DESIGN_THEME = {
+  name: "executive_dark",
+  dashboardBackground: "#0b1f3a",
+  spacing: { outerMargin: 16, gutter: 8 },
+  chartCard: {
+    background: "#ffffff",
+    border: { color: "#d9d9d9", style: "solid", width: 1 },
+    padding: 12,
+    margin: 8,
+    cornerRadius: 6,
+  },
+  kpiTile: {
+    background: "#132b4d",
+    border: { color: "#25406b", style: "solid", width: 1 },
+    padding: 10,
+    banColor: "#ffffff",
+    useSemanticDeltaColors: true,
+  },
+  header: {
+    background: "#0b1f3a",
+    titleColor: "#ffffff",
+    subtitleColor: "#c9d4e3",
+  },
+  chrome: {
+    hideGridlines: true,
+    hideZeroline: true,
+    hideAxisTicks: true,
+    showMarkLabels: true,
+    datalabel: { fontSize: 11, fontWeight: "bold", colorMode: "auto" },
+  },
+};
+
+describe("DesignThemeSchema", () => {
+  it("parses a full designTheme payload with every optional block populated", () => {
+    const result = DesignThemeSchema.safeParse(FULL_DESIGN_THEME);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual(FULL_DESIGN_THEME);
+    }
+  });
+
+  it("parses a designTheme with only the required `name` field", () => {
+    const result = DesignThemeSchema.safeParse({ name: "analyst_clean" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.name).toBe("analyst_clean");
+      expect(result.data.dashboardBackground).toBeUndefined();
+      expect(result.data.spacing).toBeUndefined();
+      expect(result.data.chartCard).toBeUndefined();
+      expect(result.data.kpiTile).toBeUndefined();
+      expect(result.data.header).toBeUndefined();
+      expect(result.data.chrome).toBeUndefined();
+    }
+  });
+
+  it("rejects a designTheme missing the required `name` field", () => {
+    const result = DesignThemeSchema.safeParse({ dashboardBackground: "#0b1f3a" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("DashboardPlan — designTheme (optional, carry-only)", () => {
+  it("parses a plan without designTheme unchanged (backward-compat)", () => {
+    const result = DashboardPlanSchema.safeParse(MINIMAL_PLAN);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.designTheme).toBeUndefined();
+    }
+  });
+
+  it("round-trips a full designTheme through DashboardPlanSchema.parse", () => {
+    const plan = DashboardPlanSchema.parse({
+      ...MINIMAL_PLAN,
+      designTheme: FULL_DESIGN_THEME,
+    });
+    expect(plan.designTheme).toEqual(FULL_DESIGN_THEME);
+  });
+
+  it("rejects a plan whose designTheme is missing the required `name` field", () => {
+    const result = DashboardPlanSchema.safeParse({
+      ...MINIMAL_PLAN,
+      designTheme: { dashboardBackground: "#0b1f3a" },
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("SheetSpec — optional styleRules block (carry-only)", () => {
+  it("parses a sheet with styleRules and round-trips element/formats", () => {
+    const result = SheetSpecSchema.safeParse({
+      ...MINIMAL_SHEET,
+      styleRules: [
+        { element: "worksheet-title", formats: { "font-color": "#0b1f3a", bold: "true" } },
+        { element: "axis-label", formats: { "font-size": "10" } },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.styleRules).toHaveLength(2);
+      expect(result.data.styleRules?.[0]?.element).toBe("worksheet-title");
+      expect(result.data.styleRules?.[0]?.formats).toEqual({
+        "font-color": "#0b1f3a",
+        bold: "true",
+      });
+    }
+  });
+
+  it("parses a sheet without styleRules unchanged (backward-compat)", () => {
+    const result = SheetSpecSchema.safeParse(MINIMAL_SHEET);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.styleRules).toBeUndefined();
+    }
+  });
+});
+
+describe("DashboardPlanSchema — unknown-key handling (consistent with existing behavior)", () => {
+  it("strips an unrecognized top-level key rather than rejecting the plan", () => {
+    // DashboardPlanSchema is a plain z.object() (no .strict()), so unknown
+    // keys are silently stripped by zod's default behavior — this has been
+    // true since before this slice (e.g. the schema has never used
+    // .strict()). This test locks in that this slice did not change it.
+    const result = DashboardPlanSchema.safeParse({
+      ...MINIMAL_PLAN,
+      someFutureUnknownField: "should be stripped, not rejected",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("someFutureUnknownField");
+    }
+  });
+
+  it("strips an unrecognized key inside designTheme rather than rejecting it", () => {
+    const result = DashboardPlanSchema.safeParse({
+      ...MINIMAL_PLAN,
+      designTheme: { name: "executive_dark", unknownThemeField: "ignored" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.designTheme).not.toHaveProperty("unknownThemeField");
+    }
   });
 });

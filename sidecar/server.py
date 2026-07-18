@@ -111,6 +111,18 @@ class SheetGeoModel(BaseModel):
     color_measure: str | None = Field(default=None, alias="colorMeasure")
 
 
+class SheetStyleRuleModel(BaseModel):
+    """A single worksheet style-rule override (mirrors schema.ts SheetStyleRule).
+
+    Design Excellence, Slice D1 — carry-only: not read by the builder yet.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    element: str
+    formats: dict[str, str]
+
+
 class SheetModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -126,6 +138,9 @@ class SheetModel(BaseModel):
     kpi: SheetKpiModel | None = None
     scatter: SheetScatterModel | None = None
     geo: SheetGeoModel | None = None
+    # Design Excellence, Slice D1: optional per-sheet style-rule overrides.
+    # Carry-only — the builder does not read this yet.
+    style_rules: list[SheetStyleRuleModel] | None = Field(default=None, alias="styleRules")
 
 
 class WorkbookRequest(BaseModel):
@@ -272,6 +287,115 @@ class BrandModel(BaseModel):
     brand_name: str = Field(default="Brand", alias="brandName")
 
 
+# ---------------------------------------------------------------------------
+# Design-theme block sub-models (Design Excellence, Slice D1 — wire plumbing,
+# carry-only). Mirrors the flat wire shape the corpus/theme layer will
+# eventually resolve and embed on a DashboardPlan's `designTheme`
+# (`src/planner/schema.ts`'s `DesignThemeSchema`) and forward as-is
+# (`src/sidecar.ts`'s `DesignTheme`).
+#
+# THE MODEL_DUMP LESSON (see BrandModel's docstring above): these models
+# accept camelCase on the wire (via `alias=`) but model_dump() produces the
+# snake_case FIELD names below, never the aliases. This slice only carries
+# the data end-to-end — the builder does not read `design_theme` yet (that
+# lands in Slice D2 onward); absent → unchanged behavior, matching the
+# Phase-1 "encodings carry-only" slice precedent.
+# ---------------------------------------------------------------------------
+
+
+class ThemeBorderModel(BaseModel):
+    """Hairline border spec for a themed zone (mirrors schema.ts ThemeBorder)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    color: str | None = None
+    style: str | None = None
+    width: int | None = None
+
+
+class ThemeDatalabelModel(BaseModel):
+    """Datalabel styling (mirrors schema.ts ThemeDatalabel)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    font_size: int | None = Field(default=None, alias="fontSize")
+    font_weight: str | None = Field(default=None, alias="fontWeight")
+    color_mode: str | None = Field(default=None, alias="colorMode")
+
+
+class ThemeChromeModel(BaseModel):
+    """Chrome removal: gridlines/zeroline/ticks/mark-labels (mirrors schema.ts ThemeChrome)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    hide_gridlines: bool = Field(default=False, alias="hideGridlines")
+    hide_zeroline: bool = Field(default=False, alias="hideZeroline")
+    hide_axis_ticks: bool = Field(default=False, alias="hideAxisTicks")
+    show_mark_labels: bool = Field(default=False, alias="showMarkLabels")
+    datalabel: ThemeDatalabelModel | None = None
+
+
+class ThemeSpacingModel(BaseModel):
+    """Canvas spacing (mirrors schema.ts ThemeSpacing)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    outer_margin: int | None = Field(default=None, alias="outerMargin")
+    gutter: int | None = None
+
+
+class ThemeChartCardModel(BaseModel):
+    """Chart-card zone-style box model (mirrors schema.ts ThemeChartCard)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    background: str | None = None
+    border: ThemeBorderModel | None = None
+    padding: int | None = None
+    margin: int | None = None
+    corner_radius: int | None = Field(default=None, alias="cornerRadius")
+
+
+class ThemeKpiTileModel(BaseModel):
+    """KPI-tile zone-style box model (mirrors schema.ts ThemeKpiTile)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    background: str | None = None
+    border: ThemeBorderModel | None = None
+    padding: int | None = None
+    ban_color: str | None = Field(default=None, alias="banColor")
+    use_semantic_delta_colors: bool = Field(default=True, alias="useSemanticDeltaColors")
+
+
+class ThemeHeaderModel(BaseModel):
+    """Header-band styling (mirrors schema.ts ThemeHeader)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    background: str | None = None
+    title_color: str | None = Field(default=None, alias="titleColor")
+    subtitle_color: str | None = Field(default=None, alias="subtitleColor")
+
+
+class DesignThemeModel(BaseModel):
+    """Resolved design theme block (mirrors schema.ts DesignTheme / sidecar.ts DesignTheme).
+
+    Optional on the request: when absent, behavior is unchanged from before
+    this slice (the builder does not read this field yet).
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+    dashboard_background: str | None = Field(default=None, alias="dashboardBackground")
+    spacing: ThemeSpacingModel | None = None
+    chart_card: ThemeChartCardModel | None = Field(default=None, alias="chartCard")
+    kpi_tile: ThemeKpiTileModel | None = Field(default=None, alias="kpiTile")
+    header: ThemeHeaderModel | None = None
+    chrome: ThemeChromeModel | None = None
+
+
 class DashboardWorkbookRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -297,6 +421,10 @@ class DashboardWorkbookRequest(BaseModel):
     # Phase E1, Slice B: optional resolved brand block. Absent → byte-identical
     # output to before this slice (see BrandModel docstring + twb_builder guards).
     brand: BrandModel | None = None
+    # Design Excellence, Slice D1: optional resolved design-theme block.
+    # Carry-only — the builder does not read this yet (lands in Slice D2
+    # onward). Absent → unchanged output, same guard pattern as `brand`.
+    design_theme: DesignThemeModel | None = Field(default=None, alias="designTheme")
     # Phase E4: optional stories (Tableau storyboard dashboards). Each story's
     # captured_sheet is validated against the actual worksheet/dashboard names
     # by twb_builder._build_story (raises ValueError, listing valid names,

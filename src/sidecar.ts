@@ -82,6 +82,16 @@ export interface SheetGeo {
   colorMeasure?: string;
 }
 
+/**
+ * A single worksheet style-rule override (mirrors schema.ts SheetStyleRule /
+ * the sidecar's SheetStyleRuleModel). Design Excellence, Slice D1 —
+ * carry-only: not consumed by the builder yet.
+ */
+export interface SheetStyleRule {
+  element: string;
+  formats: Record<string, string>;
+}
+
 export interface SheetSpec {
   title: string;
   markType: string;
@@ -99,6 +109,8 @@ export interface SheetSpec {
   scatter?: SheetScatter;
   /** Geographic encoding. */
   geo?: SheetGeo;
+  // --- Design Excellence, Slice D1: optional per-sheet style-rule overrides (carry-only) ---
+  styleRules?: SheetStyleRule[];
 }
 
 export interface FileArgs {
@@ -260,6 +272,83 @@ export interface WorkbookBrand {
   brandName: string;
 }
 
+// ---------------------------------------------------------------------------
+// Design-theme block (Design Excellence, Slice D1 — wire plumbing,
+// carry-only; mirrors sidecar's DesignThemeModel family and
+// planner/schema.ts's DesignThemeSchema, kept in sync manually per this
+// file's existing convention). Not consumed by the builder yet.
+// ---------------------------------------------------------------------------
+
+/** Hairline border spec for a themed zone. */
+export interface ThemeBorder {
+  color?: string;
+  style?: string;
+  width?: number;
+}
+
+/** Datalabel styling (size / weight / color mode). */
+export interface ThemeDatalabel {
+  fontSize?: number;
+  fontWeight?: string;
+  colorMode?: string;
+}
+
+/** Chrome-removal rules: gridlines/zeroline/ticks/mark-labels. */
+export interface ThemeChrome {
+  hideGridlines?: boolean;
+  hideZeroline?: boolean;
+  hideAxisTicks?: boolean;
+  showMarkLabels?: boolean;
+  datalabel?: ThemeDatalabel;
+}
+
+/** Canvas spacing (outer margin + gutter between zones). */
+export interface ThemeSpacing {
+  outerMargin?: number;
+  gutter?: number;
+}
+
+/** Chart-card zone-style box model (background/border/padding/margin/corner-radius). */
+export interface ThemeChartCard {
+  background?: string;
+  border?: ThemeBorder;
+  padding?: number;
+  margin?: number;
+  cornerRadius?: number;
+}
+
+/** KPI-tile zone-style box model. */
+export interface ThemeKpiTile {
+  background?: string;
+  border?: ThemeBorder;
+  padding?: number;
+  banColor?: string;
+  useSemanticDeltaColors?: boolean;
+}
+
+/** Header-band styling. */
+export interface ThemeHeader {
+  background?: string;
+  titleColor?: string;
+  subtitleColor?: string;
+}
+
+/**
+ * Resolved design theme block (matches sidecar's DesignThemeModel). Design
+ * Excellence, Slice D1 — carry-only: forwarded to the sidecar but not read
+ * by the builder yet (lands in Slice D2 onward). Omit to keep output
+ * unchanged.
+ */
+export interface DesignTheme {
+  name: string;
+  dashboardBackground?: string;
+  spacing?: ThemeSpacing;
+  chartCard?: ThemeChartCard;
+  kpiTile?: ThemeKpiTile;
+  header?: ThemeHeader;
+  chrome?: ThemeChrome;
+}
+
 export interface DashboardWorkbookArgs extends WorkbookArgs {
   /** Sheet titles to include in the dashboard (subset or all of sheets[].title). */
   dashboardSheetTitles: string[];
@@ -297,6 +386,13 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
    * Omit to keep the pre-brand output byte-identical.
    */
   brand?: WorkbookBrand;
+  // --- Design Excellence, Slice D1: optional resolved design-theme block (carry-only) ---
+  /**
+   * Resolved design theme block (from the corpus theme layer, once it
+   * lands). Carry-only in this slice: forwarded to the sidecar's Pydantic
+   * model but not read by the builder. Omit to keep output unchanged.
+   */
+  designTheme?: DesignTheme;
   // --- Phase E4: optional stories (Tableau storyboard dashboards) ---
   /**
    * Stories to append after the regular dashboard, inside the SAME
@@ -618,6 +714,13 @@ export class AuthoringSidecar {
     // produces the snake_case dict twb_builder reads).
     if (args.brand !== undefined) {
       payload["brand"] = args.brand;
+    }
+    // Design Excellence, Slice D1: resolved design-theme block, forwarded
+    // as-is (camelCase on the wire; the sidecar's DesignThemeModel accepts
+    // it and its model_dump() produces the snake_case dict — unread by the
+    // builder in this slice, same carry-only precedent as Phase-1 encodings).
+    if (args.designTheme !== undefined) {
+      payload["designTheme"] = args.designTheme;
     }
     // Phase E4: stories, forwarded as-is (camelCase on the wire; the
     // sidecar's StoryModel/StoryPointModel accept it and their model_dump()

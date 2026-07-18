@@ -27,6 +27,10 @@ __pycache__/
 tmp/
 *.log
 
+# Exception: a tiny, hand-made .twb fixture for sidecar/tests/test_design_miner.py
+# (design corpus miner round-trip test) — not a downloaded/generated workbook.
+!sidecar/tests/fixtures/design_miner_fixture.twb
+
 # Generated cron/launchd artifacts (contain local file paths — never commit)
 scripts/cron/
 

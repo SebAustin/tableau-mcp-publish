@@ -1,0 +1,94 @@
+# executive_light — white cards, hairline borders (WB-118 / WB-114 direction).
+#
+# Every hex/px literal below is copied verbatim from a `provenance` entry's
+# cited construct in design/corpus/recipes/*.yaml (enforced by
+# tests/designCorpus.test.ts's "theme-cites-recipe" check). See
+# design/corpus/SCHEMA.md for the full schema + provenance rules.
+
+name: executive_light
+
+tags:
+  audiences: [exec, mixed]
+  personas: [slt_manager, client]
+  artifacts: [dashboard, story]
+  mood: light
+
+provenance:
+  - source: WB-114.twbx
+    sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+    construct: >-
+      zone-style background-color #ffffff (worksheet canvas) —
+      dashboardBackground.
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[1]/zone-style
+  - source: WB-118.twbx
+    sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    construct: >-
+      zone-style background-color #ffffff, border-color #e6e8ea, border-style
+      solid, border-width 1, margin-right 10, padding 15 (white card,
+      hairline border) — chartCard.background/borderColor/borderStyle/
+      borderWidth/padding/margin, kpiTile.background, header.background.
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[3]/zone[1]/zone-style
+  - source: WB-118.twbx
+    sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    construct: >-
+      zone-style margin-left 15 / margin-right 15 (empty band spacer) —
+      spacing.outerMargin (15).
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[1]/zone[3]/zone-style
+  - source: WB-118.twbx
+    sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    construct: >-
+      custom color-palette type=ordered-diverging, first color #1b1b1b
+      (near-black endpoint) — reused as header.titleColor / kpiTile.banColor
+      (the exemplar has no explicit fontcolor run on its title text; the
+      diverging palette's dark endpoint is the closest real "default text on
+      white" literal mined from this source — see D0 slice report for the
+      explicit rationale).
+      recipes/palettes.yaml (ordered-diverging, colors[0]="#1b1b1b")
+  - source: WB-118.twbx
+    sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    construct: >-
+      formatted-text run "<Full Name>" (bold, fontcolor #6a6a6a) —
+      header.subtitleColor.
+      recipes/text_zones.yaml xpath /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]
+  - source: WB-118.twbx
+    sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    construct: >-
+      worksheet-scope style-rule element=label font-size 8, font-weight bold
+      — chrome.datalabel.fontSize, .fontWeight.
+      recipes/chrome_rules.yaml xpath /workbook/worksheets/worksheet[12]/table/style/style-rule[4]
+
+dashboardBackground: "#ffffff"
+
+spacing:
+  outerMargin: "15"
+  gutter: "10"
+
+chartCard:
+  background: "#ffffff"
+  borderColor: "#e6e8ea"
+  borderStyle: solid
+  borderWidth: "1"
+  padding: "15"
+  margin: "10"
+  # cornerRadius intentionally omitted — see executive_dark.yaml for rationale.
+
+kpiTile:
+  background: "#ffffff"
+  banColor: "#1b1b1b"
+  padding: "15"
+  useSemanticDeltaColors: true
+
+header:
+  background: "#ffffff"
+  titleColor: "#1b1b1b"
+  subtitleColor: "#6a6a6a"
+
+chrome:
+  hideGridlines: true
+  hideZeroline: true
+  hideAxisTicks: true
+  showMarkLabels: true
+  datalabel:
+    fontSize: "8"
+    fontWeight: bold
+    colorMode: fixed

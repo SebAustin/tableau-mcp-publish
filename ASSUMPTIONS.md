@@ -131,3 +131,66 @@ or from `@tableau/mcp-server`.
 
 **How to override:** If field introspection is needed, it belongs in the official
 `@tableau/mcp-server`; the agent passes results in.
+
+---
+
+## Design-Excellence Corpus — Additional Assumptions (added 2026-07-18)
+
+### D-01 — author-redacted exemplar not downloadable; design-around via WB-117
+
+**Assumed:** the plan's 4th exemplar, author-redacted's `a-reference-workbook`
+Tableau Public workbook, is **not mined**. The author disabled downloads for that
+specific workbook (no `.twbx` download endpoint is exposed for it — verified by
+attempting the same `https://public.tableau.com/workbooks/<name>.twbx` pattern that
+succeeded for the other 3 exemplars).
+
+**Design-around:** author-redacted was chosen to represent the *dark* executive direction
+(navy/dark KPI band). That direction is fully covered by WB-117's
+`WB-117`, the sole real source for
+`design/corpus/themes/executive_dark.yaml`. No dark-direction vocabulary is missing
+from the D0 corpus as a result — see `design/references/README.md` for the full
+provenance table and the non-download note.
+
+**How to override:** if the workbook later becomes downloadable (the author re-enables
+downloads, or shares the file directly), re-run `sidecar/design_miner.py` against it and
+fold any additional dark-direction constructs into `executive_dark.yaml`'s provenance —
+this only adds sourced entries, it never needs to replace existing ones.
+
+### D-02 — "RAG of Tableau design knowledge" = deterministic corpus, not embeddings
+
+**Assumed:** the user's "build a RAG of Tableau design knowledge" request is satisfied by
+a **committed, human-reviewable, deterministic** corpus (`design/corpus/`) with
+tag-based retrieval — not an embeddings/vector-store pipeline. See
+`docs/adr/0013-design-corpus-and-theme-layer.md` for the full context, decision, and
+alternatives-considered (embeddings/vector store rejected: nondeterminism, new runtime
+dependencies, and a break from this project's stateless-server discipline established in
+ADR-0005/ADR-0007).
+
+**Why:** the planner and tool layer are deliberately deterministic and filesystem/network
+-free at their core (ADR-0005); a vector store would be the first source of
+run-to-run-nondeterministic behavior in the whole project, and is untestable in CI the
+way a fixed, zod-validated YAML corpus is (`tests/designCorpus.test.ts`).
+
+**How to override:** if true semantic retrieval over a much larger corpus becomes
+necessary (dozens+ of themes, no longer enumerable by hand), reconsider — but keep
+retrieval itself pure/deterministic even then (e.g. a precomputed, versioned embedding
+index checked into the repo rather than a live embedding-API call per tool invocation).
+
+### D-03 — Mining dedup policy trades literal completeness for corpus reviewability
+
+**Assumed:** `sidecar/design_miner.py` deduplicates `zone_styles`/`chrome_rules`/`palettes`
+recipe entries **by content** (not just by file identity), and widens the
+`chrome_rules.yaml` worksheet-scope extraction path from the plan's literal
+`<worksheet><table><style>` to `.//style-rule` anywhere under a `<worksheet>` element.
+
+**Why:** a fully literal "every occurrence, exact path only" extraction would (a) miss
+real, important chrome constructs — `mark-labels-show` lives one level deeper than the
+plan's literal path in every mined exemplar — and (b) produce a `chrome_rules.yaml` with
+~1171 raw entries dominated by per-calculated-field noise, working against the corpus's
+explicit "human-reviewable" design goal. See `design/corpus/SCHEMA.md`'s "Deviation 1"
+and "Deviation 2" notes for the full before/after counts and reasoning.
+
+**How to override:** if a future slice needs the literal per-occurrence, per-field detail
+back (e.g. to reproduce one worksheet's exact formatting instead of a general chrome
+preset), re-run the miner with a `--no-dedup` style flag — not implemented in D0, since
+no consumer needs it yet (YAGNI); add it when a real slice requires it.

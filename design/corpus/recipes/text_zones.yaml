@@ -1,0 +1,1212 @@
+- runs:
+  - fontcolor: '#2f2e41'
+    text: 'Created by:'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[4]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Navigation Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[6]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Semibold
+    fontsize: '20'
+    text: Superstore |
+  - fontcolor: '#ffffff'
+    text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '14'
+    text: ORDER DETAILS
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    fontsize: '11'
+    text: Details
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Navigation Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[5]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Filter Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[8]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Semibold
+    fontsize: '20'
+    text: Superstore |
+  - fontcolor: '#ffffff'
+    text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '14'
+    text: OVERVIEW
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '10'
+    italic: 'true'
+    text: Click
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '10'
+    italic: 'true'
+    text: on a Big Number
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '10'
+    italic: 'true'
+    text: to select
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '10'
+    italic: 'true'
+    text: the Measure
+  - fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '10'
+    italic: 'true'
+    text: to analyze the charts in the view.
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: Total Sales
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[1]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: Total Profit
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[2]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: Total Quantity
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[3]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: <
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '[Parameters].[Churn Rate (copy)]'
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '> by Region and Ship Mode'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[4]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: <
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '[Parameters].[Churn Rate (copy)]'
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '> Over Time'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[5]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: <
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '[Parameters].[Churn Rate (copy)]'
+  - fontcolor: '#2f2e41'
+    fontsize: '12'
+    text: '> by Segment'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[5]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Navigation Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[6]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Filter Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[9]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Semibold
+    fontsize: '20'
+    text: Superstore |
+  - fontcolor: '#ffffff'
+    text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '14'
+    text: PRODUCT ANALYSIS
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Sales by Category
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[1]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Top 5 Products
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[1]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Sales by Sub-Category and Its Market Basket
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: Click
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: on a Bar
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: to drill down
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: the Market Basket
+  - fontsize: '10'
+    italic: 'true'
+    text: for the selected sub-category.
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[2]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#3e3e3e'
+    fontsize: '15'
+    text: Navigation Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[4]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Filter Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone[7]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#ffffff'
+    fontname: Tableau Semibold
+    fontsize: '20'
+    text: Superstore |
+  - fontcolor: '#ffffff'
+    text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Tableau Light
+    fontsize: '14'
+    text: REGIONAL ANALYSIS
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Top 1 City
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[1]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Top Cities
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[1]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Top 1 Postal Code
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[2]/zone[1]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Top Postal Codes
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[2]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: Sales by <
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: '[Parameters].[Parameter 5]'
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: '> <'
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: '[Parameters].[Parameter 4]'
+  - fontcolor: '#2f2e41'
+    fontsize: '11'
+    text: '>s'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[3]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: Click
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: on a Region
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: to drill down
+  - bold: 'true'
+    fontsize: '10'
+    italic: 'true'
+    text: the Map
+  - fontsize: '10'
+    italic: 'true'
+    text: for the selected Region.
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[3]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#3e3e3e'
+    fontsize: '15'
+    text: Navigation Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[5]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#2f2e41'
+    fontsize: '15'
+    text: Filter Menu
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source: WB-117.twbx
+  xpath: /workbook/dashboards/dashboard[5]/zones/zone[8]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontsize: '7'
+    text: EXPORT
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[1]/zone[8]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#b3cdfe'
+    fontsize: '10'
+    text: ●
+  - fontsize: '10'
+    text: Æ
+  - text: Consumer
+  - fontcolor: '#dee0e7'
+    fontsize: '10'
+    text: ●
+  - fontsize: '10'
+    text: Æ
+  - text: Corporate
+  - fontcolor: '#9daecc'
+    fontsize: '10'
+    text: ●
+  - fontsize: '10'
+    text: Æ
+  - text: Home Office
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]/zone[2]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: ORDER ID
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[1]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: CUSTOMER NAME
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[2]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: LOCATION
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[3]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: SALES
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[4]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: PROFIT RATIO
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[5]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: QUANTITY
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[6]
+  zone_role_hint: body
+- runs:
+  - fontsize: '8'
+    text: STATUS
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[7]
+  zone_role_hint: body
+- runs:
+  - fontsize: '7'
+    text: EXPORT
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[1]/zone[8]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#6a6a6a'
+    fontsize: '11'
+    text: Welcome,
+  - bold: 'true'
+    fontcolor: '#6a6a6a'
+    fontsize: '11'
+    text: <Full Name>
+  - fontcolor: '#6a6a6a'
+    fontsize: '11'
+    text: '!'
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - fontsize: '8'
+    text: Select a year
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source: WB-118.twbx
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone[5]/zone[1]/zone[1]
+  zone_role_hint: body
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '14'
+    text: SUPERSTORE SALES
+  - fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '14'
+    text: DASHBOARD
+  - fontcolor: '#333333'
+    fontname: Arial
+    italic: 'true'
+    text: (Left to Right)
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: Arial
+    fontsize: '8'
+    text: This dashboard provides a comprehensive
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '8'
+    text: year-over-year
+  - fontcolor: '#555555'
+    fontname: Arial
+    fontsize: '8'
+    text: Æ
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '8'
+    text: performance overview
+  - fontcolor: '#555555'
+    fontname: Arial
+    fontsize: '8'
+    text: ', with detailed insights by region, customer segment, and state, helping you quickly identify
+      key strengths and areas that need attention.'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone/zone/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#000000'
+    fontname: Arial
+    text: 'Select Year:'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone/zone/zone[2]/zone[4]
+  zone_role_hint: body
+- runs:
+  - fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '11'
+    text: SALES BY CATEGORY
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone/zone/zone[4]/zone[1]/zone/zone[1]/zone
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#133050'
+    fontname: poppins
+    fontsize: '20'
+    text: YOUR GUIDE
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone/zone/zone[1]/zone[2]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '15'
+    text: A. HORIZONTAL  LAYOUT
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Goal:'
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: Single hartzottal KP| container near the top showing. 4 compact KPI cards (Sales, Profit, Customers,
+      and Orders)
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Create KPI worksheets (one per KPI):'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: • Each worksheet layout + small text, and sparkline combo.
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '• Card layout: left side number & YOY text; right side mini sparkline or mini bar (use dual
+      axis bar + line for current vs previous year).'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '• Build sparkline: place Order date on Columns (Discrete Year) and SUM(Sales) on Rows.'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: Hide axes; set minimital gridlines.
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: 'KPI metric formatting:'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: Æ
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: • Add KPI number using a Text mark or use a floating transparent Text object over the view.
+      Format number.
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '• Add YOY % below the main number: green with small arrow icon (use Unicode ▲ or ▼).'
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Create a horizontal container on your dashboard:'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: • Dashboard → Objects → Horizontal container. Drag the 4 KPI worksheets into it. Set each to
+      fixed width (e.g., 1200 px by 900 px).
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '• Background color of container: white'
+  - bold: 'true'
+    fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: (#FFFFFF).
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: Æ
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Chart color(All through): Current Year is'
+  - bold: 'true'
+    fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '#BAC2FA'
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: and Previous Year is
+  - bold: 'true'
+    fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '#2B2C2D'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: '• Add top bar (Title + Year selector on the right). Use a horizontal container: left = Title
+      text, right = Select Year parameter control (circular buttons optionally made with images).'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: • Below KPI row, place the main chart container (large bar + map + category cards) arranged
+      in two rows. Use tiled containers to keep relative sizing consistent.
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#333333'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Tooltips and actions:'
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '10'
+    text: •
+  - fontcolor: '#000000'
+    fontname: Benton Sans Book
+    fontsize: '10'
+    text: Format your tooltip and add Filter actions where neccessary.
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone/zone/zone[5]/zone[1]/zone
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '15'
+    text: B. VERTICAL  LAYOUT
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Goal:'
+  - fontname: poppins
+    fontsize: '10'
+    text: 'KPIs stacked vertically in a left sidebar container with overview charts to the right:'
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: Create the same 4 KPI worksheets as above.
+  - text: Æ
+  - bold: 'true'
+    fontname: poppins
+    fontsize: '10'
+    text: •
+  - fontname: poppins
+    fontsize: '10'
+    text: you can reuse the same worksheets for the Horizontal Container.
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '10'
+    text: 'Create a Vertical container on the dashboard left:'
+  - text: Æ
+  - bold: 'true'
+    fontname: poppins
+    fontsize: '10'
+    text: •
+  - fontname: poppins
+    fontsize: '10'
+    text: 'Dashboard → Objects = vertical container: Drop the KPI worksheets into the vertical container
+      so they stack.'
+  - text: Æ
+  - bold: 'true'
+    fontname: poppins
+    fontsize: '10'
+    text: •
+  - fontname: poppins
+    fontsize: '10'
+    text: Each KPI card full-width of the container; card height. Set inner padding of 10px to produce
+      the compact look in your vertical sample.
+  - text: Æ
+  - fontname: poppins
+    fontsize: '10'
+    text: '• Right side main area: create a large Overview tiled container with the Sales & Profit trend
+      at top and smaller cards below (categories, map, subcategory bars).'
+  - text: Æ
+  - fontname: poppins
+    fontsize: '10'
+    text: '• Styling differences: vertical container gives more vertical room for sparklines — increase
+      sparkline height'
+  - text: Æ
+  - bold: 'true'
+    fontcolor: '#1b1b1b'
+    fontname: poppins
+    fontsize: '10'
+    text: Hint
+  - fontname: poppins
+    fontsize: '10'
+    text: ': KPI metrics Formatting, Colors, Tooltip and Actions remains the same for both Horizontal
+      and Vertical Layout.'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone/zone/zone[5]/zone[3]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    fontname: poppins
+    fontsize: '10'
+    text: -- Your dashboard should match the reference layout
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone/zone/zone[5]/zone[3]/zone[2]/zone[1]
+  zone_role_hint: body
+- runs:
+  - fontcolor: '#1b1b1b'
+    fontname: Arial
+    text: Hi, <User Name>
+  - text: Æ
+  - fontcolor: '#1b1b1b'
+    fontname: Arial
+    fontsize: '7'
+    text: 'Logged in:'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[1]/zone[8]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '20'
+    text: Welcome to your
+  - text: Æ
+  - fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '20'
+    text: Dashboard, <Full Name>!
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    text: For best results, review the instructions before you begin. They outline exactly what to build
+      and how to structure it. When finished, post your dashboard on all socials and tag me.
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    text: Let's go!
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    text: 'INTERESTING FACTS FROM THE REPORTS:'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[2]/zone
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '30'
+    text: 3.5k
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: poppins
+    fontsize: '20'
+    text: +
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[4]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#000000'
+    fontname: poppins
+    text: Viewed Begineer Repository I & II
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[4]/zone[2]
+  zone_role_hint: body
+- runs:
+  - fontcolor: '#555555'
+    fontname: poppins
+    fontsize: '30'
+    text: '43'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[4]/zone[4]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#555555'
+    fontname: poppins
+    text: User's Favorited
+  - text: Æ
+  - fontcolor: '#555555'
+    fontname: poppins
+    text: Viz
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[3]/zones/zone[2]/zone[4]/zone[1]/zone[4]/zone[5]
+  zone_role_hint: body
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '14'
+    text: SUPERSTORE SALES
+  - fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '14'
+    text: DASHBOARD
+  - text: Æ
+  - fontcolor: '#333333'
+    fontname: Arial
+    fontsize: '8'
+    italic: 'true'
+    text: (Top to Bottom)
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone/zone/zone[1]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#555555'
+    fontname: Arial
+    text: This dashboard provides a comprehensive
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    text: year-over-year
+  - fontcolor: '#555555'
+    fontname: Arial
+    text: Æ
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontname: Arial
+    text: performance overview
+  - fontcolor: '#555555'
+    fontname: Arial
+    text: ', with detailed insights by region, customer segment, and state, helping you quickly identify
+      key strengths and areas that need attention.'
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone/zone/zone[1]/zone[3]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#000000'
+    fontname: Arial
+    fontsize: '11'
+    text: SALES BY CATEGORY
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source: WB-015
+  xpath: /workbook/dashboards/dashboard[4]/zones/zone/zone/zone[2]/zone[3]/zone[1]/zone/zone/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#ffffff'
+    fontsize: '8'
+    text: Check out the
+  - text: Æ
+  - fontcolor: '#ffffff'
+    fontsize: '8'
+    text: presentation here
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[1]/zone[6]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#ffffff'
+    fontname: Poppins SemiBold
+    fontsize: '8'
+    text: CREATED BY
+  - text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Poppins SemiBold
+    fontsize: '8'
+    text: MICHAEL McCUSKER
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[1]/zone[9]
+  zone_role_hint: body
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '26'
+    text: Make it with Map Layers
+  - fontcolor: '#898989'
+    fontsize: '12'
+    text: An intro to map layers for charts and tables
+  - text: Æ
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '20'
+    text: <[Parameters].[Parameter 5]>
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Map Layers
+  - text: Æ
+  - fontcolor: '#555555'
+    fontsize: '10'
+    text: Can easily add embellishments, info and interactivity. Control highlighting and clickability.
+      Multiple mark types and control over what to color.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[3]/zone[1]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Regular
+  - text: Æ
+  - fontcolor: '#555555'
+    fontsize: '10'
+    text: Easy build, can't add much more than this. Issue with highlighting.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[3]/zone[3]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Regular
+  - text: Æ
+  - fontcolor: '#555555'
+    fontsize: '12'
+    text: Uses
+  - bold: 'true'
+    fontcolor: '#4e79a7'
+    fontsize: '14'
+    text: '12'
+  - fontcolor: '#555555'
+    fontsize: '12'
+    text: worksheets, slight slower when switch levels, units and dates. Easier to build.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[4]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Map Layers
+  - text: Æ
+  - fontcolor: '#333333'
+    fontsize: '12'
+    text: Uses just
+  - bold: 'true'
+    fontcolor: '#4e79a7'
+    fontsize: '12'
+    text: Æ
+  - bold: 'true'
+    fontcolor: '#4e79a7'
+    fontsize: '14'
+    text: '1'
+  - fontcolor: '#333333'
+    fontsize: '12'
+    text: worksheet. Better performance, more flexibility. Trickier to build/format.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[4]/zone[1]/zone[2]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Regular
+  - text: Æ
+  - fontcolor: '#555555'
+    fontsize: '10'
+    text: Easy build, can't add much more than this. Issue with highlighting.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[5]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '16'
+    text: Map Layers
+  - text: Æ
+  - fontcolor: '#555555'
+    fontsize: '10'
+    text: Can easily add embellishments, info and interactivity. Control highlighting and clickability.
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[2]/zone[5]/zone[3]
+  zone_role_hint: subtitle
+- runs:
+  - fontcolor: '#ffffff'
+    fontname: Poppins SemiBold
+    fontsize: '8'
+    text: CREATED BY
+  - text: Æ
+  - fontcolor: '#ffffff'
+    fontname: Poppins SemiBold
+    fontsize: '8'
+    text: MICHAEL McCUSKER
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone[1]/zone[5]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '26'
+    text: Make it with Map Layers
+  - fontcolor: '#898989'
+    fontsize: '12'
+    text: An intro to map layers for charts and tables
+  - text: Æ
+  - fontcolor: '#333333'
+    fontname: Poppins SemiBold
+    fontsize: '20'
+    text: TC Planning
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source: WB-058
+  xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone[2]/zone[1]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#5b42c6'
+    fontsize: '24'
+    text: Match Mark Color
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#000000'
+    fontsize: '11'
+    text: The "Match Mark Color" feature in Tableau might not be the newest trick in the book, but it’s
+      certainly one of the most underrated, in my opinion. Introduced all the way back in version 9.2,
+      this feature allows you to automatically match the color of your text labels to the color of the
+      marks they’re associated with. It’s a small but mighty detail that can make your visualizations
+      cleaner, more cohesive, and easier to interpret. Check out this
+  - bold: 'true'
+    fontcolor: '#6b4bcc'
+    fontsize: '11'
+    text: blog
+  - fontcolor: '#000000'
+    fontsize: '11'
+    text: to learn more!
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontsize: '16'
+    text: Basic Functionality
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[2]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontsize: '16'
+    text: Built in Legends
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[2]/zone[3]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontsize: '16'
+    text: Color Code Without Extra Calculations
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[4]/zone[1]
+  zone_role_hint: title
+- runs:
+  - bold: 'true'
+    fontcolor: '#000000'
+    fontsize: '16'
+    text: Offset Mark Colors
+  - text: Æ
+  - fontsize: '12'
+    text: Sometimes you want your mark labels to be a slightly different color than your marks. Use a
+      dual axis charts with
+  - text: Æ
+  - fontsize: '12'
+    text: 2 separate fields on color to get slightly darker or "invisible labels" by matching them to
+      your background color.
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source: WB-062
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[5]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#0088ff'
+    fontname: Tableau Bold
+    fontsize: '36'
+    text: Visualize Quota Attainment for Executives in Multiple Ways
+  sha256: df0e17a7af76c5c37ff31e25aa9e58d7a2ab4c999f92df2cd4f87d3e750a104b
+  source: WB-093
+  xpath: /workbook/dashboards/dashboard/zones/zone/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#475960'
+    fontname: Tableau Medium
+    fontsize: '15'
+    text: Executives don't have hours to read a dashboard. This project shows multiple ways to visualise
+      quota attainment for executives.
+  - text: Æ
+  - fontcolor: '#475960'
+    fontname: Tableau Medium
+    fontsize: '15'
+    text: All chart elements are dynamic and change according to revenue change
+  sha256: df0e17a7af76c5c37ff31e25aa9e58d7a2ab4c999f92df2cd4f87d3e750a104b
+  source: WB-093
+  xpath: /workbook/dashboards/dashboard/zones/zone/zone[1]/zone[2]
+  zone_role_hint: subtitle
+- runs:
+  - bold: 'true'
+    fontsize: '20'
+    text: Threshold Analysis Two Way
+  sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+  source: WB-133
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[1]/zone[1]/zone[1]
+  zone_role_hint: title
+- runs:
+  - fontcolor: '#333333'
+    text: 'Source: Superstore  | Created by Külii Esko @ Next-Level Tableau'
+  sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+  source: WB-133
+  xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[3]
+  zone_role_hint: body

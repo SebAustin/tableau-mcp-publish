@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8' ?>
+
+<!-- Hand-made fixture for sidecar/tests/test_design_miner.py. Every construct
+     below is copied verbatim (attribute-for-attribute) from a real mined
+     exemplar in design/corpus/recipes/*.yaml — see that test file for the
+     exact provenance of each snippet. This file is NOT a full/renderable
+     .twb (it is never XSD-validated); it exists only to exercise
+     sidecar/design_miner.py's five extractors end-to-end. -->
+<workbook locale='en_US' source-build='2024.1.0 (20241.24.0328.1309)' version='18.1' xml:base='https://localhost:8080' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <style>
+    <style-rule element="title">
+      <format attr="font-size" value="11"/>
+      <format attr="color" value="#2f2e41"/>
+    </style-rule>
+  </style>
+  <datasources>
+    <datasource caption='Sample - Superstore' name='Sample - Superstore'>
+      <color-palette custom='true' name='' type='ordered-sequential'>
+        <color>#f1f1f1</color>
+        <color>#2f2e41</color>
+      </color-palette>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name='Fixture Sheet'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='Sample - Superstore' name='Sample - Superstore' />
+          </datasources>
+        </view>
+        <style/>
+        <panes>
+          <pane>
+            <style>
+              <style-rule element="mark">
+                <format attr="mark-labels-cull" value="true"/>
+                <format attr="mark-labels-show" value="true"/>
+              </style-rule>
+            </style>
+          </pane>
+        </panes>
+        <rows />
+        <cols />
+      </table>
+    </worksheet>
+  </worksheets>
+  <actions>
+    <action caption='Clear Selection - Fixture' name='[Action1_363A3B9451D848AEBFA3DD7B29B177DC]'>
+      <activation auto-clear='true' type='on-select'/>
+      <source dashboard='Fixture Dashboard' type='sheet' worksheet='Fixture Sheet'/>
+      <link caption='Clear Selection - Fixture' delimiter=',' escape='\' expression='tsl:Fixture%20Sheet?%5BSample%20-%20Superstore%5D.%5BCalculation_1%5D~s0=' include-null='true' multi-select='true' url-escape='true'/>
+      <command command='tsc:tsl-filter'>
+        <param name='target' value='Fixture Sheet'/>
+      </command>
+    </action>
+  </actions>
+  <dashboards>
+    <dashboard name='Fixture Dashboard'>
+      <zones>
+        <zone h='100000' id='1' type-v2='empty' w='6250' x='0' y='0'>
+          <zone-style>
+            <format attr='border-color' value='#000000'/>
+            <format attr='border-style' value='none'/>
+            <format attr='border-width' value='0'/>
+            <format attr='background-color' value='#2f2e41'/>
+            <format attr='margin' value='0'/>
+          </zone-style>
+        </zone>
+        <zone h='4167' id='2' type-v2='text' w='23438' x='6250' y='0'>
+          <formatted-text>
+            <run bold='true' fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='20'>Fixture Title</run>
+          </formatted-text>
+        </zone>
+      </zones>
+    </dashboard>
+  </dashboards>
+  <windows>
+    <window name='Fixture Sheet'>
+      <cards/>
+      <simple-id uuid='{00000000-0000-0000-0000-000000000001}'/>
+    </window>
+    <window name='Fixture Dashboard'>
+      <viewpoints/>
+      <active id='-1'/>
+      <simple-id uuid='{00000000-0000-0000-0000-000000000002}'/>
+    </window>
+  </windows>
+</workbook>

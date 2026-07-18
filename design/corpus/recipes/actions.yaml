@@ -1,0 +1,1104 @@
+- activation:
+    type: on-select
+  caption: Prescriptive Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Inactive,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Active,Prescriptive Map,Prescriptive
+        Scatter Plot,X-Axis Label'
+      special-fields: all
+      target: 'Super: Prescriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Prescriptive'
+    type: sheet
+    worksheet: 'Prescriptive Button: Active'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[10]
+- activation:
+    type: on-select
+  caption: Prescriptive Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Inactive,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Active,Prescriptive Map,Prescriptive
+        Scatter Plot,X-Axis Label'
+      special-fields: all
+      target: 'Super: Prescriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Annotations'
+    type: sheet
+    worksheet: 'Prescriptive Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[1]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Highlight 1 (generated)
+  command:
+    command: tsc:brush
+    params:
+      field-captions: Clusters
+      target: Prescriptive Scatter Plot
+  kind: brush
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    type: sheet
+    worksheet: Prescriptive Scatter Plot
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[2]
+- activation:
+    type: on-select
+  caption: Prescriptive Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Inactive,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Active,Prescriptive Map,Prescriptive
+        Scatter Plot,X-Axis Label'
+      special-fields: all
+      target: 'Super: Prescriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Descriptive'
+    type: sheet
+    worksheet: 'Prescriptive Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[3]
+- activation:
+    type: on-select
+  caption: Descriptive Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'All US Map,Annotations Button: Inactive,Central Map,Days to Ship Bullet,Days to Ship Difference,Days
+        to Ship Region Comp,Days to Ship Trend,Descriptive Button: Active,East Map,Prescriptive Button:
+        Inactive,Profit Ratio Bullet,Profit Ratio Callout,Profit Ratio Region Comp,Profit Ratio Trend,Sales
+        Bullet,Sales Callout,Sales Region Comp,Sales Trend,South Map,West Map'
+      special-fields: all
+      target: 'Super: Descriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Prescriptive'
+    type: sheet
+    worksheet: 'Descriptive Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[4]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Map to Scatter Plot
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Inactive,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Active,Prescriptive Map,X-Axis
+        Label'
+      special-fields: all
+      target: 'Super: Prescriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Prescriptive'
+    type: sheet
+    worksheet: Prescriptive Map
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[5]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Map Filters
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'All US Map,Annotations Button: Inactive,Central Map,Days to Ship Region Comp,Descriptive
+        Button: Active,East Map,Prescriptive Button: Inactive,Profit Ratio Region Comp,Sales Region Comp,South
+        Map,West Map'
+      special-fields: all
+      target: 'Super: Descriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Descriptive'
+    type: sheet
+    worksheet: ''
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[6]
+- activation:
+    type: on-select
+  caption: Annotations Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Active,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Inactive'
+      special-fields: all
+      target: 'Super: Annotations'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Prescriptive'
+    type: sheet
+    worksheet: 'Annotations Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[7]
+- activation:
+    type: on-select
+  caption: Annotations Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'Annotations Button: Active,Descriptive Button: Inactive,Insight 1,Insight 1 Indicator,Insight
+        2,Insight 3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button: Inactive'
+      special-fields: all
+      target: 'Super: Annotations'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Descriptive'
+    type: sheet
+    worksheet: 'Annotations Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[8]
+- activation:
+    type: on-select
+  caption: Descriptive Button
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: 'All US Map,Annotations Button: Inactive,Central Map,Days to Ship Bullet,Days to Ship Difference,Days
+        to Ship Region Comp,Days to Ship Trend,Descriptive Button: Active,East Map,Prescriptive Button:
+        Inactive,Profit Ratio Bullet,Profit Ratio Callout,Profit Ratio Region Comp,Profit Ratio Trend,Sales
+        Bullet,Sales Callout,Sales Region Comp,Sales Trend,South Map,West Map'
+      special-fields: all
+      target: 'Super: Descriptive'
+  kind: filter
+  sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
+  source:
+    dashboard: 'Super: Annotations'
+    type: sheet
+    worksheet: 'Descriptive Button: Inactive'
+  source_file: WB-114.twbx
+  xpath: /workbook/actions/action[9]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Pag All Left
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: 'Pag All Left '
+  kind: filter
+  link:
+    caption: Clear Selection - Pag All Left
+    delimiter: ','
+    escape: \
+    expression: tsl:Pag%20All%20Left%20?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: 'Pag All Left '
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[1]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Pag All Right
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Pag All Right
+  kind: filter
+  link:
+    caption: Clear Selection - Pag All Right
+    delimiter: ','
+    escape: \
+    expression: tsl:Pag%20All%20Right?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag All Right
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[2]
+- activation:
+    type: on-select
+  caption: Nav to Dataside Website
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Home
+    type: sheet
+    worksheet: Dataside Website
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[3]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Filter1
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Top Sales by Sub-Category
+  kind: filter
+  link:
+    caption: Filter1
+    delimiter: ','
+    escape: \
+    expression: tsl:Top%20Sales%20by%20Sub-Category?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Product Analysis
+    type: sheet
+    worksheet: Top Sales by Sub-Category
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[4]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Big Number
+  command:
+    command: tsc:tsl-filter
+    params:
+      single-select: ''
+      target: Big Number Selector
+  kind: filter
+  link:
+    caption: Clear Selection - Big Number
+    delimiter: ','
+    escape: \
+    expression: tsl:Big%20Number%20Selector?%5BClipboard_20211130T202757%5D.%5BCalculation_785878179720638473%5D~s0=<[Clipboard_20211130T202757].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Overview
+    type: sheet
+    worksheet: Big Number Selector
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[5]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Pagination
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Pagination
+  kind: filter
+  link:
+    caption: Clear Selection - Pagination
+    delimiter: ','
+    escape: \
+    expression: tsl:Pagination?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pagination
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[6]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Pag Left
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Pag Left
+  kind: filter
+  link:
+    caption: Clear Selection - Pag Left
+    delimiter: ','
+    escape: \
+    expression: tsl:Pag%20Left?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag Left
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[7]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Clear Selection - Pag Right
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Pag Right
+  kind: filter
+  link:
+    caption: Clear Selection - Pag Right
+    delimiter: ','
+    escape: \
+    expression: tsl:Pag%20Right?%5BSample%20-%20Superstore%5D.%5BCalculation_785878179720638473%5D~s0=<[Sample
+      - Superstore].[Calculation_785878179720589320]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag Right
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/action[8]
+- activation:
+    type: on-select
+  caption: Define Selection - Pag Left
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[sum:Calculation_1779766322801098773:ok]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag Left
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[10]
+- activation:
+    type: on-select
+  caption: Define Selection - Pag All Left
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[sum:Calculation_1779766322804146202:qk]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: 'Pag All Left '
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[11]
+- activation:
+    type: on-select
+  caption: Define Selection - Pag All Right
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[usr:Calculation_1779766322801774615:ok]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag All Right
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[1]
+- activation:
+    type: on-select
+  caption: Parameter1
+  edit_parameter:
+    agg_type: sum
+    clear_option:
+      type: do-nothing
+      value: r:2:0:1
+    params:
+      source-field: '[Sample - Superstore].[usr:Calculation_1444811115801112616:qk:7]'
+      target-parameter: '[Parameters].[Parameter 7]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Product Analysis
+    type: sheet
+    worksheet: Top Sales by Sub-Category
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[2]
+- activation:
+    type: on-select
+  caption: Parameter2
+  edit_parameter:
+    agg_type: sum
+    clear_option:
+      type: do-nothing
+      value: r:2:0:1
+    params:
+      source-field: '[Sample - Superstore].[usr:Calculation_1444811115808776236:qk:9]'
+      target-parameter: '[Parameters].[Parameter 8]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Product Analysis
+    type: sheet
+    worksheet: Top Sales by Sub-Category
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[3]
+- activation:
+    type: on-select
+  caption: Parameter3
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Sub-Category:nk]'
+      target-parameter: '[Parameters].[Parameter 6]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Product Analysis
+    type: sheet
+    worksheet: Top Sales by Sub-Category
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[4]
+- activation:
+    type: on-select
+  caption: Parameter4
+  edit_parameter:
+    agg_type: sum
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[none:Calculation_1112389168637583361:ok]'
+      target-parameter: '[Parameters].[Parameter 4]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Regional Analysis
+    type: sheet
+    worksheet: Map
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[5]
+- activation:
+    type: on-select
+  caption: Parameter5
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Map Drill Down - Value (copy)_1803410236501684226:nk]'
+      target-parameter: '[Parameters].[Parameter 5]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Regional Analysis
+    type: sheet
+    worksheet: Map
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[6]
+- activation:
+    type: on-select
+  caption: Define Selection - Big Number
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Clipboard_20211130T202757].[none:campo:ok]'
+      target-parameter: '[Parameters].[Churn Rate (copy)]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Overview
+    type: sheet
+    worksheet: Big Number Selector
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[7]
+- activation:
+    type: on-select
+  caption: Define Selection - Pagination
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[usr:Calculation_1779766322731937793:ok:8]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pagination
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[8]
+- activation:
+    type: on-select
+  caption: Define Selection - Pag Right
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[usr:Pag Left (copy)_1779766322803888152:ok]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
+  source:
+    dashboard: Order Details
+    type: sheet
+    worksheet: Pag Right
+  source_file: WB-117.twbx
+  xpath: /workbook/actions/edit-parameter-action[9]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Dummy Highlight (Metric Select)
+  command:
+    command: tsc:brush
+    params:
+      exclude: Info button,Sales | By Customer,Last Updated,Total Orders KPI & Chg (BAN),Total Orders
+        KPI (BAN),Total Customers KPI % Chg (BAN),Sales | By State,Profit KPI % Chg (BAN),Min and Max
+        Date,Profit KPI (BAN),Profit KPI (Line),Sales | By Category,Year Select,Sales | By Manufacturer,Sales
+        | By Segment,Sales | By Sub-Category,Sales KPI (%chg),Sales KPI (BAN) New,Sales KPI (Line),Total
+        Customers KPI (BAN),Total Customers KPI (Area),Total Orders KPI (Area)
+      field-captions: Dummy Highlight
+      target: Superstore Dashboard
+  kind: brush
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Metric Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[1]
+- activation:
+    type: on-select
+  caption: Dummy Filter (Metric Select)
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Sales | By Customer,Last Updated,Total Orders KPI & Chg (BAN),Total Orders
+        KPI (BAN),Total Customers KPI % Chg (BAN),Sales | By State,Profit KPI % Chg (BAN),Min and Max
+        Date,Profit KPI (BAN),Profit KPI (Line),Sales | By Category,Year Select,Sales | By Manufacturer,Sales
+        | By Segment,Sales | By Sub-Category,Sales KPI (%chg),Sales KPI (BAN) New,Sales KPI (Line),Total
+        Customers KPI (BAN),Total Customers KPI (Area),Total Orders KPI (Area)
+      target: Superstore Dashboard
+  kind: filter
+  link:
+    caption: Dummy Filter (Metric Select)
+    delimiter: ','
+    escape: \
+    expression: tsl:Superstore%20Dashboard?%5BSample%20-%20Superstore%5D.%5BCalculation_1864208809294934036%5D~s0=<[Sample
+      - Superstore].[Calculation_1864208809294934036]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Metric Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[2]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: State FA
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Last Updated,Metric Select,Min and Max Date,Year Select
+      special-fields: all
+      target: Superstore Dashboard
+  kind: filter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By State
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[3]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Dummy Highlight (Map)
+  command:
+    command: tsc:brush
+    params:
+      exclude: Info button,Sales | By Customer,Last Updated,Total Orders KPI & Chg (BAN),Total Orders
+        KPI (BAN),Total Customers KPI % Chg (BAN),Profit KPI % Chg (BAN),Min and Max Date,Profit KPI (BAN),Profit
+        KPI (Line),Sales | By Category,Year Select,Sales | By Manufacturer,Sales | By Segment,Sales |
+        By Sub-Category,Sales KPI (%chg),Sales KPI (BAN) New,Sales KPI (Line),Total Customers KPI (BAN),Total
+        Customers KPI (Area),Total Orders KPI (Area)
+      field-captions: Dummy Highlight
+      target: Superstore Dashboard
+  kind: brush
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By State
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[4]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Dummy Highlight (Year Select)
+  command:
+    command: tsc:brush
+    params:
+      exclude: Info button,Last Updated,Sales | By Sub-Category,Metric Select,Total Orders KPI & Chg (BAN),Total
+        Orders KPI (BAN),Total Customers KPI % Chg (BAN),Sales | By State,Profit KPI % Chg (BAN),Min and
+        Max Date,Profit KPI (BAN),Profit KPI (Line),Sales | By Category,Sales | By Customer,Sales | By
+        Manufacturer,Sales | By Segment,Sales KPI (%chg),Sales KPI (BAN) New,Sales KPI (Line),Total Customers
+        KPI (BAN),Total Customers KPI (Area),Total Orders KPI (Area)
+      field-captions: Dummy Highlight
+      target: Superstore Dashboard
+  kind: brush
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Year Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[5]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Segment FA
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Last Updated,Metric Select,Min and Max Date,Year Select
+      special-fields: all
+      target: Superstore Dashboard
+  kind: filter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By Segment
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[6]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Cat FA
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Last Updated,Metric Select,Min and Max Date,Year Select
+      special-fields: all
+      target: Superstore Dashboard
+  kind: filter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By Category
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[7]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Subcat filter
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Last Updated,Metric Select,Min and Max Date,Year Select
+      special-fields: all
+      target: Superstore Dashboard
+  kind: filter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By Sub-Category
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[8]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Manufacturer FA
+  command:
+    command: tsc:tsl-filter
+    params:
+      exclude: Info button,Last Updated,Metric Select,Min and Max Date,Year Select
+      special-fields: all
+      target: Superstore Dashboard
+  kind: filter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By Manufacturer
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/action[9]
+- activation:
+    type: on-select
+  caption: Metric (Profit) PA
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Calculation_1053842352072581145:nk]'
+      target-parameter: '[Parameters].[Parameter 4]'
+  kind: edit-parameter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Metric Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/edit-parameter-action[1]
+- activation:
+    type: on-select
+  caption: Metric (Orders) PA
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Calculation_1053842352072675355:nk]'
+      target-parameter: '[Parameters].[Parameter 4]'
+  kind: edit-parameter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Metric Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/edit-parameter-action[2]
+- activation:
+    type: on-select
+  caption: Selected Subcat (DZV)
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Sub-Category:nk]'
+      target-parameter: '[Parameters].[Parameter 5]'
+  kind: edit-parameter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Sales | By Sub-Category
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/edit-parameter-action[3]
+- activation:
+    type: on-select
+  caption: Year Select
+  edit_parameter:
+    agg_type: sum
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[none:Calculation_1864208809272422400:ok]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Year Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/edit-parameter-action[4]
+- activation:
+    type: on-select
+  caption: Metric (Sales) PA
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[Sample - Superstore].[none:Calculation_1053842352072527895:nk]'
+      target-parameter: '[Parameters].[Parameter 4]'
+  kind: edit-parameter
+  sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+  source:
+    dashboard: Superstore Dashboard
+    type: sheet
+    worksheet: Metric Select
+  source_file: WB-118.twbx
+  xpath: /workbook/actions/edit-parameter-action[5]
+- activation:
+    type: on-select
+  caption: Parameter1
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[Sample - Superstore].[yr:Order Date:ok]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+  source:
+    dashboard: Vertical View Layout
+    type: sheet
+    worksheet: Year Filter
+  source_file: WB-015
+  xpath: /workbook/actions/edit-parameter-action
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Disable Highlight
+  command:
+    command: tsc:brush
+    params:
+      field-captions: Disable Highlight
+      target: Demo Picker
+  kind: brush
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source:
+    type: all
+    worksheet: ''
+  source_file: WB-058
+  xpath: /workbook/actions/action
+- activation:
+    type: on-select
+  caption: Update Demo Parameter
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[federated.0zo6m591aidbno1a4rubm1w4ak1n].[:Measure Names]'
+      target-parameter: '[Parameters].[Parameter 5]'
+  kind: edit-parameter
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source:
+    type: all
+    worksheet: ''
+  source_file: WB-058
+  xpath: /workbook/actions/edit-parameter-action[1]
+- activation:
+    type: on-select
+  caption: Reset Map Layers Toggle to Regular
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[federated.0zo6m591aidbno1a4rubm1w4ak1n].[none:Calculation_2367026056855568:nk]'
+      target-parameter: '[Parameters].[Parameter 3]'
+  kind: edit-parameter
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source:
+    type: all
+    worksheet: ''
+  source_file: WB-058
+  xpath: /workbook/actions/edit-parameter-action[2]
+- activation:
+    type: on-select
+  caption: Reset Tables Toggle to Metric
+  edit_parameter:
+    agg_type: attr
+    clear_option:
+      type: do-nothing
+      value: 's:LROOT:'
+    params:
+      source-field: '[federated.0zo6m591aidbno1a4rubm1w4ak1n].[none:Calculation_2367026057138194:nk]'
+      target-parameter: '[Parameters].[Parameter 9]'
+  kind: edit-parameter
+  sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
+  source:
+    type: all
+    worksheet: ''
+  source_file: WB-058
+  xpath: /workbook/actions/edit-parameter-action[3]
+- activation:
+    auto_clear: 'true'
+    type: on-hover
+  caption: Highlight Category
+  command:
+    command: tsc:brush
+    params:
+      exclude: BANs,2 labels,donut legend,light label fixed,transparent label,left label,Legend,line legend,right
+        label
+      special-fields: all
+      target: Match Mark Colors
+  kind: brush
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source:
+    dashboard: Match Mark Colors
+    type: sheet
+    worksheet: Legend
+  source_file: WB-062
+  xpath: /workbook/actions/action
+- activation:
+    type: on-select
+  caption: ParameterColorStart1 1
+  edit_parameter:
+    agg_type: min
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[federated.12qpq7d014igrc17pvm4x16hljwc].[usr:Calculation_1803128736303632387:qk]'
+      target-parameter: '[Parameters].[ColorStart]'
+  kind: edit-parameter
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source:
+    type: sheet
+    worksheet: ▼▲match mark with SIGN()
+  source_file: WB-062
+  xpath: /workbook/actions/edit-parameter-action[1]
+- activation:
+    type: on-select
+  caption: ParameterColorEnd1 1
+  edit_parameter:
+    agg_type: max
+    clear_option:
+      type: do-nothing
+      value: i:1
+    params:
+      source-field: '[federated.12qpq7d014igrc17pvm4x16hljwc].[usr:Calculation_1803128736303632387:qk]'
+      target-parameter: '[Parameters].[ColorEnd]'
+  kind: edit-parameter
+  sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+  source:
+    type: sheet
+    worksheet: ▼▲match mark with SIGN()
+  source_file: WB-062
+  xpath: /workbook/actions/edit-parameter-action[2]
+- activation:
+    type: on-select
+  caption: Go to Linkedin
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+  source:
+    dashboard: 10 Charts
+    type: sheet
+    worksheet: Linkedin
+  source_file: WB-095
+  xpath: /workbook/actions/action[1]
+- activation:
+    type: on-select
+  caption: Go to Tableau Public
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+  source:
+    dashboard: 10 Charts
+    type: sheet
+    worksheet: Tableau Link
+  source_file: WB-095
+  xpath: /workbook/actions/action[2]
+- activation:
+    type: on-select
+  caption: Go to NLT Video
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+  source:
+    dashboard: 10 Charts
+    type: sheet
+    worksheet: Video Link
+  source_file: WB-095
+  xpath: /workbook/actions/action[3]
+- activation:
+    type: on-select
+  caption: Go to NLT
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+  source:
+    dashboard: 10 Charts
+    type: sheet
+    worksheet: NLT Website Link
+  source_file: WB-095
+  xpath: /workbook/actions/action[4]
+- activation:
+    type: on-select
+  caption: Kat's Wix Site
+  kind: url
+  link:
+    caption: ''
+    expression: [redacted-url]
+  sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+  source:
+    dashboard: 10 Charts
+    type: sheet
+    worksheet: Kat's Wix Website
+  source_file: WB-095
+  xpath: /workbook/actions/action[5]
+- activation:
+    auto_clear: 'true'
+    type: on-select
+  caption: Remove Highlight from Subtitle
+  command:
+    command: tsc:tsl-filter
+    params:
+      target: Subtitle
+  kind: filter
+  link:
+    caption: Remove Highlight from Subtitle
+    delimiter: ','
+    escape: \
+    expression: tsl:Subtitle?%5Bfederated.1or13pe0ejlkc311p12fr0dv8i82%5D.%5BCalculation_2862861582131203%5D~s0=<[federated.1or13pe0ejlkc311p12fr0dv8i82].[Calculation_2862861582098434]~na>
+    include-null: 'true'
+    multi-select: 'true'
+    url-escape: 'true'
+  sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+  source:
+    type: all
+    worksheet: ''
+  source_file: WB-133
+  xpath: /workbook/actions/action

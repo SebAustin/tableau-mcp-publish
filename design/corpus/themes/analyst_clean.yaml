@@ -1,0 +1,90 @@
+# analyst_clean — light, minimal chrome (beginners3 / matchmark card values).
+# This is the DEFAULT fallback theme (see selectTheme resolution rules in
+# design/corpus/SCHEMA.md).
+#
+# Every hex/px literal below is copied verbatim from a `provenance` entry's
+# cited construct in design/corpus/recipes/*.yaml (enforced by
+# tests/designCorpus.test.ts's "theme-cites-recipe" check).
+
+name: analyst_clean
+
+tags:
+  audiences: [analyst]
+  personas: [analyst]
+  artifacts: [dashboard]
+  mood: light
+
+provenance:
+  - source: WB-015
+    sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+    construct: >-
+      zone-style background-color #ffffff, border-color #e6e6e6, border-style
+      solid, border-width 1, margin-left 10, margin-right 10, padding 10
+      (white card, hairline border) — dashboardBackground, chartCard.*,
+      kpiTile.background, header.background.
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone/zone/zone[4]/zone[2]/zone-style
+  - source: WB-062
+    sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+    construct: >-
+      zone-style margin-top 20, margin-bottom 20 (card group spacer) —
+      spacing.outerMargin (20).
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard/zones/zone[2]/zone[2]/zone-style
+  - source: WB-015
+    sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+    construct: >-
+      formatted-text runs "SUPERSTORE SALES" (fontsize 14, bold, fontcolor
+      #000000) and "This dashboard provides a comprehensive" (fontcolor
+      #555555) in the same header text zone — header.titleColor,
+      header.subtitleColor, kpiTile.banColor.
+      recipes/text_zones.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone/zone/zone[1]/zone[1]
+  - source: WB-062
+    sha256: 577612f9eaeaa4225659d9a3b2b8348c10741ebd9887dc44a850f5e4e8f8234f
+    construct: >-
+      workbook-scope style-rule element=title font-size 12 —
+      chrome.datalabel.fontSize (reused; the workbook has no dedicated
+      datalabel-element font-size rule, so the closest real "small text"
+      literal — the workbook's own default title size — is cited instead of
+      an invented value).
+      recipes/chrome_rules.yaml xpath /workbook/style/style-rule[3]
+  - source: WB-015
+    sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+    construct: >-
+      worksheet-scope style-rule element=mark mark-labels-show=true —
+      chrome.showMarkLabels.
+      recipes/chrome_rules.yaml xpath /workbook/worksheets/worksheet[13]/table/panes/pane[1]/style/style-rule[1]
+
+dashboardBackground: "#ffffff"
+
+spacing:
+  outerMargin: "20"
+  gutter: "10"
+
+chartCard:
+  background: "#ffffff"
+  borderColor: "#e6e6e6"
+  borderStyle: solid
+  borderWidth: "1"
+  padding: "10"
+  margin: "10"
+  # cornerRadius intentionally omitted — see executive_dark.yaml for rationale.
+
+kpiTile:
+  background: "#ffffff"
+  banColor: "#000000"
+  padding: "10"
+  useSemanticDeltaColors: true
+
+header:
+  background: "#ffffff"
+  titleColor: "#000000"
+  subtitleColor: "#555555"
+
+chrome:
+  hideGridlines: true
+  hideZeroline: true
+  hideAxisTicks: true
+  showMarkLabels: true
+  datalabel:
+    fontSize: "12"
+    fontWeight: normal
+    colorMode: fixed

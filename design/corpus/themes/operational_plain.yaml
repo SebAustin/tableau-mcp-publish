@@ -1,0 +1,92 @@
+# operational_plain — high-density plain, minimal card chrome (threshold /
+# raisingbar direction).
+#
+# Every hex/px literal below is copied verbatim from a `provenance` entry's
+# cited construct in design/corpus/recipes/*.yaml (enforced by
+# tests/designCorpus.test.ts's "theme-cites-recipe" check).
+
+name: operational_plain
+
+tags:
+  audiences: [operational]
+  personas: []
+  artifacts: [dashboard]
+  mood: light
+
+provenance:
+  - source: WB-095
+    sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+    construct: >-
+      zone-style background-color #e8e0d1 (layout-basic root canvas, margin
+      0) — dashboardBackground, spacing.outerMargin (0).
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard/zones/zone[1]/zone-style
+  - source: WB-133
+    sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+    construct: >-
+      zone-style border-color #000000, border-style none, border-width 0,
+      margin 4, padding-left 20 (plain worksheet wrapper, no card framing) —
+      chartCard.borderColor/borderStyle/borderWidth/margin, spacing.gutter (4).
+      recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard/zones/zone[2]/zone[1]/zone[1]/zone[2]/zone-style
+  - source: WB-133
+    sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+    construct: >-
+      formatted-text run "Source: Superstore | Created by Külii Esko
+      @ Next-Level Tableau" (fontcolor #333333) — header.subtitleColor.
+      recipes/text_zones.yaml xpath /workbook/dashboards/dashboard/zones/zone[2]/zone[3]
+  - source: WB-133
+    sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
+    construct: >-
+      workbook-scope style-rule element=all color #000000 — header.titleColor,
+      kpiTile.banColor.
+      recipes/chrome_rules.yaml xpath /workbook/style/style-rule[4]
+  - source: WB-095
+    sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+    construct: >-
+      worksheet-scope style-rule element=datalabel font-size 10, color
+      #000000 (pane-scoped) — chrome.datalabel.fontSize.
+      recipes/chrome_rules.yaml xpath /workbook/worksheets/worksheet[10]/table/panes/pane[1]/style/style-rule[1]
+  - source: WB-095
+    sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
+    construct: >-
+      worksheet-scope style-rule element=mark mark-labels-show=true —
+      chrome.showMarkLabels.
+      recipes/chrome_rules.yaml xpath /workbook/worksheets/worksheet[10]/table/panes/pane[2]/style/style-rule[3]
+
+dashboardBackground: "#e8e0d1"
+
+spacing:
+  outerMargin: "0"
+  gutter: "4"
+
+chartCard:
+  borderColor: "#000000"
+  borderStyle: none
+  borderWidth: "0"
+  padding: "20"
+  margin: "4"
+  # background intentionally omitted — no mined operational-density card in
+  # this D0 corpus uses an explicit card background (plain worksheets sit
+  # directly on the canvas); leaving it unset (inherits canvas background)
+  # rather than inventing one.
+  # cornerRadius intentionally omitted — see executive_dark.yaml for rationale.
+
+kpiTile:
+  banColor: "#000000"
+  padding: "4"
+  useSemanticDeltaColors: false
+  # background intentionally omitted — see chartCard note above.
+
+header:
+  background: "#e8e0d1"
+  titleColor: "#000000"
+  subtitleColor: "#333333"
+
+chrome:
+  hideGridlines: true
+  hideZeroline: true
+  hideAxisTicks: true
+  showMarkLabels: true
+  datalabel:
+    fontSize: "10"
+    fontWeight: normal
+    colorMode: auto

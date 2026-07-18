@@ -600,6 +600,14 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
         [s.model_dump() for s in req.stories] if req.stories else None
     )
 
+    # Design Excellence, Slice D2: model_dump() the optional design_theme
+    # block once, snake_case (same MODEL_DUMP LESSON as brand/stories above).
+    # None when absent, keeping both build paths byte-identical to before
+    # this slice.
+    design_theme_dict: dict[str, Any] | None = (
+        req.design_theme.model_dump() if req.design_theme is not None else None
+    )
+
     if req.hyper_path:
         hyper_file = Path(req.hyper_path)
         if not hyper_file.is_file():
@@ -619,6 +627,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             canvas_height=req.canvas_height,
             brand=brand_dict,
             stories=stories_list,
+            design_theme=design_theme_dict,
         )
     else:
         twbx_path = twb_builder.build_starter_twbx(
@@ -634,6 +643,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             canvas_height=req.canvas_height,
             brand=brand_dict,
             stories=stories_list,
+            design_theme=design_theme_dict,
         )
     return {"path": str(twbx_path)}
 

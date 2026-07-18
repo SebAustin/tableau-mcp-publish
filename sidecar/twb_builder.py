@@ -833,10 +833,97 @@ def _build_text_zone(
     return zone
 
 
+def _append_zone_style(zone: ET.Element, formats: dict[str, str]) -> None:
+    """Append a ``<zone-style>`` as the LAST child of *zone*, if *formats* is non-empty.
+
+    Design Excellence, Slice D2. Mirrors the mined vocabulary in
+    ``design/corpus/recipes/zone_styles.yaml``: plain
+    ``<format attr='...' value='...'/>`` children only — NEVER the reference
+    workbooks' XSD-illegal ``_.fcp.DashboardRoundedCorners...`` *element* form
+    for corner radii (confirmed against the XSD: ``corner-radius`` is a legal
+    plain ``StyleAttribute-ST`` enum value, so the plain ``<format>`` form is
+    both schema-valid and the only form this builder ever emits).
+
+    The XSD's ``Zone-ZoneStyle-G`` group places ``zone-style`` LAST in a
+    zone's content model. Callers MUST only invoke this helper after every
+    other child of *zone* has already been appended.
+
+    ``formats`` keys are emitted in sorted (alphabetical) order so repeated
+    builds of the same theme produce byte-identical XML. An empty/falsy
+    ``formats`` is a no-op — no empty ``<zone-style/>`` is ever emitted (a
+    themed build must never add a construct with nothing in it).
+
+    Args:
+        zone:    The ``<zone>`` element to append ``<zone-style>`` to.
+        formats: Mapping of ``StyleAttribute-ST`` attr name (e.g.
+                 ``"background-color"``) to its string value.
+    """
+    if not formats:
+        return
+    zone_style = ET.SubElement(zone, "zone-style")
+    for attr in sorted(formats):
+        ET.SubElement(zone_style, "format", {"attr": attr, "value": formats[attr]})
+
+
+def _chart_card_zone_style_formats(
+    chart_card: dict[str, Any] | None, gutter: int | None
+) -> dict[str, str]:
+    """Map ``design_theme["chart_card"]`` onto the mined zone-style vocabulary.
+
+    Design Excellence, Slice D2. ``chart_card`` is
+    ``ThemeChartCardModel.model_dump()`` (snake_case — see
+    ``server.ThemeChartCardModel``): ``background`` -> ``background-color``,
+    ``border.{color,style,width}`` -> ``border-{color,style,width}``,
+    ``padding`` -> ``padding``, ``margin`` -> ``margin``, ``corner_radius`` ->
+    ``corner-radius``. Unset keys are omitted entirely — never written as an
+    empty-string or zero placeholder.
+
+    ``gutter`` (``design_theme["spacing"]["gutter"]``, Slice D2 PLAN.md)
+    supplies the zone's ``margin`` only when ``chart_card`` does not set one
+    of its own; an explicit ``chart_card["margin"]`` always wins over the
+    gutter.
+
+    Args:
+        chart_card: ``design_theme["chart_card"]`` dict, or ``None``.
+        gutter:     ``design_theme["spacing"]["gutter"]``, or ``None``.
+
+    Returns:
+        A ``{StyleAttribute-ST attr: value}`` dict (may be empty).
+    """
+    formats: dict[str, str] = {}
+    card = chart_card or {}
+
+    background = card.get("background")
+    if background:
+        formats["background-color"] = str(background)
+
+    border = card.get("border") or {}
+    if border.get("color"):
+        formats["border-color"] = str(border["color"])
+    if border.get("style"):
+        formats["border-style"] = str(border["style"])
+    if border.get("width") is not None:
+        formats["border-width"] = str(border["width"])
+
+    if card.get("padding") is not None:
+        formats["padding"] = str(card["padding"])
+
+    if card.get("margin") is not None:
+        formats["margin"] = str(card["margin"])
+    elif gutter is not None:
+        formats["margin"] = str(gutter)
+
+    if card.get("corner_radius") is not None:
+        formats["corner-radius"] = str(card["corner_radius"])
+
+    return formats
+
+
 def _append_worksheet_zones(
     parent: ET.Element,
     titles: list[str],
     id_start: int,
+    zone_style_formats: dict[str, str] | None = None,
 ) -> None:
     """Append equal-sized horizontal worksheet zones to *parent*.
 
@@ -844,9 +931,16 @@ def _append_worksheet_zones(
     (the DB-1 invariant), and carries a ``<layout-cache>`` child.
 
     Args:
-        parent:    The ``<zone type-v2='layout-flow'>`` container to append into.
-        titles:    Ordered worksheet titles.
-        id_start:  First zone id to use; ids are allocated sequentially.
+        parent:             The ``<zone type-v2='layout-flow'>`` container to
+                             append into.
+        titles:              Ordered worksheet titles.
+        id_start:            First zone id to use; ids are allocated sequentially.
+        zone_style_formats:  Optional zone-style format dict (Slice D2) applied
+                              to EVERY zone appended here, as the LAST child
+                              (after ``<layout-cache>``). ``None``/empty (the
+                              default): no ``<zone-style>`` is emitted — callers
+                              that style KPI-tile bands must omit this (KPI
+                              tiles are not themed until Slice D4).
     """
     n = len(titles)
     if n == 0:
@@ -872,6 +966,8 @@ def _append_worksheet_zones(
             "layout-cache",
             {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
         )
+        if zone_style_formats:
+            _append_zone_style(ws_zone, zone_style_formats)
 
 
 def _build_dashboard(
@@ -886,6 +982,7 @@ def _build_dashboard(
     text_zones: list[dict[str, str]] | None = None,
     layout_grammar: dict[str, Any] | None = None,
     brand: dict[str, Any] | None = None,
+    design_theme: dict[str, Any] | None = None,
 ) -> ET.Element:
     """Return the ``<dashboard>`` ET.Element for one dashboard.
 
@@ -970,6 +1067,24 @@ def _build_dashboard(
                          exactly.  Absent (``None``, the default): the title/
                          subtitle runs keep the pre-brand hardcoded values
                          (byte-identical determinism guard).
+        design_theme:    Optional resolved design-theme block (Design Excellence,
+                         Slice D2; ``model_dump()`` snake_case dict — see
+                         ``server.DesignThemeModel``).  When present:
+                         ``design_theme["dashboard_background"]`` becomes a
+                         ``background-color`` ``<zone-style>`` on the canvas
+                         (``layout-basic``) zone; ``design_theme["chart_card"]``
+                         becomes a ``<zone-style>`` on every chart/worksheet
+                         zone EXCEPT kpi-tile zones in a
+                         ``kpi_band_over_charts`` layout (KPI tiles are styled
+                         starting Slice D4); ``design_theme["spacing"]["gutter"]``
+                         supplies each chart zone's ``margin`` when
+                         ``chart_card["margin"]`` is unset (an explicit
+                         ``chart_card["margin"]`` always wins); and
+                         ``design_theme["spacing"]["outer_margin"]`` becomes a
+                         ``margin`` ``<zone-style>`` on the outer
+                         ``layout-flow`` zone.  Absent (``None``, the default):
+                         no ``<zone-style>`` is ever emitted (byte-identical
+                         determinism guard, same discipline as ``brand``).
     """
     dashboard = ET.Element("dashboard", {"name": name})
 
@@ -994,6 +1109,18 @@ def _build_dashboard(
         "zone",
         {"h": "100000", "id": "1", "type-v2": "layout-basic", "w": "100000", "x": "0", "y": "0"},
     )
+
+    # -----------------------------------------------------------------------
+    # Design Excellence, Slice D2: derive zone-style inputs from design_theme.
+    # ``design_theme`` absent/None -> every value here is None/empty -> no
+    # <zone-style> is ever appended below (the byte-identical guard).
+    # -----------------------------------------------------------------------
+    theme_dashboard_background = design_theme.get("dashboard_background") if design_theme else None
+    theme_spacing: dict[str, Any] = (design_theme.get("spacing") or {}) if design_theme else {}
+    theme_outer_margin = theme_spacing.get("outer_margin")
+    theme_gutter = theme_spacing.get("gutter")
+    theme_chart_card = design_theme.get("chart_card") if design_theme else None
+    chart_zone_style_formats = _chart_card_zone_style_formats(theme_chart_card, theme_gutter)
 
     # -----------------------------------------------------------------------
     # Determine whether we are using the extended path (title/grammar) or the
@@ -1063,6 +1190,12 @@ def _build_dashboard(
                 "layout-cache",
                 {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
             )
+            # Slice D2: themed chart-card zone-style (last child, no-op if unset).
+            _append_zone_style(ws_zone, chart_zone_style_formats)
+
+        # Slice D2: outer_margin -> margin on the outer layout-flow zone.
+        if theme_outer_margin is not None:
+            _append_zone_style(flow, {"margin": str(theme_outer_margin)})
 
     else:
         # --- EXTENDED PATH: title / text zones / kpi_band_over_charts -------
@@ -1167,6 +1300,8 @@ def _build_dashboard(
                         "y": "0",
                     },
                 )
+                # Slice D2: KPI tiles are NOT themed here (deferred to Slice D4)
+                # — no zone_style_formats passed.
                 _append_worksheet_zones(kpi_flow, effective_kpi, id_start=3)
 
             # Charts band (param='horz', one zone per chart).
@@ -1184,8 +1319,12 @@ def _build_dashboard(
                         "y": "0",
                     },
                 )
+                # Slice D2: themed chart-card zone-style on every chart zone.
                 _append_worksheet_zones(
-                    chart_flow, effective_charts, id_start=3 + len(effective_kpi)
+                    chart_flow,
+                    effective_charts,
+                    id_start=3 + len(effective_kpi),
+                    zone_style_formats=chart_zone_style_formats,
                 )
 
         else:
@@ -1224,6 +1363,8 @@ def _build_dashboard(
                     "layout-cache",
                     {"cell-count-h": "1", "cell-count-w": "1", "type-h": "cell", "type-w": "cell"},
                 )
+                # Slice D2: themed chart-card zone-style (last child, no-op if unset).
+                _append_zone_style(ws_zone, chart_zone_style_formats)
 
         # --- Footer text zones ----------------------------------------------
         for ftz in footer_text_zones:
@@ -1231,6 +1372,18 @@ def _build_dashboard(
                 str(ftz["text"]), _next_id(), bold=False, fontsize=12, h=4000
             )
             outer_flow.append(ftz_zone)
+
+        # Slice D2: outer_margin -> margin on the outer layout-flow zone. Must
+        # be appended LAST — after every text/content zone above — so it
+        # satisfies the XSD's Zone-ZoneStyle-G "last child" ordering.
+        if theme_outer_margin is not None:
+            _append_zone_style(outer_flow, {"margin": str(theme_outer_margin)})
+
+    # Slice D2: dashboard_background -> background-color on the canvas
+    # (layout-basic) zone. Appended last, after the single flow/outer_flow
+    # child built above (both branches), satisfying the "last child" rule.
+    if theme_dashboard_background:
+        _append_zone_style(container, {"background-color": str(theme_dashboard_background)})
 
     # <simple-id> is required for dashboard elements by the XSD.
     # Offset by 10000 to avoid collision with worksheet UUIDs.
@@ -1476,6 +1629,7 @@ def build_twb_xml(
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
+    design_theme: dict[str, Any] | None = None,
 ) -> str:
     """Build a schema-valid TWB XML string.
 
@@ -1488,8 +1642,10 @@ def build_twb_xml(
     (a determinism guard — not a byte-snapshot comparison against the pre-feature
     version; the worksheet/window structure was re-baselined for schema validity).
     The same determinism guarantee holds for ``brand``: omitting it (or passing
-    ``None`` explicitly) never changes the output (Phase E1, Slice B), and for
-    ``stories`` (Phase E4): omitting it never changes the output either.
+    ``None`` explicitly) never changes the output (Phase E1, Slice B), for
+    ``stories`` (Phase E4): omitting it never changes the output either, and for
+    ``design_theme`` (Design Excellence, Slice D2): omitting it never changes
+    the output either.
 
     Args:
         brand: Optional brand block (``model_dump()`` snake_case dict — see
@@ -1507,6 +1663,12 @@ def build_twb_xml(
             ``class='dashboard'`` window entry. Every ``captured_sheet`` MUST
             name an existing worksheet or regular-dashboard in this workbook —
             enforced with a loud ``ValueError`` otherwise.
+        design_theme: Optional resolved design-theme block (Design Excellence,
+            Slice D2; ``model_dump()`` snake_case dict — see
+            ``server.DesignThemeModel``). Forwarded as-is to every
+            :func:`_build_dashboard` call — see its docstring for the full
+            zone-style mapping. Absent (the default): byte-identical to
+            before this slice.
     """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
@@ -1640,6 +1802,7 @@ def build_twb_xml(
                     text_zones=db.get("text_zones") or None,
                     layout_grammar=db.get("layout_grammar") or None,
                     brand=brand,
+                    design_theme=design_theme,
                 )
                 dashboards_container.append(dashboard_el)
         if stories:
@@ -1733,14 +1896,16 @@ def build_starter_twbx(
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
+    design_theme: dict[str, Any] | None = None,
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource.
 
     When ``dashboards`` is ``None`` (default), the two call forms (no kwarg and
     explicit ``None``) produce byte-identical output (determinism guard).
     Pass a non-None list to include a ``<dashboards>`` block and a dashboard
-    window entry. ``brand`` (Phase E1, Slice B) and ``stories`` (Phase E4)
-    follow the same determinism guarantee — see :func:`build_twb_xml`.
+    window entry. ``brand`` (Phase E1, Slice B), ``stories`` (Phase E4), and
+    ``design_theme`` (Design Excellence, Slice D2) follow the same determinism
+    guarantee — see :func:`build_twb_xml`.
     """
     twb_xml = build_twb_xml(
         datasource_name,
@@ -1754,6 +1919,7 @@ def build_starter_twbx(
         canvas_height=canvas_height,
         brand=brand,
         stories=stories,
+        design_theme=design_theme,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -1935,6 +2101,7 @@ def build_embedded_twb_xml(
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
+    design_theme: dict[str, Any] | None = None,
 ) -> str:
     """Build a TWB XML string that embeds a .hyper extract via a federated connection.
 
@@ -1963,6 +2130,10 @@ def build_embedded_twb_xml(
         stories:          Optional list of story specs (Phase E4) — see
                           :func:`build_twb_xml` for the full behaviour. Absent
                           (the default): byte-identical to before this slice.
+        design_theme:     Optional resolved design-theme block (Design
+                          Excellence, Slice D2) — see :func:`build_twb_xml`
+                          for the full behaviour. Absent (the default):
+                          byte-identical to before this slice.
 
     Returns:
         A UTF-8 TWB XML string with an XML declaration header.
@@ -2035,6 +2206,7 @@ def build_embedded_twb_xml(
                     text_zones=db.get("text_zones") or None,
                     layout_grammar=db.get("layout_grammar") or None,
                     brand=brand,
+                    design_theme=design_theme,
                 )
                 dashboards_container.append(dashboard_el)
         if stories:
@@ -2112,6 +2284,7 @@ def build_embedded_twbx(
     canvas_height: int = 800,
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
+    design_theme: dict[str, Any] | None = None,
 ) -> Path:
     """Build a self-contained .twbx that embeds the .hyper extract.
 
@@ -2139,6 +2312,10 @@ def build_embedded_twbx(
         stories:          Optional list of story specs (Phase E4) — see
                           :func:`build_twb_xml`. Absent (the default):
                           byte-identical to before this slice.
+        design_theme:     Optional resolved design-theme block (Design
+                          Excellence, Slice D2) — see :func:`build_twb_xml`.
+                          Absent (the default): byte-identical to before this
+                          slice.
 
     Returns:
         The resolved ``out_path``.
@@ -2166,6 +2343,7 @@ def build_embedded_twbx(
         canvas_height=canvas_height,
         brand=brand,
         stories=stories,
+        design_theme=design_theme,
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -260,26 +260,31 @@ def test_post_workbook_dashboard_with_kpi_tile_theme_returns_200(tmp_path: Path)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
 
-    # Cosmetic BAN typography: the field-scoped cell rule (live probe #2
-    # confirmed this DOES render on a naked BAN view).
-    cell_rule = worksheet.find("table/style/style-rule[@element='cell']")
-    assert cell_rule is not None
-    attrs = {f.get("attr") for f in cell_rule.findall("format")}
-    assert {"font-size", "font-family", "color"} <= attrs
+    # Live probe #3: BAN typography (cosmetic font-size/font-name/color)
+    # no longer lives on a table-level cell rule (proven ineffective for a
+    # naked BAN view) — it's on the pane's <customized-label> instead.
+    assert worksheet.find("table/style/style-rule[@element='cell']") is None
+    label_runs = worksheet.findall(".//panes/pane/customized-label//run")
+    assert len(label_runs) == 3  # primary, newline, delta
+    primary_run = label_runs[0]
+    assert primary_run.get("fontcolor") == "#ffffff"
+    assert primary_run.get("fontname") == "Tableau Bold"
+    assert primary_run.get("fontsize") == "36"
+    assert primary_run.text == "<[federated.Sales_Data].[sum:Sales:qk]>"
 
     # Number formatting: the worksheet-LOCAL default-format override (live
-    # probe #2 hotfix location — the cell rule above does NOT carry
-    # text-format; a competing default-format silently wins over it on a
-    # naked BAN view, so the compact/arrow patterns live here instead).
+    # probe #2 hotfix location) — the placeholder run above renders using
+    # THIS resolved default-format.
     local_columns = {
         c.get("name"): c.get("default-format")
         for c in worksheet.findall(".//datasource-dependencies/column")
     }
     assert local_columns.get("[Sales]") == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
     assert local_columns.get("[Sales Delta]") == "*▲ #,##;▼ #,##"
-    assert "text-format" not in attrs
 
+    # Table-level style still carries title + transparency (live probe #2b).
     assert worksheet.find("table/style/style-rule[@element='title']") is not None
+    assert worksheet.find("table/style/style-rule[@element='table']") is not None
 
 
 def test_post_workbook_dashboard_without_kpi_tile_returns_200_unstyled(tmp_path: Path) -> None:

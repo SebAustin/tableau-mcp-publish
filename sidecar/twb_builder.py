@@ -455,26 +455,36 @@ def _build_worksheet(
     XPath provenance. Absent ``design_theme`` (the default): byte-identical
     to before this slice.
 
-    Styled KPI tiles (Design Excellence, Slice D4; number-format hotfix
-    after live probe #2)
+    Styled KPI tiles (Design Excellence, Slice D4; hotfixed across three
+    live-probe rounds)
     ---------------------------------------------------------------------
     When ``sheet["kind"] == "kpi_tile"`` AND ``design_theme["kpi_tile"]`` is
     present:
 
-    - The compact number/currency format on the primary measure (fixes
-      numeric overflow in narrow tiles) and the mined arrow-direction format
-      on the delta measure (when ``kpi_tile["use_semantic_delta_colors"]``
-      is set) are stamped as a plain ``default-format`` attribute on this
-      worksheet's OWN ``<datasource-dependencies><column>`` declaration —
-      see :func:`_kpi_tile_local_default_formats` for why (live probe #2
-      found the original cell-level ``text-format`` approach does not
-      reliably override a competing ``default-format`` on a naked BAN view).
-    - A field-scoped ``<style-rule element='cell'>`` is appended to the SAME
-      TABLE-level ``<style>`` above (see :func:`_kpi_tile_field_style_rule`)
-      for BAN font-size/font-family (from ``brand["typography"]["ban"]``)
-      and BAN color (from ``kpi_tile["ban_color"]``) — confirmed rendering
-      correctly by the live probe.
-    - A per-worksheet ``element='title'`` style-rule
+    - The compact number/currency format on the primary and comparison
+      measures (fixes numeric overflow in narrow tiles) and the mined
+      arrow-direction format on the delta measure (when
+      ``kpi_tile["use_semantic_delta_colors"]`` is set) are stamped as a
+      plain ``default-format`` attribute on this worksheet's OWN
+      ``<datasource-dependencies><column>`` declaration — see
+      :func:`_kpi_tile_local_default_formats` for why.
+    - A transparent-background TABLE-level ``<style-rule element='table'>``
+      (:func:`_kpi_tile_table_transparency_rule`) reveals the KPI tile
+      ZONE's themed background through the worksheet's own (otherwise
+      opaque white) table fill, when ``kpi_tile["background"]`` is set.
+    - A ``<customized-label>`` (:func:`_kpi_tile_customized_label`) on the
+      PANE — the mechanism that actually renders BAN font-size/font-name
+      (from ``brand["typography"]["ban"]``), BAN color (from
+      ``kpi_tile["ban_color"]``), AND makes the worksheet-local
+      compact/arrow default-formats above visible (placeholder
+      substitution renders a field's value using its resolved
+      default-format) — live probe #3 proved the EARLIER table-level
+      ``element='cell'`` font-size/font-family/color rule renders nothing
+      for a naked BAN view; that mechanism has been removed.
+    - A pane-level ``<style-rule element='cell'><format attr='text-align'
+      value='center'/></style-rule>`` (:func:`_kpi_tile_pane_style_rules`)
+      centers the BAN text, mined verbatim from the same real worksheet.
+    - A per-worksheet TABLE-level ``element='title'`` style-rule
       (:func:`_kpi_tile_title_style_rule`) is also added when
       ``kpi_tile["ban_color"]`` is set, fixing dark-on-navy title legibility
       WITHOUT recoloring every other worksheet's title (unlike D3's
@@ -632,16 +642,13 @@ def _build_worksheet(
         kpi_transparency_rule = _kpi_tile_table_transparency_rule(theme_kpi_tile)
         if kpi_transparency_rule is not None:
             table_rules = [*table_rules, kpi_transparency_rule]
+    # Live-probe #3 hotfix: the TABLE-level element='cell' font-size/
+    # font-family/color rule Slice D4 originally emitted here is REMOVED —
+    # fresh renders proved it does nothing for BAN typography on a naked
+    # (rows/cols empty) Text mark. BAN typography now lives on the pane's
+    # <customized-label> instead (see _kpi_tile_customized_label, appended
+    # below in the <panes> section).
     style_el = _build_style_element(table_rules)
-    if is_kpi_tile:
-        # Slice D4: field-scoped BAN-typography rule for the KPI tile's
-        # primary measure — a SECOND style-rule inside the SAME <style>
-        # element (style-rule is maxOccurs="unbounded"). Number formatting
-        # (compact/delta-arrow) is NOT here — see kpi_local_default_formats
-        # above (live-probe-#2 hotfix).
-        kpi_cell_rule = _kpi_tile_field_style_rule(kpi_spec, theme_kpi_tile, brand_ban, ds_ref)
-        if kpi_cell_rule is not None:
-            style_el.append(kpi_cell_rule)
     table.append(style_el)
 
     # --- <panes> ------------------------------------------------------
@@ -755,6 +762,17 @@ def _build_worksheet(
             encodings_el = ET.SubElement(pane, "encodings")
             for tag, col_val in encoding_elements:
                 ET.SubElement(encodings_el, tag, {"column": col_val})
+
+        # Live-probe #3 hotfix: <customized-label> — the mechanism that
+        # ACTUALLY renders BAN typography/compact-formats (see
+        # _kpi_tile_customized_label's docstring). MUST come after
+        # <encodings> and before <style> (PaneSpecification-G's
+        # CustomLabel-G / Stylesheet-G ordering — verified against the
+        # mined pane). No-op when design_theme has no kpi_tile block.
+        if is_kpi_tile:
+            kpi_label_el = _kpi_tile_customized_label(kpi_spec, theme_kpi_tile, brand_ban, ds_ref)
+            if kpi_label_el is not None:
+                pane.append(kpi_label_el)
 
         # Slice D3: pane-level mark-labels/datalabel style-rule — ONLY for
         # bar/line chart sheets (see _is_labelable_chart_sheet), and MUST be
@@ -1328,36 +1346,41 @@ def _table_style_rules(
 # ---------------------------------------------------------------------------
 # Styled KPI tiles (Design Excellence, Slice D4)
 #
-# Fixes three live-probe #1 findings on the KPI band: (a) numeric overflow
-# (### in narrow tiles) via a compact number/currency format; (b) illegible
-# dark-on-navy titles via a per-worksheet title-color rule; (c) unstyled
-# tiles via the D2 zone-style box model, now also applied to kpi_tile zones.
+# Fixes live-probe findings on the KPI band across THREE probe rounds: (a)
+# numeric overflow (### in narrow tiles) via a compact number/currency
+# format; (b) illegible dark-on-navy titles via a per-worksheet title-color
+# rule; (c) unstyled tiles via the D2 zone-style box model, now also applied
+# to kpi_tile zones; (d) a table-level opaque-white fill hiding the tile
+# zone's themed background; (e) BAN typography (font/color) not rendering.
 #
-# TWO SEPARATE mined locations (split after live-probe #2 found compact
-# numbers still overflowing — see _kpi_tile_local_default_formats's
-# docstring for the full root-cause writeup):
+# THREE mined locations, each covering a DIFFERENT concern (this shape
+# emerged over three probe-driven corrections — see each helper's own
+# docstring for the full root-cause writeup of why it lives where it does):
 #
-# 1. NUMBER FORMATTING (compact primary + delta arrow-direction): a plain
-#    ``default-format`` attribute on the KPI tile's OWN WORKSHEET-LOCAL
-#    ``<datasource-dependencies><column>`` declaration — mirrors WB-118's
-#    real, published "Sales KPI (BAN) New" worksheet
+# 1. NUMBER FORMATTING (compact primary/comparison + delta arrow-direction):
+#    a plain ``default-format`` attribute on the KPI tile's OWN
+#    WORKSHEET-LOCAL ``<datasource-dependencies><column>`` declaration —
+#    mirrors WB-118's real, published "Sales KPI (BAN) New" worksheet
 #    (WB-118.twbx), whose primary BAN measure
-#    carries ``default-format='c"$"#,##0,.0K;-"$"#,##0,.0K'`` there (NOT a
-#    cell-level override). This is the mechanism that actually takes effect
-#    for a naked (rows/cols empty) BAN view.
-# 2. COSMETIC TYPOGRAPHY (font-size/font-family/color) + TITLE COLOR: a
-#    field-scoped ``<format attr='...' field='[ds].[col]' value='...'/>``
-#    inside the worksheet's own TABLE-level ``<style><style-rule
-#    element='cell'>`` — mirrors WB-117's
-#    ``worksheet[10]/table/style/style-rule[1]`` (``font-size
-#    field='[...].[:Measure Names]' value='9'``). This DID render correctly
-#    per the live probe — only the number-format half of the original
-#    single-rule design needed to move.
-#
-# Deliberately NOT the exemplars' ``<customized-label>`` construct: that
-# REPLACES a mark's entire rendered label, which would silently drop this
-# builder's comparison/delta <text> encodings from the visible tile (see the
-# D4 report for the full assessment).
+#    carries ``default-format='c"$"#,##0,.0K;-"$"#,##0,.0K'`` there.
+#    :func:`_kpi_tile_local_default_formats`. This value is what a
+#    ``customized-label`` placeholder run (below) ultimately renders.
+# 2. BAN TYPOGRAPHY (font-size/font-name/color): the PANE's own
+#    ``<customized-label>`` — :func:`_kpi_tile_customized_label`. Mirrors
+#    WB-118's "Sales KPI (BAN) New" pane structure (``view, mark,
+#    encodings, customized-label, style``) verbatim: multi-run
+#    ``formatted-text`` with placeholder-substitution runs
+#    (``<[ds].[instance]>``) that render using the field's OWN
+#    default-format from #1. An EARLIER version of this slice tried a
+#    TABLE-level field-scoped ``element='cell'`` rule for this — live probe
+#    #3's fresh renders proved that mechanism does nothing on a naked BAN
+#    view; it has been removed (:func:`_kpi_tile_customized_label`'s
+#    docstring has the full before/after).
+# 3. TABLE/PANE CHROME: a transparent TABLE-level ``background-color``
+#    (:func:`_kpi_tile_table_transparency_rule`) so the zone's themed
+#    background shows through, plus a PANE-level ``text-align: center``
+#    (:func:`_kpi_tile_pane_style_rules`) — both mined verbatim from the
+#    SAME WB-118 worksheet.
 # ---------------------------------------------------------------------------
 
 # Mined compact-number pattern (WB-015, /workbook/worksheets/
@@ -1368,7 +1391,7 @@ _KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
 # Mined delta arrow-direction pattern (WB-117's
 # WB-117.twbx, default-format='*▲ #,##;▼ #,##'
 # on [MOM - Sales (copy)_233624247371403264] et al.) -- the D7-deferred
-# fallback for true color-by-sign (see _kpi_tile_field_style_rule's
+# fallback for true color-by-sign (see _kpi_tile_local_default_formats's
 # docstring). Direction is visible (▲/▼) without any new calc-field
 # machinery.
 _KPI_DELTA_ARROW_FORMAT = "*▲ #,##;▼ #,##"
@@ -1540,12 +1563,12 @@ def _kpi_tile_pane_style_rules(
     ``<table><panes><pane><style>``): ``<style-rule element='cell'>
     <format attr='text-align' value='center'/></style-rule>`` — centers the
     BAN text within the tile. This is a PANE-scoped ``element='cell'`` rule
-    (``<panes><pane><style>``), a DIFFERENT XSD location from
-    :func:`_kpi_tile_field_style_rule`'s TABLE-scoped ``element='cell'``
-    rule (``<table><style>``) — both legitimately share the ``cell``
-    element name at their own scope. Emitted whenever ``kpi_tile`` theming
-    is active (``design_theme.kpi_tile`` present), independent of
-    ``ban_color``/typography specifics.
+    (``<panes><pane><style>``), a DIFFERENT XSD location from the
+    (now-removed) TABLE-scoped ``element='cell'`` rule that used to live at
+    ``<table><style>`` — both legitimately share the ``cell`` element name
+    at their own scope. Emitted whenever ``kpi_tile`` theming is active
+    (``design_theme.kpi_tile`` present), independent of ``ban_color``/
+    typography specifics.
 
     Returns an empty list when *kpi_tile* is falsy.
     """
@@ -1624,31 +1647,92 @@ def _kpi_tile_local_default_formats(
     return formats
 
 
-def _kpi_tile_field_style_rule(
+_KPI_LABEL_DELTA_FALLBACK_FONTSIZE = 12
+_KPI_LABEL_NEWLINE = "\n"
+
+
+def _kpi_tile_customized_label(
     kpi_spec: dict[str, Any] | None,
     kpi_tile: dict[str, Any] | None,
     ban_font: dict[str, Any] | None,
     ds_ref: str,
 ) -> ET.Element | None:
-    """Return a field-scoped ``<style-rule element='cell'>`` for the KPI
-    tile's primary measure's BAN typography, or ``None``.
+    """Return a ``<customized-label>`` for the KPI tile's pane, or ``None``.
 
-    Design Excellence, Slice D4 (hotfix in D4's live-probe-#2 follow-up
-    REMOVED the ``text-format`` entries this originally carried — see
-    :func:`_kpi_tile_local_default_formats`'s docstring for why; number
-    formatting now lives on the worksheet-local dependency ``<column>``
-    instead). This rule now ONLY carries cosmetic (non-number-format)
-    attributes, all scoped to the PRIMARY measure's column-instance field —
-    which the live probe confirmed DO render correctly for a naked BAN view:
+    Design Excellence, Slice D4 — THIRD hotfix round (live probe #3):
+    REPLACES the ``element='cell'`` font-size/font-family/color rule this
+    builder previously emitted (``_kpi_tile_field_style_rule``, now
+    deleted — live probe #3's fresh renders proved it does nothing for a
+    naked BAN view; the mechanism below is what actually renders BAN
+    typography), and makes the worksheet-local default-formats (compact/
+    arrow, :func:`_kpi_tile_local_default_formats`) visible — Tableau's
+    placeholder-substitution mechanism renders a
+    referenced field's value USING its resolved ``default-format``.
 
-    - ``font-size``/``font-family``: from ``brand.typography.ban`` (Phase E1
-      wire, never consumed by the builder before Slice D4).
-    - ``color``: from ``kpi_tile["ban_color"]``.
+    Verified DIRECTLY against WB-118's real, published "Sales KPI (BAN)
+    New" worksheet (WB-118.twbx): its
+    ``<pane>`` children, IN ORDER, are ``view, mark, encodings,
+    customized-label, style`` — ``<customized-label>`` COEXISTS with the
+    full ``<encodings>`` list (all measures stay declared; the label is a
+    presentation template layered on top, not a replacement) — reversing
+    this builder's earlier D4 assessment that the construct necessarily
+    drops other encoded fields from view. Confirmed against the XSD's
+    ``PaneSpecification-G`` sequence (``encodings`` -> ``HiddenFields`` ->
+    ``DropLine`` -> ``Trendline`` -> ``ReferenceLine`` -> ``[CustomTooltip]``
+    -> ``[CustomLabel]`` -> ``[Stylesheet]``) — since this builder emits
+    none of the optional groups between ``encodings`` and ``CustomLabel``,
+    the effective order is exactly ``encodings, customized-label, style``,
+    matching the mined pane byte-for-byte.
 
-    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy,
-    *kpi_spec* has no ``primary_measure``, or neither *ban_font* nor
-    ``kpi_tile["ban_color"]`` is set — a themed build with nothing
-    cosmetic to say about this specific tile emits no rule at all.
+    Run shape (mirrors the SAME worksheet's own runs: ``fontalignment``,
+    ``fontcolor``, ``fontsize`` attrs; a CDATA-style placeholder run
+    ``<[ds].[instance]>`` whose text Tableau substitutes with the field's
+    value rendered via ITS OWN default-format; a plain unstyled run as a
+    line separator):
+
+    1. PRIMARY value run: ``fontsize`` from ``brand.typography.ban.size``,
+       ``fontname`` from ``ban.font`` (mirrors this codebase's OWN existing
+       precedent for brand-driven title/subtitle runs — see
+       ``_title_or_subtitle_run_attrs``: a named font carries boldness
+       instead of a separate ``bold`` attribute), ``fontcolor`` from
+       ``kpi_tile.ban_color``. Attrs omitted (not defaulted) when their
+       source is absent — same discipline as every other D4 helper.
+    2. Newline separator run (plain, no attrs).
+    3. DELTA value run (only when ``kpi_spec.delta_measure`` is set):
+       smaller — ``round(ban.size / 2)`` when brand.typography.ban is
+       present, else :data:`_KPI_LABEL_DELTA_FALLBACK_FONTSIZE` — same
+       ``fontcolor`` as the primary. No ``fontname`` (mined secondary/
+       caption runs consistently carry fewer attrs than the primary value
+       run).
+
+    Deliberate divergences from the mined worksheet (documented, not
+    silent):
+
+    - NO caption run (e.g. mined "S A L E S"/"P R O F I T"). This builder's
+      zone titles already label each tile (Slice D4's per-worksheet
+      ``element='title'`` rule); a redundant in-label caption is
+      unnecessary here.
+    - The newline separator uses a PLAIN ``"\\n"`` character, not the
+      mined literal ``"Æ\\n"`` glyph-prefixed form. That glyph's exact
+      semantics are undocumented (likely a Tableau Desktop label-editor
+      artifact for a manually-inserted line break); a bare newline is the
+      standard, unambiguous way to represent a line break in ``xs:string``
+      run content and needs no unverified assumption about the glyph.
+    - COMPARISON measure is NOT given its own value run: no single mined
+      worksheet stacks more than ONE explicit value placeholder inside a
+      single ``customized-label`` (WB-118 splits "primary" and
+      "delta/%-change" into SEPARATE, adjacent worksheets rather than one
+      combined label — see the D4 report for the full survey across every
+      BAN-shaped worksheet in this exemplar). Primary+delta in ONE label is
+      therefore a COMPOSITION of mined primitives (multi-run
+      formatted-text, placeholder substitution, run styling) applied per
+      explicit instruction, not a verbatim single-source mirror — the
+      comparison measure's compact ``default-format`` is still emitted
+      (:func:`_kpi_tile_local_default_formats`) for tooltip/data use, just
+      not rendered as its own label line.
+
+    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy, or
+    *kpi_spec* has no ``primary_measure``.
     """
     if not kpi_tile or not kpi_spec:
         return None
@@ -1656,32 +1740,47 @@ def _kpi_tile_field_style_rule(
     if not primary:
         return None
 
-    entries: list[dict[str, str]] = []
-    primary_field = f"{ds_ref}.{_measure_instance(str(primary))}"
-
-    if ban_font:
-        ban_size = ban_font.get("size")
-        if ban_size is not None:
-            entries.append(
-                {"attr": "font-size", "field": primary_field, "value": str(int(ban_size))}
-            )
-        ban_font_name = ban_font.get("font")
-        if ban_font_name:
-            entries.append(
-                {"attr": "font-family", "field": primary_field, "value": str(ban_font_name)}
-            )
     ban_color = kpi_tile.get("ban_color")
-    if ban_color:
-        entries.append({"attr": "color", "field": primary_field, "value": str(ban_color)})
+    ban_size = ban_font.get("size") if ban_font else None
+    ban_font_name = ban_font.get("font") if ban_font else None
 
-    if not entries:
-        return None
+    label_el = ET.Element("customized-label")
+    formatted_text_el = ET.SubElement(label_el, "formatted-text")
 
-    entries.sort(key=lambda e: (e["attr"], e["field"]))
-    rule_el = ET.Element("style-rule", {"element": "cell"})
-    for entry in entries:
-        ET.SubElement(rule_el, "format", entry)
-    return rule_el
+    def _append_run(
+        text: str,
+        *,
+        fontcolor: str | None = None,
+        fontname: str | None = None,
+        fontsize: float | int | None = None,
+    ) -> None:
+        # Alphabetical attribute order (fontcolor, fontname, fontsize) —
+        # same discipline as _build_text_zone's <run> construction.
+        run_attrs: dict[str, str] = {}
+        if fontcolor:
+            run_attrs["fontcolor"] = str(fontcolor)
+        if fontname:
+            run_attrs["fontname"] = str(fontname)
+        if fontsize is not None:
+            run_attrs["fontsize"] = str(int(fontsize))
+        run_el = ET.SubElement(formatted_text_el, "run", run_attrs)
+        run_el.text = text
+
+    primary_field = f"{ds_ref}.{_measure_instance(str(primary))}"
+    _append_run(
+        f"<{primary_field}>", fontcolor=ban_color, fontname=ban_font_name, fontsize=ban_size
+    )
+
+    delta = kpi_spec.get("delta_measure")
+    if delta:
+        _append_run(_KPI_LABEL_NEWLINE)
+        delta_field = f"{ds_ref}.{_measure_instance(str(delta))}"
+        delta_size = (
+            round(ban_size / 2) if ban_size is not None else _KPI_LABEL_DELTA_FALLBACK_FONTSIZE
+        )
+        _append_run(f"<{delta_field}>", fontcolor=ban_color, fontsize=delta_size)
+
+    return label_el
 
 
 def _build_dashboard(

@@ -35,22 +35,26 @@ Mined-location summary (see the D4 report for full exemplar-XML citations)
   zone_styles.yaml``), now also applied to ``kpi_band_over_charts`` KPI-tile
   zones and their containing band flow zone.
 
-Deviation from the plan's speculative BAN-styling location
+BAN-styling location — REVISED after live probe #3
 ------------------------------------------------------------
-The plan speculated BAN typography "likely" sits on a pane-level
-``style-rule element='mark'``/``'datalabel'``. Investigating the actual
-exemplar XML (all 3 Superstore exemplars) shows every real BAN worksheet
-instead uses a ``<customized-label>`` block with placeholder-substitution
-runs (``<run fontsize='26'><![CDATA[<[ds].[usr:Calc:nk]>]]></run>``,
-verified XSD-legal via ``PaneSpecification-CustomLabel-G``). This builder
-DELIBERATELY does not adopt that construct: ``customized-label`` REPLACES a
-mark's entire rendered label, and our KPI tiles emit MULTIPLE ``<text>``
-encodings (primary/comparison/delta) on one mark — switching to a
-single-run custom label would silently drop comparison/delta measures from
-the visible tile, a correctness regression outside this slice's scope. The
-field-scoped ``<style-rule element='cell'>`` approach above is a REAL mined
-sibling construct (see citations above) that only ADDS formatting and never
-replaces the mark's label composition.
+D4's original assessment (see git history) speculated then rejected a
+``<customized-label>`` approach, believing it would REPLACE a mark's
+entire rendered label and drop comparison/delta measures from view. Live
+probe #3's fresh renders proved the TABLE-level ``element='cell'``
+font-size/font-family/color rule that assessment led to renders NOTHING
+for a naked BAN view. A direct diff against WB-118's real, published
+"Sales KPI (BAN) New" worksheet (WB-118.twbx)
+showed the earlier assessment was wrong on the specific "replaces the
+label" claim: that worksheet's ``<pane>`` keeps its full 3-field
+``<encodings>`` list AND adds a ``<customized-label>`` — the two coexist;
+the label is a presentation template layered on top. BAN typography (and
+making the worksheet-local compact/arrow default-formats VISIBLE, since
+Tableau's placeholder substitution renders a field's value via its
+resolved default-format) now lives in ``<customized-label>`` — see
+``test_twb_kpi_styling_customized_label.py`` for that mechanism's full
+test coverage and mined-evidence citations, including the documented
+divergences (no caption run, plain newline, primary+delta only — not all
+three encoded measures get their own label run).
 
 Delta-color assessment (item 6)
 ---------------------------------
@@ -74,7 +78,8 @@ Test groups
 -----------
 D4-1  Tile zone-style from ``kpi_tile`` (background/border/padding)
 D4-2  KPI band container gets ``kpi_tile.background`` only (continuous band)
-D4-3  BAN font-size/font-family/color at the mined per-field ``cell`` rule
+D4-3  Table-level cell rule dead-mechanism regression guard (removed, D4-3
+      moved to ``test_twb_kpi_styling_customized_label.py``)
 D4-4  Compact format per classification (currency/number/percent) on primary
 D4-5  Title legibility rule (per-worksheet, not workbook-wide)
 D4-6  Delta arrow-format (mined fallback for color-by-sign)
@@ -82,8 +87,12 @@ D4-7  No-theme byte-identical (both entry points)
 D4-8  No ``kpi_tile`` block -> tiles remain fully unstyled
 
 D4-9 (XSD validity) and D4-10 (FastAPI integration) live in the companion
-file ``test_twb_kpi_styling_integration.py`` — split at the ~800-line
-file-size guideline, same discipline as Slice D3's
+file ``test_twb_kpi_styling_integration.py``. Live-probe-driven hotfix
+rounds live in ``test_twb_kpi_styling_hotfix.py`` (round 2: local
+default-formats, table transparency, text-align) and
+``test_twb_kpi_styling_customized_label.py`` (round 3: BAN typography via
+``<customized-label>``) — split at the ~800-line file-size guideline, same
+discipline as Slice D3's
 ``test_twb_chrome.py``/``test_twb_chrome_integration.py``.
 """
 
@@ -331,17 +340,25 @@ def test_kpi_band_flow_gets_background_color_only() -> None:
 
 
 # ---------------------------------------------------------------------------
-# D4-3  BAN font-size / font-family / color at the mined per-field cell rule
+# D4-3  BAN typography — TABLE-level per-field cell rule (REMOVED, live
+# probe #3)
 #
-# Live-probe #2 confirmed these DO render correctly on a naked BAN view —
-# this cosmetic cell rule is unchanged by the hotfix. ``text-format`` is
-# explicitly asserted ABSENT here (it moved to the worksheet-local
-# default-format — see D4-4) so a regression that re-adds it to this
-# ineffective location fails CI instead of silently reintroducing the bug.
+# Live probe #2 believed this rendered correctly; fresh live-probe #3
+# renders proved it does NOT render BAN typography for a naked (rows/cols
+# empty) Text mark. The mechanism was DELETED (``_kpi_tile_field_style_rule``
+# no longer exists) — BAN font-size/font-name/color now render via the
+# pane's ``<customized-label>`` instead (see
+# ``test_twb_kpi_styling_customized_label.py``). This section is now a
+# permanent regression guard: the TABLE-level ``element='cell'`` rule must
+# NEVER reappear for a kpi_tile worksheet, themed or not.
 # ---------------------------------------------------------------------------
 
 
-def test_ban_font_size_font_family_and_color_on_primary_measure() -> None:
+def test_table_level_cell_rule_never_emitted_dead_mechanism_stays_removed() -> None:
+    """Regression guard: BAN typography moved to <customized-label> in the
+    live-probe #3 hotfix. The table-level element='cell' rule this slice
+    ORIGINALLY used for font-size/font-family/color must never come back —
+    it demonstrably does not render for a naked BAN view."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -354,76 +371,13 @@ def test_ban_font_size_font_family_and_color_on_primary_measure() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    formats = _cell_formats(worksheet)
-
-    # Independent cross-check: the field these formats target must be one of
-    # the worksheet's OWN <text> encoding columns (read from the live XML),
-    # not merely a value re-derived via the same helper the implementation
-    # uses internally.
-    encoded_columns = _text_encoding_columns(worksheet)
-    primary_field = _field("Sales")
-    assert primary_field in encoded_columns
-
-    font_size = next(f for f in formats if f["attr"] == "font-size")
-    assert font_size["field"] == primary_field
-    assert font_size["field"] in encoded_columns
-    assert font_size["value"] == "36"
-
-    font_family = next(f for f in formats if f["attr"] == "font-family")
-    assert font_family["field"] == primary_field
-    assert font_family["field"] in encoded_columns
-    assert font_family["value"] == "Tableau Bold"
-
-    color = next(f for f in formats if f["attr"] == "color")
-    assert color["field"] == primary_field
-    assert color["field"] in encoded_columns
-    assert color["value"] == "#ffffff"
-
-    # Tightened per live-probe #2's root-cause fix: text-format must NEVER
-    # be emitted at this (ineffective, for naked BAN views) location again.
-    assert {f["attr"] for f in formats} == {"font-size", "font-family", "color"}
-
-
-def test_ban_font_absent_without_brand_typography() -> None:
-    """kpi_tile present but no brand -> font-size/font-family absent; color
-    (from kpi_tile.ban_color, independent of brand) still present; no
-    text-format at this location regardless (it lives elsewhere — D4-4)."""
-    xml = twb_builder.build_twb_xml(
-        "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
-    )
-    root = ET.fromstring(xml)
-    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
-    assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    assert {f["attr"] for f in formats} == {"color"}
-
-
-def test_cell_style_rule_formats_sorted_deterministic() -> None:
-    xml_1 = twb_builder.build_twb_xml(
-        "DS",
-        "kpi_ds",
-        "site",
-        SHEETS_MIXED,
-        dashboards=DASHBOARD_KPI_BAND,
-        design_theme=THEME_KPI,
-        brand=BRAND,
-    )
-    xml_2 = twb_builder.build_twb_xml(
-        "DS",
-        "kpi_ds",
-        "site",
-        SHEETS_MIXED,
-        dashboards=DASHBOARD_KPI_BAND,
-        design_theme=THEME_KPI,
-        brand=BRAND,
-    )
-    assert xml_1 == xml_2
-    root = ET.fromstring(xml_1)
-    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
-    assert worksheet is not None
-    formats = _cell_formats(worksheet)
-    keys = [(f["attr"], f["field"]) for f in formats]
-    assert keys == sorted(keys), f"<format> children must be deterministically sorted: {keys}"
+    assert _cell_formats(worksheet) == []
+    # The table-level <style> still carries the title + transparency rules
+    # (both proven-working) — only the dead cell rule is gone.
+    style = worksheet.find("table/style")
+    assert style is not None
+    elements = {r.get("element") for r in style.findall("style-rule")}
+    assert elements == {"title", "table"}
 
 
 # ---------------------------------------------------------------------------
@@ -657,8 +611,12 @@ def test_delta_arrow_format_when_semantic_delta_colors_true() -> None:
 
     local_formats = _local_default_formats(worksheet)
     assert local_formats[f"[{raw_delta}]"] == "*▲ #,##;▼ #,##"
-    # Not present in the cell rule (that location is proven ineffective).
-    assert not any(f["field"] == _field("Sales Delta") for f in _cell_formats(worksheet))
+    # No table-level cell rule exists at all any more (see
+    # test_table_level_cell_rule_never_emitted_dead_mechanism_stays_removed);
+    # the delta's compact/arrow format is made VISIBLE by a
+    # <customized-label> placeholder run instead — see
+    # test_twb_kpi_styling_customized_label.py.
+    assert _cell_formats(worksheet) == []
 
 
 def test_delta_arrow_format_absent_when_semantic_delta_colors_false() -> None:
@@ -695,10 +653,14 @@ def test_delta_arrow_format_absent_when_no_delta_measure() -> None:
     # Only the primary measure's own local override is present — no delta
     # field exists on this sheet's kpi spec at all.
     assert local_formats == {"[Quantity]": "n#,##0,.0K;-#,##0,.0K"}
-    # Cosmetic cell rule targets only the primary field (color, from
-    # kpi_tile.ban_color — no brand passed in this test).
-    fields = {f["field"] for f in _cell_formats(worksheet)}
-    assert fields == {_field("Quantity")}
+    # No table-level cell rule (dead mechanism, removed); BAN
+    # typography/cosmetics now live on <customized-label> — see
+    # test_twb_kpi_styling_customized_label.py for that coverage, and
+    # confirm here only that no delta run exists when there's no delta
+    # measure at all (<customized-label> has exactly one value run).
+    assert _cell_formats(worksheet) == []
+    label_runs = worksheet.findall(".//panes/pane/customized-label//run")
+    assert len(label_runs) == 1
 
 
 # ---------------------------------------------------------------------------

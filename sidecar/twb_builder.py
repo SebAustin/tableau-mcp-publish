@@ -338,6 +338,7 @@ def _build_worksheet(
     ds_caption: str,
     ds_internal: str,
     sheet_index: int,
+    design_theme: dict[str, Any] | None = None,
 ) -> ET.Element:  # noqa: C901 – intentionally long: one function per worksheet type
     """Build a schema-valid ``<worksheet>`` element.
 
@@ -409,11 +410,35 @@ def _build_worksheet(
         - The geo dimension and color measure are added to
           ``<datasource-dependencies>``.
 
+    Chrome rules + mark labels (Design Excellence, Slice D3)
+    ---------------------------------------------------------
+    When ``design_theme`` is present, ``design_theme["chrome"]`` drives two
+    independent style locations:
+
+    - TABLE-level ``<style>`` (was an unconditional bare ``<style/>``):
+      ``chrome.hide_axis_ticks`` adds an ``axis`` style-rule with
+      ``line-visibility='off' tick-color='#00000000'`` — applied to EVERY
+      sheet kind (harmless blanket chrome removal). ``SheetModel.style_rules``
+      (Slice D1's per-sheet escape hatch) is appended after, verbatim,
+      sorted by ``element`` name — independently of ``design_theme``.
+    - PANE-level ``<style>`` (new, optional, LAST child of ``<pane>``):
+      ``chrome.datalabel`` and ``chrome.show_mark_labels`` — ONLY for
+      ``kind='chart'`` sheets whose ``mark_type`` is ``bar``/``line`` (see
+      :func:`_is_labelable_chart_sheet`'s docstring for the scoping
+      rationale). NOT emitted for ``kpi_tile`` or ``map_filled`` sheets.
+
+    See :func:`_table_style_rules`/:func:`_pane_style_rules` for the mined
+    XPath provenance. Absent ``design_theme`` (the default): byte-identical
+    to before this slice.
+
     Args:
         sheet:        Sheet spec dict.
         ds_caption:   Human-readable datasource caption.
         ds_internal:  Internal datasource name (``sqlproxy.*``).
         sheet_index:  Zero-based index used to derive a deterministic UUID.
+        design_theme: Optional resolved design-theme block (``model_dump()``
+                      snake_case dict — see ``server.DesignThemeModel``).
+                      Absent (the default): byte-identical to before Slice D3.
     """
     title = str(sheet["title"])
     mark_type = str(sheet.get("mark_type", "bar")).lower()
@@ -421,6 +446,11 @@ def _build_worksheet(
     cols_dims = [str(c) for c in sheet.get("cols", [])]
     rows_dims = [str(r) for r in sheet.get("rows", [])]
     measures = [str(m) for m in sheet.get("measures", [])]
+
+    # Slice D3: design_theme.chrome, threaded through to both the table-level
+    # and pane-level style-rule builders below. None when design_theme is
+    # absent -> every downstream rules list is empty -> byte-identical.
+    theme_chrome: dict[str, Any] | None = design_theme.get("chrome") if design_theme else None
 
     # --- Scatter spec ------------------------------------------------------
     scatter = sheet.get("scatter")  # optional {x, y, breakdown?}
@@ -508,7 +538,10 @@ def _build_worksheet(
     ET.SubElement(view, "aggregation", {"value": "true"})
 
     # --- <style> (required before <rows>/<cols> by XSD) ---------------
-    ET.SubElement(table, "style")
+    # Slice D3: table-level style-rules (theme-driven axis-tick removal +
+    # SheetModel.style_rules pass-through). Byte-identical to the pre-D3 bare
+    # <style/> when there is nothing to say (see _build_style_element).
+    table.append(_build_style_element(_table_style_rules(theme_chrome, sheet.get("style_rules"))))
 
     # --- <panes> ------------------------------------------------------
     panes = ET.SubElement(table, "panes")
@@ -622,6 +655,13 @@ def _build_worksheet(
             encodings_el = ET.SubElement(pane, "encodings")
             for tag, col_val in encoding_elements:
                 ET.SubElement(encodings_el, tag, {"column": col_val})
+
+        # Slice D3: pane-level mark-labels/datalabel style-rule — ONLY for
+        # bar/line chart sheets (see _is_labelable_chart_sheet), and MUST be
+        # the LAST child of <pane> (PaneSpecification-G's Stylesheet-G
+        # ordering). No-op (nothing appended) when there are no rules to say.
+        if _is_labelable_chart_sheet(sheet):
+            _append_style_rules(pane, _pane_style_rules(theme_chrome))
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
     if is_map_filled:
@@ -968,6 +1008,215 @@ def _append_worksheet_zones(
         )
         if zone_style_formats:
             _append_zone_style(ws_zone, zone_style_formats)
+
+
+# ---------------------------------------------------------------------------
+# Chrome rules + mark labels (Design Excellence, Slice D3)
+#
+# Mirrors the mined vocabulary in ``design/corpus/recipes/chrome_rules.yaml``:
+# ``<style><style-rule element='...'><format attr='...' value='...'/></style-rule></style>``
+# at three distinct XSD locations:
+#   - workbook-level  (``Workbook-Styles-G``, optional — omitted entirely
+#     when there is nothing to say)
+#   - worksheet TABLE-level  (``Workbook-Stylesheet-G`` on ``Table-CT`` —
+#     REQUIRED even when empty; the pre-D3 bare ``<style/>`` stays
+#     byte-identical when there is nothing to say)
+#   - worksheet PANE-level  (``PaneSpecification-G``'s ``Stylesheet-G``,
+#     optional, and MUST be the LAST child of ``<pane>``)
+# Every helper here is a pure formats-mapper; ``_build_worksheet``/
+# ``build_twb_xml``/``build_embedded_twb_xml`` decide WHERE to attach the
+# result and whether the calling context is eligible (see
+# ``_is_labelable_chart_sheet``).
+# ---------------------------------------------------------------------------
+
+
+def _build_style_element(rules: list[tuple[str, dict[str, str]]]) -> ET.Element:
+    """Return a standalone ``<style>`` element built from *rules*.
+
+    Each ``(element, formats)`` pair becomes a ``<style-rule element='...'>``
+    with one ``<format attr='...' value='...'/>`` per *formats* key, emitted
+    in sorted (alphabetical) order for deterministic output — same discipline
+    as ``_append_zone_style`` (Slice D2). An empty *rules* list returns a
+    childless (self-closing) ``<style/>`` — the exact shape the pre-D3 bare
+    ``ET.SubElement(table, "style")`` produced, preserving byte-identical
+    output at call sites where ``<style>`` is structurally REQUIRED even when
+    there is nothing themed to say (worksheet table-level).
+    """
+    style_el = ET.Element("style")
+    for element, formats in rules:
+        rule_el = ET.SubElement(style_el, "style-rule", {"element": element})
+        for attr in sorted(formats):
+            ET.SubElement(rule_el, "format", {"attr": attr, "value": formats[attr]})
+    return style_el
+
+
+def _append_style_rules(parent: ET.Element, rules: list[tuple[str, dict[str, str]]]) -> None:
+    """Append a ``<style>`` child (via :func:`_build_style_element`) to *parent*.
+
+    A no-op when *rules* is empty — for XSD contexts where ``<style>`` itself
+    is OPTIONAL (workbook-level ``Workbook-Stylesheet-G`` and pane-level
+    ``Stylesheet-G``, both ``minOccurs='0'``). Worksheet TABLE-level
+    ``<style>`` is REQUIRED even when empty (no ``minOccurs`` on its
+    ``Workbook-Stylesheet-G`` reference) — callers there must append
+    :func:`_build_style_element`'s result directly and unconditionally
+    instead of going through this helper.
+    """
+    if not rules:
+        return
+    parent.append(_build_style_element(rules))
+
+
+def _workbook_style_rules(chrome: dict[str, Any] | None) -> list[tuple[str, dict[str, str]]]:
+    """Return workbook-level ``(element, formats)`` pairs from ``design_theme.chrome``.
+
+    ``hide_gridlines``/``hide_zeroline`` each map to a plain
+    ``line-visibility='off'`` format — mirrors ``WB-062``
+    ``/workbook/style/style-rule[2]`` (gridline) and ``WB-095``
+    ``/workbook/style/style-rule[2]`` (zeroline): a single workbook-wide rule
+    rather than repeating the same rule on every worksheet.
+
+    ``title_color`` additionally emits a ``title`` style-rule with a plain
+    ``color`` format — mirrors WB-117's
+    ``WB-117.twbx`` ``/workbook/style/style-rule[1]``
+    (``font-size='11' color='#2f2e41'``; only ``color`` is emitted here since
+    no theme field for title font-size exists). ``title_color`` is NOT a
+    field on Slice D1's ``ThemeChromeModel`` — it is read defensively via
+    ``.get()`` so this is a no-op through the current Pydantic/zod wire
+    schema; only a caller passing a raw ``design_theme`` dict directly to
+    this builder module can reach it today (builder-only support; the
+    Pydantic model + zod schema wiring is deferred — see the D3 report).
+
+    Returns pairs sorted by element name for deterministic output. Returns an
+    empty list when *chrome* is ``None``/falsy or every flag is unset — the
+    byte-identical guard: a ``design_theme`` with no chrome intent never adds
+    a workbook-level ``<style>``.
+    """
+    if not chrome:
+        return []
+    rules: dict[str, dict[str, str]] = {}
+    if chrome.get("hide_gridlines"):
+        rules["gridline"] = {"line-visibility": "off"}
+    if chrome.get("hide_zeroline"):
+        rules["zeroline"] = {"line-visibility": "off"}
+    title_color = chrome.get("title_color")
+    if title_color:
+        rules["title"] = {"color": str(title_color)}
+    return [(element, rules[element]) for element in sorted(rules)]
+
+
+def _theme_datalabel_formats(datalabel: dict[str, Any] | None) -> dict[str, str]:
+    """Map ``design_theme.chrome.datalabel`` onto the mined datalabel vocabulary.
+
+    Mirrors WB-117's ``worksheet[15]/table/panes/pane/style/style-rule[2]``
+    (``color-mode='auto' font-weight='bold' font-family='Calibri'``):
+    ``font_size`` -> ``font-size``, ``font_weight`` -> ``font-weight``,
+    ``color_mode`` -> ``color-mode``. ``color`` is read defensively via
+    ``.get()`` (NOT a field on Slice D1's ``ThemeDatalabelModel``) — same
+    builder-only-support discipline as ``title_color`` above. Unset keys are
+    omitted entirely — never written as an empty-string placeholder.
+    """
+    dl = datalabel or {}
+    formats: dict[str, str] = {}
+    if dl.get("font_size") is not None:
+        formats["font-size"] = str(dl["font_size"])
+    if dl.get("font_weight"):
+        formats["font-weight"] = str(dl["font_weight"])
+    if dl.get("color_mode"):
+        formats["color-mode"] = str(dl["color_mode"])
+    if dl.get("color"):
+        formats["color"] = str(dl["color"])
+    return formats
+
+
+def _pane_style_rules(chrome: dict[str, Any] | None) -> list[tuple[str, dict[str, str]]]:
+    """Return pane-level ``(element, formats)`` pairs: ``datalabel`` THEN ``mark``.
+
+    Mirrors the mined shape at ``.../table/panes/pane/style/style-rule`` where
+    BOTH ``datalabel`` and ``mark`` rules live in the SAME ``<pane><style>``
+    block, datalabel first (WB-117 worksheet[10]/[15] and
+    WB-114 worksheet[8]/[15] all place the datalabel
+    style-rule immediately before the mark style-rule).
+
+    ``chrome.show_mark_labels`` emits ``mark-labels-show='true'`` +
+    ``mark-labels-cull='false'`` — readable, uncrowded bar/line labels.
+    Callers MUST gate this function behind :func:`_is_labelable_chart_sheet`;
+    it performs no sheet-kind scoping itself (pure formats-mapper).
+
+    Returns an empty list when *chrome* is ``None``/falsy or neither
+    ``show_mark_labels`` nor any datalabel field is set.
+    """
+    if not chrome:
+        return []
+    rules: list[tuple[str, dict[str, str]]] = []
+    datalabel_formats = _theme_datalabel_formats(chrome.get("datalabel"))
+    if datalabel_formats:
+        rules.append(("datalabel", datalabel_formats))
+    if chrome.get("show_mark_labels"):
+        rules.append(("mark", {"mark-labels-show": "true", "mark-labels-cull": "false"}))
+    return rules
+
+
+def _is_labelable_chart_sheet(sheet: dict[str, Any]) -> bool:
+    """True for ``kind='chart'`` sheets whose ``mark_type`` is ``bar`` or ``line``.
+
+    Design Excellence, Slice D3 scoping decision: mined
+    ``design/corpus/recipes/chrome_rules.yaml`` evidence for
+    ``mark-labels-show`` on MAP worksheets is genuinely mixed across the
+    reference workbooks (some map layers carry ``mark-labels-show='true'``,
+    others ``'false'``), so per the D3 plan's explicit fallback instruction
+    ("if ambiguous, apply to bar/line only — Few discipline: labels on bars,
+    not on maps") theme-driven mark-labels/datalabel styling is restricted to
+    bar/line chart sheets. This naturally excludes ``kpi_tile`` sheets
+    (``kind != 'chart'``; their hero ``<text>`` marks are not "labels" in
+    this sense — KPI styling lands in Slice D4) and ``map_filled`` sheets
+    (``mark_type == 'map_filled'``, not in the allowed set), as well as
+    scatter/text mark types.
+    """
+    # NOTE: ``sheet.get("kind") or "chart"`` (not ``sheet.get("kind", "chart")``)
+    # — after a Pydantic ``SheetModel.model_dump()`` round-trip (the real
+    # ``/workbook/dashboard`` request path) the "kind" key is ALWAYS present,
+    # with value ``None`` when the caller didn't set it. ``.get(key, default)``
+    # only substitutes the default for an ABSENT key, so it would silently
+    # read ``None`` here for the common case (an ordinary bar/line sheet with
+    # no explicit ``kind``) — the ``or`` form treats both "absent" and
+    # "present but falsy" as the "chart" default, matching caller intent.
+    sheet_kind = str(sheet.get("kind") or "chart")
+    mark_type = str(sheet.get("mark_type") or "bar").lower()
+    return sheet_kind == "chart" and mark_type in ("bar", "line")
+
+
+def _table_style_rules(
+    chrome: dict[str, Any] | None,
+    sheet_style_rules: list[dict[str, Any]] | None,
+) -> list[tuple[str, dict[str, str]]]:
+    """Return worksheet TABLE-level ``(element, formats)`` pairs.
+
+    Order: the theme-driven ``axis`` tick-color rule first (when
+    ``chrome.hide_axis_ticks`` is set), then any ``SheetModel.style_rules``
+    pass-through entries (Slice D1's per-sheet escape hatch — carried
+    verbatim), sorted by ``element`` name for deterministic output.
+
+    The axis rule mirrors WB-117's
+    ``worksheet[10]/table/style/style-rule[1]`` EXACTLY:
+    ``line-visibility='off' tick-color='#00000000'`` (fully transparent
+    ticks). Unlike :func:`_pane_style_rules`, this is NOT scoped to
+    bar/line charts — ``hide_axis_ticks`` is a blanket chrome setting that is
+    harmless on sheet kinds with no visible axis (e.g. KPI tiles).
+
+    ``sheet_style_rules`` works independently of ``chrome``/``design_theme``
+    — a sheet can carry ``style_rules`` even when no design theme is applied
+    at all.
+    """
+    rules: list[tuple[str, dict[str, str]]] = []
+    if chrome and chrome.get("hide_axis_ticks"):
+        rules.append(("axis", {"line-visibility": "off", "tick-color": "#00000000"}))
+    passthrough = sorted(sheet_style_rules or [], key=lambda r: str(r.get("element") or ""))
+    for rule in passthrough:
+        element = str(rule.get("element") or "")
+        formats = {str(k): str(v) for k, v in (rule.get("formats") or {}).items()}
+        if element and formats:
+            rules.append((element, formats))
+    return rules
 
 
 def _build_dashboard(
@@ -1683,6 +1932,15 @@ def build_twb_xml(
     if brand:
         workbook.append(_build_preferences_element(brand))
 
+    # --- Design Excellence, Slice D3: workbook-level chrome style-rules -----
+    # (gridline/zeroline off, optional defensive title color) — AFTER
+    # <preferences>, BEFORE <datasources> per the XSD's Workbook-Preferences-G
+    # -> Workbook-StyleTheme-G -> Workbook-Styles-G -> ... ->
+    # Workbook-DataSources-G sequence. No-op when design_theme has no chrome
+    # intent (byte-identical guard, same discipline as brand above).
+    if design_theme:
+        _append_style_rules(workbook, _workbook_style_rules(design_theme.get("chrome")))
+
     # --- Published datasource reference -------------------------------------
     datasources = ET.SubElement(workbook, "datasources")
     datasource = ET.SubElement(
@@ -1770,7 +2028,9 @@ def build_twb_xml(
     # re-baselined for schema-valid output (XSD A2)
     worksheets = ET.SubElement(workbook, "worksheets")
     for i, sheet in enumerate(sheets):
-        worksheets.append(_build_worksheet(sheet, datasource_name, ds_internal, i))
+        worksheets.append(
+            _build_worksheet(sheet, datasource_name, ds_internal, i, design_theme=design_theme)
+        )
 
     # --- Optional dashboard + story block (BEFORE <windows> per XSD) --------
     # XSD workbook sequence: Worksheets → Dashboards → Windows → explain-data.
@@ -2150,6 +2410,11 @@ def build_embedded_twb_xml(
     if brand:
         workbook.append(_build_preferences_element(brand))
 
+    # --- Design Excellence, Slice D3: workbook-level chrome style-rules -----
+    # See build_twb_xml's twin comment for the full XSD-ordering rationale.
+    if design_theme:
+        _append_style_rules(workbook, _workbook_style_rules(design_theme.get("chrome")))
+
     # --- Collect geo-role map from all sheets --------------------------------
     # If any sheet carries a ``geo`` spec, thread the field→semantic-role
     # mapping into the datasource builder so the correct column gets the
@@ -2179,7 +2444,7 @@ def build_embedded_twb_xml(
     worksheets_el = ET.SubElement(workbook, "worksheets")
     for i, sheet in enumerate(sheets):
         worksheets_el.append(
-            _build_worksheet(sheet, datasource_name, ds_internal, i)
+            _build_worksheet(sheet, datasource_name, ds_internal, i, design_theme=design_theme)
         )
 
     # --- Optional dashboards + stories ---------------------------------------

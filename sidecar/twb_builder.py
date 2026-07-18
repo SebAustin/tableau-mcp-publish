@@ -626,6 +626,12 @@ def _build_worksheet(
         kpi_title_rule = _kpi_tile_title_style_rule(theme_kpi_tile)
         if kpi_title_rule is not None:
             table_rules = [*table_rules, kpi_title_rule]
+        # Live-probe #2b hotfix: transparent table background so the KPI
+        # tile ZONE's navy background-color (Slice D2) shows through instead
+        # of being hidden behind the table's own opaque white fill.
+        kpi_transparency_rule = _kpi_tile_table_transparency_rule(theme_kpi_tile)
+        if kpi_transparency_rule is not None:
+            table_rules = [*table_rules, kpi_transparency_rule]
     style_el = _build_style_element(table_rules)
     if is_kpi_tile:
         # Slice D4: field-scoped BAN-typography rule for the KPI tile's
@@ -756,6 +762,12 @@ def _build_worksheet(
         # ordering). No-op (nothing appended) when there are no rules to say.
         if _is_labelable_chart_sheet(sheet):
             _append_style_rules(pane, _pane_style_rules(theme_chrome))
+        elif is_kpi_tile:
+            # Live-probe #2b hotfix (finding 4, optional): centered BAN text
+            # — a pane-scoped element='cell' rule (mirrors WB-118's own
+            # <table><panes><pane><style>), also MUST be the LAST child of
+            # <pane>. No-op when design_theme has no kpi_tile block.
+            _append_style_rules(pane, _kpi_tile_pane_style_rules(theme_kpi_tile))
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
     if is_map_filled:
@@ -1365,14 +1377,31 @@ _CURRENCY_SYMBOL_RE = re.compile(r"^([^#0-9]*)")
 
 
 def _extract_currency_symbol(currency_format: str) -> str:
-    """Return the leading currency-symbol prefix of a Tableau currency format.
+    """Return the leading currency-symbol prefix of a Tableau currency format,
+    with any pre-existing quote-wrapping stripped.
 
-    E.g. ``"$#,##0"`` -> ``"$"``. Falls back to ``"$"`` when the format has
-    no leading non-numeric prefix (defensive; brand.formats.currency is
-    expected to always have one).
+    E.g. ``"$#,##0"`` -> ``"$"``, and the Tableau-native quoted form
+    ``'"$"#,##0'`` (symbol already wrapped in literal quote characters,
+    matching real mined ``default-format`` values like
+    ``c"$"#,##0;-"$"#,##0``) -> ALSO ``"$"``. Falls back to ``"$"`` when the
+    format has no leading non-numeric prefix (defensive; brand.formats.currency
+    is expected to always have one).
+
+    Design Excellence, Slice D4 hotfix (live-probe #2b): the regex prefix
+    match (``^[^#0-9]*``) does not stop at a literal ``"`` — a brand currency
+    string already in Tableau-native quoted form (``'"$"#,##0'``) would
+    otherwise be captured AS-IS (quote characters included), and
+    :func:`_compact_currency_format` would then wrap THAT in a second pair of
+    quotes (``c""$""#,##0...``), producing a format string Tableau cannot
+    parse (silently falls back, leaving the un-compacted default and the
+    overflow this whole mechanism exists to fix). Stripping any leading/
+    trailing ``"`` from the extracted prefix before wrapping guarantees
+    exactly ONE quote pair in the final pattern, regardless of which
+    convention the input already used.
     """
     match = _CURRENCY_SYMBOL_RE.match(currency_format)
     symbol = match.group(1) if match else ""
+    symbol = symbol.strip('"')
     return symbol or "$"
 
 
@@ -1476,6 +1505,55 @@ def _kpi_tile_title_style_rule(
     return ("title", {"color": str(ban_color)})
 
 
+def _kpi_tile_table_transparency_rule(
+    kpi_tile: dict[str, Any] | None,
+) -> tuple[str, dict[str, str]] | None:
+    """Return a worksheet-scoped ``("table", {"background-color": "#00000000"})``
+    rule, or ``None``.
+
+    Design Excellence, Slice D4 hotfix (live-probe #2b finding 3 — "white
+    tiles"): the D2 zone-style ``background-color`` on the KPI tile's ZONE
+    renders correctly, but the worksheet's own TABLE has an opaque white
+    fill of its own that paints on top of it, hiding the navy band. Mirrors
+    WB-118's real, published ``"Sales KPI (BAN) New"`` worksheet
+    (WB-118.twbx) verbatim:
+    ``<style-rule element='table'><format attr='background-color'
+    value='#00000000'/></style-rule>`` — a fully transparent table fill so
+    the containing zone's background shows through.
+
+    Returns ``None`` when *kpi_tile* is falsy or ``background`` is unset —
+    only relevant when the tile actually has a themed background to reveal.
+    """
+    tile = kpi_tile or {}
+    if not tile.get("background"):
+        return None
+    return ("table", {"background-color": "#00000000"})
+
+
+def _kpi_tile_pane_style_rules(
+    kpi_tile: dict[str, Any] | None,
+) -> list[tuple[str, dict[str, str]]]:
+    """Return PANE-level ``(element, formats)`` pairs for a themed KPI tile.
+
+    Design Excellence, Slice D4 hotfix (live-probe #2b finding 4 — optional,
+    mined verbatim from the SAME WB-118 worksheet's OWN
+    ``<table><panes><pane><style>``): ``<style-rule element='cell'>
+    <format attr='text-align' value='center'/></style-rule>`` — centers the
+    BAN text within the tile. This is a PANE-scoped ``element='cell'`` rule
+    (``<panes><pane><style>``), a DIFFERENT XSD location from
+    :func:`_kpi_tile_field_style_rule`'s TABLE-scoped ``element='cell'``
+    rule (``<table><style>``) — both legitimately share the ``cell``
+    element name at their own scope. Emitted whenever ``kpi_tile`` theming
+    is active (``design_theme.kpi_tile`` present), independent of
+    ``ban_color``/typography specifics.
+
+    Returns an empty list when *kpi_tile* is falsy.
+    """
+    if not kpi_tile:
+        return []
+    return [("cell", {"text-align": "center"})]
+
+
 def _kpi_tile_local_default_formats(
     kpi_spec: dict[str, Any] | None,
     kpi_tile: dict[str, Any] | None,
@@ -1514,9 +1592,15 @@ def _kpi_tile_local_default_formats(
     Returns:
         ``{primary_measure: compact format}`` (via :func:`_kpi_compact_format`,
         always, once *kpi_tile* + a primary measure are present) plus
-        ``{delta_measure: _KPI_DELTA_ARROW_FORMAT}`` when
-        ``kpi_spec["delta_measure"]`` is set AND
-        ``kpi_tile["use_semantic_delta_colors"]`` is true. Empty when
+        ``{comparison_measure: compact format}`` (same classification,
+        whenever ``kpi_spec["comparison_measure"]`` is set — live-probe #2b
+        found the comparison measure, e.g. a raw "Sales PP" float, got NO
+        default-format at all and ALSO overflowed; it needs the same
+        treatment as the primary, unconditionally, independent of
+        ``use_semantic_delta_colors`` which only governs the DELTA's
+        arrow-direction format) plus ``{delta_measure:
+        _KPI_DELTA_ARROW_FORMAT}`` when ``kpi_spec["delta_measure"]`` is set
+        AND ``kpi_tile["use_semantic_delta_colors"]`` is true. Empty when
         *kpi_tile* is falsy, *kpi_spec* is falsy, or *kpi_spec* has no
         ``primary_measure``.
     """
@@ -1528,6 +1612,10 @@ def _kpi_tile_local_default_formats(
         return formats
 
     formats[str(primary)] = _kpi_compact_format(str(primary), brand_formats or {})
+
+    comparison = kpi_spec.get("comparison_measure")
+    if comparison:
+        formats[str(comparison)] = _kpi_compact_format(str(comparison), brand_formats or {})
 
     delta = kpi_spec.get("delta_measure")
     if delta and kpi_tile.get("use_semantic_delta_colors"):

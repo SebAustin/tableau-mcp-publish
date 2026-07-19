@@ -2157,6 +2157,28 @@ def _build_dashboard(
     # Real dashboards (wb1–wb7) carry a <style/> child before <size>.
     ET.SubElement(dashboard, "style")
 
+    # Design Excellence, Slice D4 FINAL SHAPE hotfix (live-probe #2f's
+    # sizing-mode investigation): ``sizing-mode='fixed'`` is REQUIRED,
+    # unconditionally, on every dashboard's <size> — mined verbatim from
+    # every exemplar dashboard (WB-118/WB-117, e.g.
+    # ``<size maxheight='900' maxwidth='1300' minheight='900'
+    # minwidth='1300' sizing-mode='fixed'/>``). Without it, an
+    # equal-min/max ``<size>`` is NOT treated as a truly fixed canvas by
+    # Tableau's server-side image renderer — it falls back to range/
+    # automatic sizing, which COMPRESSES zone content in ways a purely
+    # proportional 0-100000 zone grid does not predict, independent of
+    # font size, mark-labels-cull, or any other per-zone attribute (see
+    # design/corpus/SCHEMA.md constraint #5 for the live-probe bisect
+    # ladder — V13 (single-zone canvas: worked) vs V14-V23 (multi-zone
+    # canvas, NO sizing-mode: every combination of fontsize/cull/delta/
+    # band-height/fixed-size-zones failed identically — pointed straight
+    # at a dashboard-level, not zone-level, sizing attribute). This is a
+    # DELIBERATE, unconditional baseline change (not design_theme-gated):
+    # it affects the no-theme byte-identical guards' EXPECTED bytes too
+    # (both sides of the guard still match each other — the guard proves
+    # design_theme doesn't change output, not that output is frozen
+    # forever) — see the guard tests' updated assertions for the render
+    # evidence justifying this one-time re-baselining.
     ET.SubElement(
         dashboard,
         "size",
@@ -2165,6 +2187,7 @@ def _build_dashboard(
             "maxwidth": str(canvas_width),
             "minheight": str(canvas_height),
             "minwidth": str(canvas_width),
+            "sizing-mode": "fixed",
         },
     )
 
@@ -2588,6 +2611,11 @@ def _build_story(
 
     dashboard = ET.Element("dashboard", {"name": name, "type": "storyboard"})
     ET.SubElement(dashboard, "style")
+    # Design Excellence, Slice D4 FINAL SHAPE hotfix: same
+    # sizing-mode='fixed' fix as _build_dashboard's <size> — see that
+    # function's docstring comment for the full mined-provenance/render-
+    # evidence rationale. Applied here too for consistency (a storyboard
+    # is still a <dashboard> element with its own <size>).
     ET.SubElement(
         dashboard,
         "size",
@@ -2596,6 +2624,7 @@ def _build_story(
             "maxwidth": str(canvas_width),
             "minheight": str(canvas_height),
             "minwidth": str(canvas_width),
+            "sizing-mode": "fixed",
         },
     )
 

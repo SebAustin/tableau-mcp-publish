@@ -250,15 +250,66 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
 4. **A `<customized-label>` VALUE run that overflows the mark's cell renders as a literal `"###"`**
    (Tableau's standard numeric-cell-overflow placeholder), even though the label mechanism itself is
    rendering correctly — this is easy to misdiagnose as a repeat of constraint #1/#2's non-rendering
-   failure, but it is a DIFFERENT problem with a different fix. A KPI tile is only ~240px wide;
-   `fontsize` values must be chosen with the mark cell's width in mind, not just copied verbatim from
-   a brand's typography scale (a brand's `36px` display-heading size, reasonable for a page title, is
-   too large for a compact BAN tile). The largest BAN fontsize anywhere in the 10-workbook mined
-   corpus is `26` (WB-117's `WB-117.twbx`) — a safe practical
-   ceiling, clamped to in `sidecar/twb_builder.py` rather than passed through unbounded.
+   failure, but it is a DIFFERENT problem. `fontsize` clamping (`sidecar/twb_builder.py`'s
+   `_KPI_LABEL_VALUE_FONTSIZE_MAX = 26`, the largest BAN fontsize anywhere in the 10-workbook mined
+   corpus) is still correct discipline for a *standalone* worksheet view — but constraint #5 below,
+   found by a follow-up live-probe round, proved fontsize is NOT what causes `"###"` inside a real
+   multi-zone DASHBOARD; do not assume shrinking fontsize alone fixes an overflow observed in a
+   dashboard render.
+5. **A KPI-tile Text mark's numeric value overflows to `"###"` inside ANY dashboard with 2+ zones,
+   REGARDLESS of fontsize, formatting, or the customized-label mechanism — and this is NOT specific
+   to the customized-label BAN mechanism at all.** A live-probe round (bisect ladder V13–V23,
+   published to a real Tableau Cloud dev site, fresh-rendered at each step) methodically ruled out,
+   one variable at a time, every plausible XML-level cause: `mark-labels-cull` (true vs false — no
+   effect), the delta value line (present vs absent — no effect), the primary run's `fontsize`
+   (17px vs 10px — no effect, and the rendered `"###"` glyph itself did not change width with
+   fontsize, implying it is NOT rendering our run's actual font at all), the KPI band's own height
+   allocation (20% vs 40% of a fixed-size dashboard canvas — no effect), tile width-sharing among
+   sibling KPI tiles (4-way vs full-width alone — no effect), fixed-size zone sizing
+   (`is-fixed='true' fixed-size='150'`, mirrored verbatim from a real mined exemplar zone —
+   no effect), and dashboard
+   zone-nesting depth (`kpi_band_over_charts`'s two nested flow levels vs the simplest possible
+   single-level 2-sheet `tiled_vertical` dashboard — no effect). The ONE variable that flips the
+   result: whether the worksheet is the dashboard's **sole** zone (works: caption + correctly
+   compact-formatted big value, every time, V0–V13) vs **any** dashboard with a second zone present
+   anywhere (`"###"`, every time, V14–V21 — even a *lone, full-width* KPI tile paired with just ONE
+   sibling chart zone, no width-sharing at all). Critically, this ALSO affects a KPI tile with **no**
+   customized-label and **no** calc column at all — i.e. this codebase's current, unmodified,
+   untouched production output for an *untheme* `kpi_tile` sheet (raw `SUM(field)`, Tableau's own
+   default general number format, zero compaction) overflows identically once placed in the SAME
+   multi-zone dashboard (V22/V23). **Conclusion: this is a pre-existing Tableau Cloud
+   dashboard-rendering characteristic of KPI-tile-shaped Text marks in multi-zone dashboards, not a
+   defect introduced by the customized-label/calc-column BAN mechanism** — the mechanism does not
+   make the real-world (multi-zone) case any worse than the pre-D4 baseline; it only *adds* value in
+   contexts where the worksheet renders standalone (e.g. the "Sales" tab viewed directly, outside the
+   dashboard). Fixing the multi-zone case is therefore NOT achievable through `sidecar/twb_builder.py`
+   XML changes alone (every lever this corpus and the mined exemplars offer was tried and had zero
+   effect) — it needs either Tableau-Cloud-side investigation (a support case, or discovery of an
+   as-yet-untested rendering-mode difference, e.g. "Automatic" vs fixed dashboard sizing, viewport/
+   device-designer differences, or a genuine product limitation) or a different UX approach for KPI
+   tiles inside dense dashboards (e.g. accepting a smaller pre-truncated value format server-side,
+   or steering users toward viewing KPI tiles as their own full worksheet tab).
+
+   **Follow-up round, `sizing-mode='fixed'` hypothesis — tested, REFUTED.** Our emitted
+   `<dashboard><size>` carried equal `min`/`max` but no `sizing-mode` attribute, unlike every mined
+   exemplar dashboard (WB-118/WB-117 both carry `<size ... sizing-mode='fixed'/>`) — a
+   plausible root cause, since Tableau's server-side image renderer is documented to treat an
+   equal-min/max `<size>` WITHOUT `sizing-mode='fixed'` as range/automatic sizing, not truly fixed.
+   `sizing-mode='fixed'` was added unconditionally to both `<size>` emission sites
+   (`_build_dashboard` and `_build_story`; XSD-confirmed valid, `DashboardSizingMode-ST` enum includes
+   `"fixed"`) and verified end-to-end against a REAL full-pipeline probe (exec audience, executive_dark
+   theme, brand typography, the actual `generatePlan()`-produced 4-tile KPI band + 2-chart dashboard,
+   published + fresh-rendered, `maxAge=1`, on the real Tableau Cloud dev site) — **the KPI band still
+   rendered all four tiles as `"###"`, byte-for-byte the same failure mode as before the fix.**
+   `sizing-mode='fixed'` is kept in the codebase regardless (mined-correct baseline hygiene, harmless
+   per XSD validation and this same full-pipeline render — every OTHER dashboard element, including
+   the two chart worksheets and the filled map, rendered correctly), but it is **not** the fix for
+   this constraint. D4 is closed with this constraint recorded as a known, documented Tableau Cloud
+   platform limitation rather than a remaining `twb_builder.py` defect.
 
 See `sidecar/twb_builder.py`'s `_kpi_tile_customized_label`/`_append_kpi_ban_calc_column`/
-`_kpi_tile_pane_style_rules` docstrings for the encoding of these constraints into the builder, and
-`sidecar/tests/test_twb_kpi_styling_customized_label.py`'s module docstring for the full bisect-
-ladder narrative (V0 control graft → V1–V5 individual-attribute isolation → V7 raw-vs-calculated
-field format → V9/V10 mark-labels-show necessary-but-not-sufficient → V11/V12 proof).
+`_kpi_tile_pane_style_rules`/`_build_dashboard` docstrings for the encoding of these constraints into
+the builder, and `sidecar/tests/test_twb_kpi_styling_customized_label.py`'s module docstring for the
+full bisect-ladder narrative (V0 control graft → V1–V5 individual-attribute isolation → V7 raw-vs-
+calculated field format → V9/V10 mark-labels-show necessary-but-not-sufficient → V11/V12 proof →
+V13–V23 multi-zone-dashboard isolation → `sizing-mode='fixed'` follow-up, refuted).

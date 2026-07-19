@@ -6,8 +6,10 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
+import hyper_builder
 import twb_builder
 
 SHEETS_2 = [
@@ -164,6 +166,53 @@ def test_dashboard_size_element_matches_canvas(canvas_w: int, canvas_h: int) -> 
     assert int(size_el.get("maxheight", "0")) == canvas_h
     assert int(size_el.get("minwidth", "0")) == canvas_w
     assert int(size_el.get("minheight", "0")) == canvas_h
+
+
+# ---------------------------------------------------------------------------
+# Design Excellence, Slice D4 FINAL SHAPE hotfix — sizing-mode='fixed'
+#
+# Live-probe #2f's bisect ladder (V13-V23, design/corpus/SCHEMA.md
+# constraint #5) proved a KPI-tile Text mark's compact-formatted value
+# overflows to "###" inside ANY dashboard with 2+ zones, regardless of
+# fontsize/mark-labels-cull/delta-line/band-height/zone-width/fixed-size
+# zones — pointing at a dashboard-level (not zone-level) attribute. Our
+# emitted <size> carried equal min/max but NO sizing-mode, unlike every
+# mined exemplar dashboard (WB-118/WB-117 both carry
+# sizing-mode='fixed'). Without it, Tableau's server-side image renderer
+# does not treat an equal-min/max <size> as truly fixed — it falls back to
+# range/automatic sizing, which compresses zone content. This regression
+# guard is unconditional (sizing-mode is emitted on EVERY dashboard, not
+# gated by design_theme) — a deliberate, mined-evidence-backed baseline
+# change, not a design_theme-driven feature.
+# ---------------------------------------------------------------------------
+
+
+def test_dashboard_size_has_sizing_mode_fixed_sqlproxy() -> None:
+    xml = twb_builder.build_twb_xml(
+        "DS", "ds", "site", SHEETS_2, dashboards=DASHBOARDS_BASIC
+    )
+    root = ET.fromstring(xml)
+    size_el = root.find(".//dashboard/size")
+    assert size_el is not None
+    assert size_el.get("sizing-mode") == "fixed"
+
+
+def test_dashboard_size_has_sizing_mode_fixed_embedded(tmp_path: Path) -> None:
+    df = pd.DataFrame({"Revenue": [1.0, 2.0], "Region": ["East", "West"]})
+    hyper_file = tmp_path / "sizing_mode.hyper"
+    hyper_builder.dataframe_to_hyper(df, hyper_file)
+    columns = hyper_builder.read_hyper_columns(hyper_file)
+    xml = twb_builder.build_embedded_twb_xml(
+        datasource_name="DS",
+        hyper_filename=hyper_file.name,
+        columns=columns,
+        sheets=SHEETS_2,
+        dashboards=DASHBOARDS_BASIC,
+    )
+    root = ET.fromstring(xml)
+    size_el = root.find(".//dashboard/size")
+    assert size_el is not None
+    assert size_el.get("sizing-mode") == "fixed"
 
 
 # ---------------------------------------------------------------------------

@@ -122,6 +122,23 @@ def test_story_zones_layout_basic_then_flow_then_title_nav_flipboard() -> None:
         assert z.get("type-v2") is None
 
 
+def test_story_dashboard_size_has_sizing_mode_fixed() -> None:
+    """Design Excellence, Slice D4 FINAL SHAPE hotfix: a storyboard is
+    still a <dashboard> element with its own <size> — same
+    sizing-mode='fixed' mined-evidence fix as _build_dashboard's <size>
+    (see test_twb_dashboard.py's sizing-mode test group and
+    design/corpus/SCHEMA.md constraint #5)."""
+    xml = twb_builder.build_twb_xml(
+        "DS", "ds", "site", SHEETS_2, dashboards=DASHBOARDS_BASIC, stories=STORY_BASIC
+    )
+    root = ET.fromstring(xml)
+    story = root.find(".//dashboard[@type='storyboard']")
+    assert story is not None
+    size_el = story.find("size")
+    assert size_el is not None
+    assert size_el.get("sizing-mode") == "fixed"
+
+
 def test_flipboard_nav_and_flipboard_zones_are_paired() -> None:
     xml = twb_builder.build_twb_xml(
         "DS", "ds", "site", SHEETS_2, dashboards=DASHBOARDS_BASIC, stories=STORY_BASIC

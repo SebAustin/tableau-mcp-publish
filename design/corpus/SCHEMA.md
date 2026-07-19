@@ -203,7 +203,7 @@ entirely rather than inventing a pixel value; each theme file documents this inl
 | `analyst_clean` | light, minimal chrome | WB-015 + WB-062 | **yes** |
 | `operational_plain` | high-density plain | WB-133 + WB-095 | no |
 
-### Retrieval (future slice — D5)
+### Retrieval (implemented in D5 — `src/design/selectTheme.ts`)
 
 `selectTheme(audience, personaName?, artifact)` is a pure function over each theme's `tags`:
 persona match > audience match > default `analyst_clean`, alphabetical theme-name tie-break. Every

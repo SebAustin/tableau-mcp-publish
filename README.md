@@ -205,6 +205,22 @@ full source lineage and enforcement status per rule:
 - **Small-multiples hint** — a color-coded bar answering a cross-dimension comparison question
   gets a documented small-multiples alternative noted in its rationale.
 
+### The design-knowledge corpus + themes (design-excellence expansion)
+
+The repo also ships a **mined design corpus** (`design/corpus/`) — 234 zone styles, 597 chrome
+rules, 57 dashboard actions, 12 palettes, and 82 text-zone patterns extracted verbatim (with
+sha256 + xpath provenance) from real, community-acclaimed Tableau Public dashboards plus the
+project's reference workbooks by an XXE-safe offline miner (`sidecar/design_miner.py`). Four
+hand-curated **themes** (`executive_dark`, `executive_light`, `analyst_clean`,
+`operational_plain`) cite every literal back to a mined recipe; `design_dashboard` selects one
+deterministically (persona tag → audience tag → fallback) and the proposal names it. A selected
+theme drives: dashboard canvas + chart-card zone styling, gridline/zeroline/axis-tick removal,
+bar mark labels, styled KPI BAN tiles (compact `$2.3M` formats, `▲/▼` delta arrows, caption
+labels — via the mined calculated-column + customized-label mechanism), a multi-run header band,
+the brand's sequential ramp on filled maps, and auto-enabled cross-filter actions.
+`design/corpus/SCHEMA.md` documents five live-discovered Tableau Cloud render constraints the
+corpus encodes ("XSD-valid ≠ Cloud-renders").
+
 ## Tools (27)
 
 Full reference with every parameter, guardrail, and example prompt in

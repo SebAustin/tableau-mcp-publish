@@ -32,9 +32,17 @@ import { generatePlan, generateInterview } from "../planner/plan.js";
 import type { PlanInput } from "../planner/plan.js";
 import { buildProposal } from "../planner/proposal.js";
 import { FieldHintSchema, AudienceEnum, DashboardLayoutEnum } from "../planner/schema.js";
-import type { Audience } from "../planner/schema.js";
+import type { Audience, DashboardPlan, DesignTheme } from "../planner/schema.js";
 import type { AudienceConstraintOverrides } from "../planner/audience.js";
 import { loadBrand, resolvePersona } from "../branding/load.js";
+import { loadThemes } from "../design/loadThemes.js";
+import { selectTheme } from "../design/selectTheme.js";
+import { toDesignTheme } from "../design/schema.js";
+import type { ThemeFile } from "../design/schema.js";
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
 
 // ---------------------------------------------------------------------------
 // Shared sub-schemas
@@ -267,6 +275,26 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         }
       }
 
+      // ---------------------------------------------------------------------
+      // Design Excellence, Slice D5: load the design-theme corpus.
+      //
+      // Fail-soft by design — the corpus is an enhancement layer, not a
+      // required input: a missing/invalid `design/corpus/themes/` directory
+      // (e.g. a stripped-down install) must never block `design_dashboard`
+      // from returning a proposal. Selection (`selectTheme`) and mapping
+      // (`toDesignTheme`) happen further below, once `plan.audience` and
+      // `plan.storyArc` (which determines the `artifact` input) are known.
+      // ---------------------------------------------------------------------
+      let themes: ThemeFile[] = [];
+      try {
+        themes = loadThemes();
+      } catch (err: unknown) {
+        process.stderr.write(
+          `design_dashboard: could not load the design theme corpus, proceeding without a ` +
+            `design theme: ${getErrorMessage(err)}\n`,
+        );
+      }
+
       // interview mode — return ClarifyingQuestions, not a proposal
       if (mode === "interview") {
         const result = generateInterview({
@@ -318,7 +346,38 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
       };
 
       const plan = generatePlan(planInput);
-      const proposal = buildProposal(plan);
+
+      // ---------------------------------------------------------------------
+      // Design Excellence, Slice D5: select + attach a design theme.
+      //
+      // `artifact` mirrors `build_from_plan`'s own storyArc check
+      // (buildFromPlan.ts): a plan carrying a non-empty `storyArc` is a
+      // story artifact, otherwise a dashboard. The resolved `designTheme`
+      // is embedded in the plan (not looked up again at build time) so
+      // `build_from_plan` needs no corpus filesystem I/O and propose→build
+      // cannot drift — the same discipline `brand.yaml` resolution already
+      // follows for this tool.
+      // ---------------------------------------------------------------------
+      let designTheme: DesignTheme | undefined;
+      if (themes.length > 0) {
+        try {
+          const artifact = plan.storyArc && plan.storyArc.length > 0 ? "story" : "dashboard";
+          const selected = selectTheme(themes, {
+            audience: plan.audience,
+            personaName,
+            artifact,
+          });
+          designTheme = toDesignTheme(selected);
+        } catch (err: unknown) {
+          process.stderr.write(
+            `design_dashboard: could not select a design theme, proceeding without a design ` +
+              `theme: ${getErrorMessage(err)}\n`,
+          );
+        }
+      }
+
+      const themedPlan: DashboardPlan = designTheme ? { ...plan, designTheme } : plan;
+      const proposal = buildProposal(themedPlan);
 
       return toolResult(formatProposalText(proposal), { result: proposal });
     },

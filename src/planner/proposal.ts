@@ -458,6 +458,16 @@ export function buildProposal(plan: DashboardPlan): DashboardProposal {
       `${storyOutline.join(" -> ")}.`;
   }
 
+  // Design Excellence, Slice D5: name the resolved design theme, if any.
+  // Appended AFTER applyToneToSummary (same placement as the storyOutline
+  // sentence above) — a concise-tone summary is trimmed to its first
+  // sentence + layoutSummary, so a theme mention folded INTO buildSummary()
+  // would be silently dropped for concise personas; appending it here keeps
+  // it visible regardless of tone.
+  if (plan.designTheme) {
+    summary += ` Styled with the "${plan.designTheme.name}" design theme.`;
+  }
+
   const artifactNote = detectPersonaArtifactQuestion(plan);
   const combinedOpenQuestions = [
     ...(detectOpenQuestions(plan) ?? []),

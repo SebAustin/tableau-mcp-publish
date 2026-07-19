@@ -26,6 +26,7 @@
   "files": [
     "dist",
     "brand.yaml",
+    "design/corpus",
     "sidecar/*.py",
     "sidecar/pyproject.toml",
     "sidecar/uv.lock"

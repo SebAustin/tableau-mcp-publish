@@ -312,6 +312,12 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         ...(plan.dashboardSubtitle ? { dashboardSubtitle: plan.dashboardSubtitle } : {}),
         ...(plan.textZones ? { textZones: plan.textZones } : {}),
         ...(plan.layoutGrammar ? { layoutGrammar: plan.layoutGrammar } : {}),
+        // Design Excellence, Slice D5: forward the plan's resolved design
+        // theme (attached by design_dashboard's selectTheme/toDesignTheme
+        // step) so the sidecar actually applies it — carrying it this far
+        // and dropping it here would silently discard everything D2-D5
+        // built on top of it.
+        ...(plan.designTheme ? { designTheme: plan.designTheme } : {}),
         ...(stories ? { stories } : {}),
       });
 

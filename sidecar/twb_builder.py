@@ -1096,6 +1096,132 @@ def _build_text_zone(
     return zone
 
 
+# Design Excellence, Slice D5: themed header-band zone height (0-100000 grid).
+# Mirrors the mined header zone's OWN ``h`` attribute at the exact xpath cited
+# by executive_dark.yaml's header provenance entry
+# (design/corpus/recipes/text_zones.yaml ->
+# /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1], source
+# WB-117.twbx: ``<zone forceUpdate='true'
+# h='9722' id='556' type-v2='text' ...>``). Nearly double the non-themed
+# title zone's ``h=6000`` — long question-derived titles were observed
+# truncating at 6000 (single-line height); 9722 gives a themed header room
+# for a 2-line title without inventing an un-mined value.
+_HEADER_ZONE_H = 9722
+
+
+def _build_header_zone(
+    title: str,
+    subtitle: str | None,
+    zone_id: int,
+    brand: dict[str, Any] | None,
+    header: dict[str, Any],
+    h: int = _HEADER_ZONE_H,
+) -> ET.Element:
+    """Return a themed header ``<zone type-v2='text'>`` with title (+ subtitle) runs.
+
+    Design Excellence, Slice D5. Mirrors the mined MULTI-RUN title-zone
+    vocabulary in ``design/corpus/recipes/text_zones.yaml`` at
+    ``/workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]``
+    (source ``WB-117.twbx``, cited verbatim by
+    ``design/corpus/themes/executive_dark.yaml``'s header provenance entry):
+    a bold title run, a bare glyph-separator run (``"Æ  "`` — Tableau
+    Desktop's own manual-line-break idiom, copied byte-for-byte from the
+    source XML's ``<run fontcolor='#ffffff'>Æ  </run>``, NOT an invented
+    ``"\\n"``), and a plain subtitle run — all inside ONE
+    ``<formatted-text>``. This replaces the separate title-zone + subtitle-
+    zone pair the non-themed path emits (see ``_build_dashboard``) whenever
+    ``design_theme.header`` is present.
+
+    Title/subtitle font family/size/bold still come from
+    ``brand.typography.title``/``.body`` via ``_resolve_font_spec``/
+    ``_title_or_subtitle_run_attrs`` — unchanged from the non-themed path.
+    Only ``fontcolor`` is overridden, by ``header["title_color"]``/
+    ``header["subtitle_color"]``, when set. The separator run's own
+    ``fontcolor`` mirrors the mined entry's choice of the title-side color
+    (the mined source's title and subtitle runs share one color, so this is
+    the closest real, non-invented choice for the separator).
+
+    When *subtitle* is falsy, only the title run is emitted (no separator,
+    no subtitle run) — the natural single-run degenerate case of this same
+    multi-run mechanism.
+
+    The zone additionally receives a themed ``<zone-style
+    background-color=...>`` (Slice D2's ``_append_zone_style``, appended
+    LAST per the XSD's zone-style-is-last-child rule) when
+    ``header["background"]`` is set.
+
+    Args:
+        title:    Header title text (required — callers only invoke this
+                  helper when ``title`` is truthy).
+        subtitle: Optional subtitle text.
+        zone_id:  Deterministic zone id.
+        brand:    Optional brand block (``model_dump()`` snake_case dict),
+                  same shape ``_resolve_font_spec`` already consumes.
+        header:   ``design_theme["header"]`` dict (``ThemeHeaderModel.model_dump()``).
+        h:        Zone height on the 0-100000 grid. Defaults to
+                  :data:`_HEADER_ZONE_H`.
+
+    Returns:
+        A ``<zone>`` ET.Element with ``type-v2='text'``.
+    """
+    t_bold, t_fontsize, _t_fontcolor, t_fontname = _title_or_subtitle_run_attrs(
+        _resolve_font_spec(brand, "title"), default_bold=True, default_fontsize=20
+    )
+    title_color = header.get("title_color")
+
+    title_run: dict[str, str] = {}
+    if t_bold:
+        title_run["bold"] = "true"
+    if title_color:
+        title_run["fontcolor"] = _normalize_hex_color(str(title_color))
+    if t_fontname:
+        title_run["fontname"] = t_fontname
+    title_run["fontsize"] = str(t_fontsize)
+    runs: list[tuple[str, dict[str, str]]] = [(title, title_run)]
+
+    if subtitle:
+        sep_run: dict[str, str] = {}
+        if title_color:
+            sep_run["fontcolor"] = _normalize_hex_color(str(title_color))
+        runs.append(("Æ  ", sep_run))
+
+        s_bold, s_fontsize, _s_fontcolor, s_fontname = _title_or_subtitle_run_attrs(
+            _resolve_font_spec(brand, "body"), default_bold=False, default_fontsize=14
+        )
+        subtitle_color = header.get("subtitle_color")
+        subtitle_run: dict[str, str] = {}
+        if s_bold:
+            subtitle_run["bold"] = "true"
+        if subtitle_color:
+            subtitle_run["fontcolor"] = _normalize_hex_color(str(subtitle_color))
+        if s_fontname:
+            subtitle_run["fontname"] = s_fontname
+        subtitle_run["fontsize"] = str(s_fontsize)
+        runs.append((subtitle, subtitle_run))
+
+    zone = ET.Element(
+        "zone",
+        {
+            "forceUpdate": "true",
+            "h": str(h),
+            "id": str(zone_id),
+            "type-v2": "text",
+            "w": "100000",
+            "x": "0",
+            "y": "0",
+        },
+    )
+    ft = ET.SubElement(zone, "formatted-text")
+    for run_text, run_attrs in runs:
+        run_el = ET.SubElement(ft, "run", run_attrs)
+        run_el.text = run_text
+
+    if header.get("background"):
+        _append_zone_style(zone, {"background-color": str(header["background"])})
+
+    return zone
+
+
 def _append_zone_style(zone: ET.Element, formats: dict[str, str]) -> None:
     """Append a ``<zone-style>`` as the LAST child of *zone*, if *formats* is non-empty.
 
@@ -2147,7 +2273,15 @@ def _build_dashboard(
                          in-label caption (:func:`_kpi_tile_customized_label`),
                          so the zone's own title would duplicate it; mirrors
                          WB-118's own mined KPI-tile zone attribute (see
-                         :func:`_append_worksheet_zones`'s docstring). Absent
+                         :func:`_append_worksheet_zones`'s docstring). Design
+                         Excellence, Slice D5: when ``design_theme["header"]``
+                         is present AND ``title`` is truthy, the separate
+                         title/subtitle zones below collapse into ONE
+                         multi-run themed header zone (see
+                         :func:`_build_header_zone`) carrying
+                         ``header["background"]`` as its own ``<zone-style>``
+                         and ``header["title_color"]``/``["subtitle_color"]``
+                         as run ``fontcolor``. Absent
                          ``design_theme`` entirely (``None``, the default):
                          no ``<zone-style>`` is ever emitted (byte-identical
                          determinism guard, same discipline as ``brand``).
@@ -2210,6 +2344,12 @@ def _build_dashboard(
     theme_gutter = theme_spacing.get("gutter")
     theme_chart_card = design_theme.get("chart_card") if design_theme else None
     chart_zone_style_formats = _chart_card_zone_style_formats(theme_chart_card, theme_gutter)
+
+    # Design Excellence, Slice D5: header-band theming. ``design_theme``
+    # absent/``header`` unset -> ``theme_header`` is None -> the title/
+    # subtitle code below falls back to the pre-D5 separate-zone path
+    # unchanged (the byte-identical guard).
+    theme_header = design_theme.get("header") if design_theme else None
 
     # Design Excellence, Slice D4: KPI-tile zone-style inputs. ``design_theme``
     # absent/``kpi_tile`` unset -> both dicts empty -> no <zone-style> is ever
@@ -2331,42 +2471,56 @@ def _build_dashboard(
         )
 
         # --- Header text zones (title, subtitle, explicit header textZones) --
+        # Design Excellence, Slice D5: when a theme header block is present,
+        # title (+ optional subtitle) collapse into ONE multi-run themed
+        # header zone (_build_header_zone) instead of the two separate zones
+        # below — see that function's docstring for the mined multi-run
+        # vocabulary it mirrors. Absent theme_header (design_theme unset or
+        # carries no header block): unchanged separate-zone path, byte-
+        # identical to pre-D5 output.
+        #
         # Title: no brand → bold=true, fontsize=20 (mirrors wb6 ~1664).
         # With brand → typography.title drives fontcolor/fontname/fontsize,
         # no bold attribute (mirrors wb7 ~4478: the "Tableau Bold" font name
         # itself carries the boldness). See _title_or_subtitle_run_attrs.
-        if title:
-            t_bold, t_fontsize, t_fontcolor, t_fontname = _title_or_subtitle_run_attrs(
-                _resolve_font_spec(brand, "title"), default_bold=True, default_fontsize=20
+        if title and theme_header:
+            header_zone: ET.Element = _build_header_zone(
+                title, subtitle, _next_id(), brand, theme_header
             )
-            title_zone: ET.Element = _build_text_zone(
-                title,
-                _next_id(),
-                bold=t_bold,
-                fontsize=t_fontsize,
-                fontcolor=t_fontcolor,
-                fontname=t_fontname,
-                h=6000,
-            )
-            outer_flow.append(title_zone)
+            outer_flow.append(header_zone)
+        else:
+            if title:
+                t_bold, t_fontsize, t_fontcolor, t_fontname = _title_or_subtitle_run_attrs(
+                    _resolve_font_spec(brand, "title"), default_bold=True, default_fontsize=20
+                )
+                title_zone: ET.Element = _build_text_zone(
+                    title,
+                    _next_id(),
+                    bold=t_bold,
+                    fontsize=t_fontsize,
+                    fontcolor=t_fontcolor,
+                    fontname=t_fontname,
+                    h=6000,
+                )
+                outer_flow.append(title_zone)
 
-        # Subtitle: no brand → fontsize=14, no bold (mirrors wb7 ~4487 shape).
-        # With brand → typography.body drives fontcolor/fontname/fontsize
-        # (mirrors wb7 ~4488 exactly).
-        if subtitle:
-            s_bold, s_fontsize, s_fontcolor, s_fontname = _title_or_subtitle_run_attrs(
-                _resolve_font_spec(brand, "body"), default_bold=False, default_fontsize=14
-            )
-            subtitle_zone: ET.Element = _build_text_zone(
-                subtitle,
-                _next_id(),
-                bold=s_bold,
-                fontsize=s_fontsize,
-                fontcolor=s_fontcolor,
-                fontname=s_fontname,
-                h=4000,
-            )
-            outer_flow.append(subtitle_zone)
+            # Subtitle: no brand → fontsize=14, no bold (mirrors wb7 ~4487 shape).
+            # With brand → typography.body drives fontcolor/fontname/fontsize
+            # (mirrors wb7 ~4488 exactly).
+            if subtitle:
+                s_bold, s_fontsize, s_fontcolor, s_fontname = _title_or_subtitle_run_attrs(
+                    _resolve_font_spec(brand, "body"), default_bold=False, default_fontsize=14
+                )
+                subtitle_zone: ET.Element = _build_text_zone(
+                    subtitle,
+                    _next_id(),
+                    bold=s_bold,
+                    fontsize=s_fontsize,
+                    fontcolor=s_fontcolor,
+                    fontname=s_fontname,
+                    h=4000,
+                )
+                outer_flow.append(subtitle_zone)
 
         # Explicit header text zones.
         for htz in header_text_zones:

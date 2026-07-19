@@ -620,6 +620,28 @@ describe("build_from_plan (M6)", () => {
     );
   });
 
+  // Design Excellence, Slice D5: plan.designTheme (attached by design_dashboard's
+  // selectTheme/toDesignTheme step) must flow through to buildDashboardWorkbook —
+  // dropping it here would silently discard everything D2-D5 built on top of it.
+  it("D5: forwards plan.designTheme to buildDashboardWorkbook when present", async () => {
+    const designTheme = {
+      name: "executive_dark",
+      dashboardBackground: "#2f2e41",
+      header: { background: "#2f2e41", titleColor: "#ffffff", subtitleColor: "#ffffff" },
+    };
+    await invoke("build_from_plan", { plan: { ...basePlan, designTheme } });
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+      expect.objectContaining({ designTheme }),
+    );
+  });
+
+  it("D5: omits designTheme from buildDashboardWorkbook when the plan carries none", async () => {
+    await invoke("build_from_plan", { plan: basePlan });
+    const call = ctx.sidecar.buildDashboardWorkbook.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(call).toBeDefined();
+    expect("designTheme" in call).toBe(false);
+  });
+
   // E2E-2: datasourceSpec.filePath → hyperPath threaded through to buildDashboardWorkbook
   it("E2E-2: with datasourceSpec.filePath, threads hyperPath from buildDatasourceFromFile into buildDashboardWorkbook", async () => {
     const planWithSpec = {

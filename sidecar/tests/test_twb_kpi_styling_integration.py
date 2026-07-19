@@ -282,7 +282,9 @@ def test_post_workbook_dashboard_with_kpi_tile_theme_returns_200(tmp_path: Path)
     primary_run = label_runs[2]
     assert primary_run.get("fontcolor") == "#ffffff"
     assert primary_run.get("fontname") is None  # never emitted — see D4 FINAL SHAPE
-    assert primary_run.get("fontsize") == "36"
+    # brand.typography.ban.size is 36 (_BRAND_CAMEL), clamped to the mined
+    # max 26 — live-probe #2e: 36 overflows the ~240px tile cell as "###".
+    assert primary_run.get("fontsize") == "26"
     assert primary_run.text == "<[federated.Sales_Data].[usr:Calculation_BAN_Sales:qk]>"
 
     # Number formatting: the CALCULATED column's OWN default-format (FINAL

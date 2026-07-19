@@ -416,7 +416,10 @@ def test_primary_run_gets_ban_typography_no_fontname() -> None:
     runs = _label_runs(worksheet)
     primary_run = runs[2]  # caption, separator, PRIMARY VALUE, ...
     assert primary_run.get("fontcolor") == "#ffffff"
-    assert primary_run.get("fontsize") == "36"  # brand.typography.ban.size
+    # brand.typography.ban.size is 36, clamped to the mined max 26 (live-
+    # probe #2e: 36 overflows the ~240px tile cell as "###") — see
+    # test_primary_fontsize_clamped_to_mined_max_when_brand_requests_larger.
+    assert primary_run.get("fontsize") == "26"
     # Design Excellence, Slice D4 FINAL SHAPE: NO fontname — V11/V12 (the
     # proven shape) carry none; an earlier version of this function set one
     # from brand.typography.ban.font, but that attribute was never part of
@@ -465,6 +468,52 @@ def test_primary_fontsize_fallback_17_without_brand() -> None:
     primary_run = _label_runs(worksheet)[2]
     assert primary_run.get("fontsize") == "17"
     assert primary_run.get("fontname") is None
+
+
+def _brand_with_ban_size(size: int) -> dict[str, Any]:
+    ban_font = {"font": "Tableau Bold", "size": size}
+    typography = {**BRAND["typography"], "ban": ban_font}
+    return BrandModel(**{**BRAND, "typography": typography}).model_dump()  # type: ignore[arg-type]
+
+
+def test_primary_fontsize_clamped_to_mined_max_when_brand_requests_larger() -> None:
+    """Live-probe #2e: the full-pipeline label mechanism renders correctly,
+    but a large requested fontsize (e.g. brand.yaml's 36) overflows the
+    ~240px KPI tile cell and Tableau renders the value as '###' — clamp to
+    26, the largest BAN fontsize anywhere in the mined corpus."""
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=_brand_with_ban_size(36),
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    primary_run = _label_runs(worksheet)[2]
+    assert primary_run.get("fontsize") == "26"
+
+
+def test_primary_fontsize_unclamped_when_within_mined_range() -> None:
+    """A brand-requested size already within the mined range (<=26) is
+    emitted verbatim, unchanged by the clamp."""
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=_brand_with_ban_size(20),
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    primary_run = _label_runs(worksheet)[2]
+    assert primary_run.get("fontsize") == "20"
 
 
 # ---------------------------------------------------------------------------

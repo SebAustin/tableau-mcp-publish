@@ -247,6 +247,15 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
    working label at all) still renders that field's own compact value as the mark's plain default
    text — this is a DIFFERENT, unlabeled fallback rendering path, not evidence the label mechanism
    itself is working.
+4. **A `<customized-label>` VALUE run that overflows the mark's cell renders as a literal `"###"`**
+   (Tableau's standard numeric-cell-overflow placeholder), even though the label mechanism itself is
+   rendering correctly — this is easy to misdiagnose as a repeat of constraint #1/#2's non-rendering
+   failure, but it is a DIFFERENT problem with a different fix. A KPI tile is only ~240px wide;
+   `fontsize` values must be chosen with the mark cell's width in mind, not just copied verbatim from
+   a brand's typography scale (a brand's `36px` display-heading size, reasonable for a page title, is
+   too large for a compact BAN tile). The largest BAN fontsize anywhere in the 10-workbook mined
+   corpus is `26` (WB-117's `WB-117.twbx`) — a safe practical
+   ceiling, clamped to in `sidecar/twb_builder.py` rather than passed through unbounded.
 
 See `sidecar/twb_builder.py`'s `_kpi_tile_customized_label`/`_append_kpi_ban_calc_column`/
 `_kpi_tile_pane_style_rules` docstrings for the encoding of these constraints into the builder, and

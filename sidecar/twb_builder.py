@@ -1814,6 +1814,21 @@ def _append_kpi_ban_calc_column(
 # _KPI_COMPACT_NUMBER_FORMAT for the full ladder provenance).
 _KPI_LABEL_CAPTION_FONTSIZE = 7
 _KPI_LABEL_VALUE_FONTSIZE_FALLBACK = 17
+# Live-probe #2e finding: the full pipeline's label mechanism WORKS end to
+# end, but brand.yaml's ban.size=36 overflows the ~240px KPI tile cell —
+# the value renders as "###" (a Tableau cell-overflow placeholder, not a
+# label failure). V12's own tested value (17) rendered correctly; the
+# largest BAN fontsize anywhere in the 10-workbook mined corpus is 26
+# (WB-117's WB-117.twbx). The PRIMARY
+# value run's fontsize is therefore clamped to this mined maximum whenever
+# brand.typography.ban.size is set (brand can still request anything up to
+# 26; larger requests are capped, not rejected) — see
+# _kpi_tile_customized_label's docstring.
+_KPI_LABEL_VALUE_FONTSIZE_MAX = 26
+# Not clamped: at 12px, an arrow-formatted delta value ("▲ 281,016", ~9
+# characters) comfortably fits the same ~240px tile that overflows at
+# 36px/primary-length content — left as a fixed value per live-probe #2e's
+# review, not overflow-safe by explicit design (unlike the primary run).
 _KPI_LABEL_DELTA_FONTSIZE = 12
 _KPI_LABEL_DEFAULT_VALUE_COLOR = "#555555"
 # The mined literal "Æ" glyph-prefixed newline run text — undocumented
@@ -1929,14 +1944,21 @@ def _kpi_tile_customized_label(
        (:data:`_KPI_LABEL_CAPTION_SEPARATOR`, ``"Æ\\n\\n"``), no other attrs.
     3. PRIMARY value run: a CDATA placeholder referencing
        *primary_calc_instance*, ``fontsize`` from
-       ``brand.typography.ban.size`` when present else
-       :data:`_KPI_LABEL_VALUE_FONTSIZE_FALLBACK`, ``fontcolor`` from
-       :func:`_kpi_tile_ban_value_color`. NO ``fontname`` — the proven
-       V11/V12 shape carries none; BAN font family follows the workbook
-       default instead (a documented, honest limitation — an earlier
-       version of this function set ``fontname`` from
-       ``brand.typography.ban.font``, but that attribute was NEVER part of
-       any variant that actually rendered, so it is not risked here).
+       ``min(brand.typography.ban.size, `` :data:`_KPI_LABEL_VALUE_FONTSIZE_MAX`
+       ``)`` when brand is present else :data:`_KPI_LABEL_VALUE_FONTSIZE_FALLBACK`,
+       ``fontcolor`` from :func:`_kpi_tile_ban_value_color`. The clamp is a
+       live-probe #2e finding, NOT cosmetic: the full-pipeline label
+       mechanism renders correctly end to end, but a large requested
+       fontsize (e.g. brand.yaml's ``36``) overflows the ~240px KPI tile
+       cell and Tableau renders the value as ``"###"`` (a cell-overflow
+       placeholder, not a label failure) — see
+       :data:`_KPI_LABEL_VALUE_FONTSIZE_MAX`'s own comment for the mined
+       maximum this clamps to. NO ``fontname`` — the proven V11/V12 shape
+       carries none; BAN font family follows the workbook default instead
+       (a documented, honest limitation — an earlier version of this
+       function set ``fontname`` from ``brand.typography.ban.font``, but
+       that attribute was NEVER part of any variant that actually
+       rendered, so it is not risked here).
     4. Newline run: the literal glyph-prefixed single newline
        (:data:`_KPI_LABEL_NEWLINE_GLYPH`, ``"Æ\\n"``).
     5. DELTA value run (only when *delta_calc_instance* is set): a CDATA
@@ -1959,8 +1981,12 @@ def _kpi_tile_customized_label(
     caption_color = _kpi_tile_ban_caption_color(kpi_tile)
     value_color = _kpi_tile_ban_value_color(kpi_tile)
     ban_size = ban_font.get("size") if ban_font else None
+    # Live-probe #2e: clamp to the mined maximum (26) so a large brand-
+    # requested size never overflows the ~240px KPI tile cell into "###".
     primary_fontsize = (
-        int(ban_size) if ban_size is not None else _KPI_LABEL_VALUE_FONTSIZE_FALLBACK
+        min(int(ban_size), _KPI_LABEL_VALUE_FONTSIZE_MAX)
+        if ban_size is not None
+        else _KPI_LABEL_VALUE_FONTSIZE_FALLBACK
     )
 
     label_el = ET.Element("customized-label")

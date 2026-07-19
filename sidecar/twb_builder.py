@@ -206,11 +206,14 @@ def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
     entries in ``design/corpus/recipes/palettes.yaml`` (``type:
     ordered-sequential``/``ordered-diverging``, ``custom: true``). Gated
     ONLY on the relevant list being non-empty — independent of
-    ``design_theme`` (a harmless additive registration; the corresponding
-    per-encoding ``palette=`` REFERENCE, which does need ``design_theme``,
-    lives in :func:`_build_worksheet`). Absent list -> no element (never an
-    empty placeholder ``<color-palette>``) — this is the "categorical only"
-    behavior the byte-identical guards in ``test_twb_branding.py`` and
+    ``design_theme`` (a harmless, independently-useful registration —
+    selectable from Tableau Desktop's palette picker — kept even though the
+    map-filled per-encoding override in :func:`_build_worksheet` no longer
+    references it by name; see :func:`_map_filled_palette_style_rule`'s
+    docstring for the live-probe #4 finding that motivated that change).
+    Absent list -> no element (never an empty placeholder
+    ``<color-palette>``) — this is the "categorical only" behavior the
+    byte-identical guards in ``test_twb_branding.py`` and
     ``test_twb_palettes.py`` both rely on.
 
     Placed as the FIRST child of ``<workbook>`` (before ``<datasources>``),
@@ -631,18 +634,19 @@ def _build_worksheet(
     is_map_filled = mark_type == "map_filled" or geo_spec is not None
     map_color_measure = geo_spec.get("color_measure") if (is_map_filled and geo_spec) else None
 
-    # Design Excellence, Slice D6: brand sequential palette on the map's
-    # color-measure encoding. Gated on BOTH design_theme being present AND
-    # brand.palette.sequential being non-empty (see _map_filled_palette_name)
-    # — protects the no-theme byte-identical guard (test_twb_palettes.py
-    # group C). None -> no <style-rule> appended below (byte-identical).
+    # Design Excellence, Slice D6 (FINAL SHAPE, live-probe #4): brand
+    # sequential palette embedded on the map's color-measure encoding.
+    # Gated on BOTH design_theme being present AND brand.palette.sequential
+    # being non-empty (see _map_filled_sequential_colors) — protects the
+    # no-theme byte-identical guard (test_twb_palettes.py group C). None ->
+    # no <style-rule> appended below (byte-identical).
     map_palette_rule: ET.Element | None = None
     if map_color_measure and design_theme is not None:
-        map_palette_name = _map_filled_palette_name(brand)
-        if map_palette_name is not None:
+        map_sequential_colors = _map_filled_sequential_colors(brand)
+        if map_sequential_colors is not None:
             map_palette_rule = _map_filled_palette_style_rule(
                 field_column=f"{ds_ref}.{_measure_instance(str(map_color_measure))}",
-                palette_name=map_palette_name,
+                colors=map_sequential_colors,
             )
 
     worksheet = ET.Element("worksheet", {"name": title})
@@ -1651,59 +1655,71 @@ def _table_style_rules(
 # ---------------------------------------------------------------------------
 
 
-def _map_filled_palette_style_rule(field_column: str, palette_name: str) -> ET.Element:
-    """Return a ``<style-rule element='mark'><encoding attr='color' .../></style-rule>``.
+def _map_filled_palette_style_rule(field_column: str, colors: list[str]) -> ET.Element:
+    """Return a ``<style-rule element='mark'><encoding attr='color'
+    type='custom-interpolated'><color-palette .../></encoding></style-rule>``.
 
-    Mirrors the scratchpad-restored ``WB-058``'s own
+    FINAL SHAPE (live-probe #4): mirrors ``WB-015``'s own
     ``<table><style><style-rule element='mark'><encoding attr='color'
-    field='[none:...:ok]&#10;[none:...:ok]' palette='miller_stone_10_0'
-    type='palette'/></style-rule>`` — the only real, verified mined construct
-    pairing a ``palette=`` attribute directly on an ``<encoding attr='color'>``
-    element (``Encoding-G``'s ``palette`` attribute in the TWB XSD).
-    Attribute insertion order (``attr``, ``field``, ``palette``, ``type``)
-    matches the mined example exactly (also alphabetical, the codebase's
-    general attribute-ordering discipline).
+    field='[Sample - Superstore].[usr:Calculation_...:qk]'
+    type='custom-interpolated'><color-palette custom='true' name=''
+    type='ordered-sequential'><color>#f1f1f1</color>...</color-palette>
+    </encoding></style-rule>`` attribute-for-attribute: ``<encoding>``
+    carries only ``attr``/``field``/``type`` (alphabetical; NO ``center``/
+    ``num-steps``/``max``/``min``/``reverse`` — those only appear on the
+    corpus's DIVERGING encodings, which need a two-sided midpoint; a
+    one-directional sequential ramp mirrors the sequential exemplar exactly,
+    carrying none of them), and the nested ``<color-palette>`` carries
+    ``custom``/``name``/``type`` with an EMPTY ``name=''`` (verified: every
+    one of the 8 mined embedded-palette encodings across ``WB-015``
+    and ``WB-062``/``WB-063`` uses ``name=''`` — the inline
+    override is never itself given a reusable name). No ``enable-transparency``
+    or other extra attribute appears anywhere in the mined exemplars (grepped
+    across all 4 scratchpad-restored corpus source files) — none is invented
+    here either.
 
-    Here ``palette_name`` references the brand's OWN ``<preferences>``
-    registration (:func:`_build_preferences_element`) instead of a Tableau
-    built-in name like ``miller_stone_10_0`` — the sequential ramp's color
-    stops live in exactly one place, not duplicated per worksheet.
+    SUPERSEDES the ``palette='<brandName> Sequential'`` attribute-reference
+    shape shipped in the first D6 pass: live-probe #4 published that shape
+    and rendered it on Tableau Cloud — the workbook published and rendered
+    without error, but the map's color ramp was BYTE-IDENTICAL to the
+    pre-D6 (unbranded) render, i.e. Cloud silently ignores a ``palette=``
+    NAME reference for a continuous measure's ``<encoding attr='color'>``
+    (that construct's only verified real-world use, ``WB-058``'s
+    ``palette='miller_stone_10_0'``, is a DISCRETE bucket-map encoding, not
+    a continuous ramp — the two are not interchangeable on Cloud). This is
+    the 8x-attested embedded-color-stops construct instead: duplicates the
+    brand's sequential stops directly in the worksheet's own style-rule
+    (rather than referencing the ``<preferences>`` registration by name),
+    which is exactly what every real mined exemplar does.
 
-    Deviation, documented: 3 separate mined exemplars (``WB-015`` x2,
-    ``WB-062``/``WB-063`` x5) instead embed a full, unnamed
-    ``<color-palette type='ordered-sequential'>`` directly inside a
-    ``type='custom-interpolated'`` encoding (duplicating the color stops per
-    worksheet rather than referencing a name by ``palette=``). That shape is
-    used 8x across the corpus vs. this attribute-reference shape's 1x, but
-    the plan explicitly calls for the ``palette='<brandName> Sequential'``
-    reference form (single source of truth) — see the D6 slice report for
-    the full trade-off writeup.
+    The ``<preferences>`` registration (:func:`_build_preferences_element`)
+    is KEPT as-is — it is a harmless, independently-useful custom-palette
+    declaration (selectable from Tableau Desktop's palette picker) even
+    though this per-encoding override no longer references it by name.
     """
     rule_el = ET.Element("style-rule", {"element": "mark"})
-    ET.SubElement(
+    encoding_el = ET.SubElement(
         rule_el,
         "encoding",
-        {"attr": "color", "field": field_column, "palette": palette_name, "type": "palette"},
+        {"attr": "color", "field": field_column, "type": "custom-interpolated"},
     )
+    _append_color_palette(encoding_el, name="", palette_type="ordered-sequential", colors=colors)
     return rule_el
 
 
-def _map_filled_palette_name(brand: dict[str, Any] | None) -> str | None:
-    """Return ``'<brandName> Sequential'`` when ``brand.palette.sequential`` is non-empty.
+def _map_filled_sequential_colors(brand: dict[str, Any] | None) -> list[str] | None:
+    """Return ``brand.palette.sequential`` (hex strings) when non-empty, else ``None``.
 
     ``None`` when ``brand`` is absent or its sequential list is empty —
     callers use this as the single gate for whether the map-filled color
-    encoding gets a ``palette=`` reference at all (the OTHER gate,
-    ``design_theme is not None``, is checked separately by the caller — see
-    :func:`_build_worksheet`).
+    encoding gets an embedded ``<color-palette>`` override at all (the OTHER
+    gate, ``design_theme is not None``, is checked separately by the caller
+    — see :func:`_build_worksheet`).
     """
     if not brand:
         return None
-    sequential = (brand.get("palette") or {}).get("sequential") or []
-    if not sequential:
-        return None
-    brand_name = str(brand.get("brand_name") or "Brand")
-    return f"{brand_name} Sequential"
+    sequential = [str(c) for c in ((brand.get("palette") or {}).get("sequential") or [])]
+    return sequential or None
 
 
 # ---------------------------------------------------------------------------

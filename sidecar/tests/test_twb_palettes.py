@@ -18,35 +18,42 @@ mined from):
    explicit decision).
 
 2. Worksheet-level ``<style-rule element='mark'><encoding attr='color'
-   field='...' palette='<brandName> Sequential' type='palette'/></style-rule>``
-   on ``map_filled`` sheets with a ``geo.color_measure``. This is the ONLY
-   verified real-world construct pairing a ``palette=`` attribute directly on
-   an ``<encoding attr='color'>`` element — found in the scratchpad-restored
-   ``WB-058`` (``<encoding attr='color'
-   field='[none:...:ok]&#10;[none:...:ok]' palette='miller_stone_10_0'
-   type='palette'>``, alongside a discrete bucket map). Here ``palette=``
-   references the brand's OWN ``<preferences>`` entry from (1) above instead
-   of a Tableau built-in name — the color stops live in exactly one place.
-   Gated on BOTH ``design_theme`` being present AND
+   field='...' type='custom-interpolated'><color-palette custom='true'
+   name='' type='ordered-sequential'>...</color-palette></encoding>
+   </style-rule>`` on ``map_filled`` sheets with a ``geo.color_measure`` —
+   an embedded, unnamed override carrying the brand's own sequential stops,
+   attribute-for-attribute identical to ``WB-015``'s own mined
+   ``<table><style><style-rule element='mark'><encoding attr='color'
+   field='[Sample - Superstore].[usr:Calculation_...:qk]'
+   type='custom-interpolated'><color-palette custom='true' name=''
+   type='ordered-sequential'><color>#f1f1f1</color>...</color-palette>
+   </encoding></style-rule>`` (see ``_MINED_SEQUENTIAL_ENCODING_XML`` below,
+   verbatim from the scratchpad-restored exemplar; deep-compared structurally
+   in group B). Gated on BOTH ``design_theme`` being present AND
    ``brand.palette.sequential`` being non-empty, to protect the no-theme
    byte-identical guard (see group C below).
 
-   Deviation from the alternative embedded-color construct: 3 separate mined
-   exemplars (``WB-015`` x2, ``WB-062``/``WB-063`` x5)
-   instead embed a full, unnamed ``<color-palette type='ordered-sequential'>``
-   directly inside the style-rule's ``<encoding type='custom-interpolated'>``
-   (duplicating the color stops per-worksheet) rather than referencing a
-   name. The plan explicitly asks for the ``palette='<brandName> Sequential'``
-   attribute-reference shape (single source of truth in ``<preferences>``),
-   which is verified schema-legal (``Encoding-G``'s ``palette`` attribute)
-   and verified as a REAL, if differently-typed, mined construct — see the
-   module-level report for the full trade-off writeup.
+   FINAL SHAPE, live-probe #4: an EARLIER pass of this slice instead emitted
+   a ``palette='<brandName> Sequential' type='palette'`` ATTRIBUTE
+   REFERENCE back to (1)'s ``<preferences>`` registration — schema-legal and
+   a real (if differently-typed) mined construct (``WB-058``'s
+   ``palette='miller_stone_10_0'``, on a DISCRETE bucket-map encoding, not a
+   continuous ramp). Live-probe #4 published that shape to Tableau Cloud: it
+   rendered without error, but the map's color ramp was byte-identical to
+   the pre-D6 (unbranded) render — Cloud silently ignores a ``palette=``
+   NAME reference for a continuous measure. This module now asserts the
+   8x-attested EMBEDDED shape instead (``WB-015`` x2,
+   ``WB-062``/``WB-063`` x5, plus ``WB-058``'s own
+   diverging datasource-level analog), which is what live-probe #4
+   confirmed actually renders. The ``<preferences>`` registration from (1)
+   is unaffected — still emitted, still harmless.
 
 Test groups
 -----------
 A  Preferences: sequential/diverging registration (presence, absence, order,
    hex normalization)
-B  Map-filled worksheet color encoding: ``palette=`` attribute gating
+B  Map-filled worksheet color encoding: embedded ``<color-palette>`` gating
+   + deep structural comparison against the mined ``WB-015`` shape
 C  Byte-identical / gating guards (no theme, no brand, empty palette)
 D  XSD validity
 E  FastAPI integration: POST /workbook/dashboard, camelCase brand + designTheme
@@ -208,14 +215,44 @@ def _find_color_palettes(root: ET.Element) -> list[ET.Element]:
 
 def _find_map_palette_encoding(root: ET.Element) -> ET.Element | None:
     """Find the ``<style-rule element='mark'><encoding attr='color'
-    palette=...>`` in the worksheet's TABLE-level ``<style>`` (not the pane's
-    ``<encodings><color>`` shelf element — a different, palette-less
-    construct from Phase 1)."""
+    type='custom-interpolated'>`` (with its embedded ``<color-palette>``
+    child) in the worksheet's TABLE-level ``<style>`` — not the pane's
+    ``<encodings><color>`` shelf element, a different, ramp-less construct
+    from Phase 1."""
     for rule in root.findall(".//table/style/style-rule[@element='mark']"):
         for enc in rule.findall("encoding"):
-            if enc.get("attr") == "color" and enc.get("palette") is not None:
+            if enc.get("attr") == "color" and enc.get("type") == "custom-interpolated":
                 return enc
     return None
+
+
+# Verbatim from the scratchpad-restored ``WB-015`` (a mined 7th
+# on-disk reference workbook, ``/workbook/worksheets/worksheet[9]/table/
+# style/style-rule[4]/encoding`` — see ``design/corpus/recipes/
+# palettes.yaml``'s matching ``source: WB-015`` /
+# ``type: ordered-sequential`` entry). Used as a structural ground-truth in
+# group B's deep-compare test — NOT for its data values (the field
+# reference and color stops are beginners3's own Calculation/palette, not
+# ours), only its ELEMENT/ATTRIBUTE shape.
+_MINED_SEQUENTIAL_ENCODING_XML = """\
+<encoding attr='color'
+  field='[Sample - Superstore].[usr:Calculation_4166392665091952642:qk]'
+  type='custom-interpolated'>
+  <color-palette custom='true' name='' type='ordered-sequential'>
+    <color>#f1f1f1</color>
+    <color>#eaebf1</color>
+    <color>#e3e5f2</color>
+    <color>#dde0f3</color>
+    <color>#d6daf4</color>
+    <color>#cfd5f5</color>
+    <color>#c8cff6</color>
+    <color>#c1c9f7</color>
+    <color>#bbc3f8</color>
+    <color>#b4bdf9</color>
+    <color>#adb8fa</color>
+  </color-palette>
+</encoding>
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -296,28 +333,36 @@ def test_preferences_only_diverging_populated() -> None:
 
 
 # ---------------------------------------------------------------------------
-# B — Map-filled worksheet color encoding: palette= attribute gating
+# B — Map-filled worksheet color encoding: embedded <color-palette> gating
 # ---------------------------------------------------------------------------
 
 
-def test_map_color_encoding_gets_palette_attr_when_theme_and_brand_sequential_sqlproxy() -> None:
+def test_map_color_encoding_gets_embedded_palette_when_theme_and_brand_sequential_sqlproxy() -> (
+    None
+):
     xml = twb_builder.build_twb_xml(
         "DS", "ds", "site", [SHEET_MAP_FILLED_WITH_COLOR], brand=BRAND, design_theme=THEME_MINIMAL
     )
     root = ET.fromstring(xml)
     enc = _find_map_palette_encoding(root)
-    assert enc is not None, "Expected a palette= <encoding attr='color'> style-rule"
-    assert enc.get("palette") == "Acme Corp Sequential"
-    assert enc.get("type") == "palette"
+    assert enc is not None, "Expected a <encoding attr='color' type='custom-interpolated'> rule"
+    assert enc.get("type") == "custom-interpolated"
     assert "[sum:Sales:qk]" in (enc.get("field") or "")
+    cp = enc.find("color-palette")
+    assert cp is not None
+    assert cp.get("custom") == "true"
+    assert cp.get("name") == ""
+    assert cp.get("type") == "ordered-sequential"
+    colors = [c.text for c in cp.findall("color")]
+    assert colors == BRAND["palette"]["sequential"]
     # The original Phase-1 shelf-level <color column='...'/> encoding must
-    # still be present and untouched (a separate, palette-less construct).
+    # still be present and untouched (a separate, ramp-less construct).
     shelf_color = root.find(".//panes/pane[@id='0']/encodings/color")
     assert shelf_color is not None
-    assert shelf_color.get("palette") is None
+    assert shelf_color.find("color-palette") is None
 
 
-def test_map_color_encoding_gets_palette_attr_embedded(tmp_path: Path) -> None:
+def test_map_color_encoding_gets_embedded_palette_embedded_path(tmp_path: Path) -> None:
     hyper_file = _build_hyper(tmp_path)
     columns = hyper_builder.read_hyper_columns(hyper_file)
     xml = twb_builder.build_embedded_twb_xml(
@@ -331,20 +376,53 @@ def test_map_color_encoding_gets_palette_attr_embedded(tmp_path: Path) -> None:
     root = ET.fromstring(xml)
     enc = _find_map_palette_encoding(root)
     assert enc is not None
-    assert enc.get("palette") == "Acme Corp Sequential"
+    cp = enc.find("color-palette")
+    assert cp is not None
+    assert cp.get("type") == "ordered-sequential"
+    colors = [c.text for c in cp.findall("color")]
+    assert colors == BRAND["palette"]["sequential"]
 
 
-def test_map_color_encoding_attribute_order_matches_mined_shape() -> None:
-    """Attribute insertion order mirrors WB-058's own ``<encoding
-    attr='color' field='...' palette='...' type='palette'>`` (alphabetical:
-    attr, field, palette, type)."""
+def test_map_color_encoding_deep_matches_mined_beginners3_shape() -> None:
+    """Structural deep-compare against ``_MINED_SEQUENTIAL_ENCODING_XML``
+    (verbatim ``WB-015``): same ``<encoding>`` attribute KEYS in the
+    same order, same nested ``<color-palette>`` attribute keys/values (custom/
+    name/type — ``name`` is EMPTY in both, never the brand name), and the
+    same one-level ``<color>`` leaf shape (text only, no attributes). Field
+    reference and color VALUES legitimately differ (ours vs. beginners3's
+    own calculation/palette) — only the XML SHAPE is asserted equal."""
+    mined = ET.fromstring(_MINED_SEQUENTIAL_ENCODING_XML)
     xml = twb_builder.build_twb_xml(
         "DS", "ds", "site", [SHEET_MAP_FILLED_WITH_COLOR], brand=BRAND, design_theme=THEME_MINIMAL
     )
-    root = ET.fromstring(xml)
-    enc = _find_map_palette_encoding(root)
-    assert enc is not None
-    assert list(enc.attrib.keys()) == ["attr", "field", "palette", "type"]
+    ours = _find_map_palette_encoding(ET.fromstring(xml))
+    assert ours is not None
+
+    # <encoding> attribute keys, in insertion order.
+    assert list(ours.attrib.keys()) == list(mined.attrib.keys()) == ["attr", "field", "type"]
+    assert ours.get("attr") == mined.get("attr") == "color"
+    assert ours.get("type") == mined.get("type") == "custom-interpolated"
+
+    # Exactly one child: <color-palette>.
+    assert [c.tag for c in ours] == [c.tag for c in mined] == ["color-palette"]
+    mined_cp = mined.find("color-palette")
+    ours_cp = ours.find("color-palette")
+    assert mined_cp is not None
+    assert ours_cp is not None
+    assert list(ours_cp.attrib.keys()) == list(mined_cp.attrib.keys()) == ["custom", "name", "type"]
+    assert ours_cp.get("custom") == mined_cp.get("custom") == "true"
+    assert ours_cp.get("name") == mined_cp.get("name") == "", (
+        "The embedded override is unnamed in every mined exemplar — never "
+        "the brand name (that lives on the SEPARATE <preferences> entry)."
+    )
+    assert ours_cp.get("type") == mined_cp.get("type") == "ordered-sequential"
+
+    # <color> leaves: text-only, no attributes, in both shapes.
+    mined_color = mined_cp.find("color")
+    ours_color = ours_cp.find("color")
+    assert mined_color is not None
+    assert ours_color is not None
+    assert list(mined_color.attrib) == list(ours_color.attrib) == []
 
 
 def test_map_color_encoding_no_style_rule_when_no_color_measure() -> None:
@@ -570,10 +648,19 @@ def test_post_workbook_dashboard_camelcase_brand_with_sequential_returns_200_wit
     )
     assert seq is not None
     assert seq.get("name") == "Acme Corp Sequential"
+    assert [c.text for c in seq.findall("color")] == _BRAND_CAMEL["palette"]["sequential"]
 
     enc = _find_map_palette_encoding(root)
     assert enc is not None
-    assert enc.get("palette") == "Acme Corp Sequential"
+    assert enc.get("type") == "custom-interpolated"
+    cp = enc.find("color-palette")
+    assert cp is not None
+    assert cp.get("custom") == "true"
+    assert cp.get("name") == "", (
+        "Embedded map override stays unnamed — the brand name lives only on <preferences>."
+    )
+    assert cp.get("type") == "ordered-sequential"
+    assert [c.text for c in cp.findall("color")] == _BRAND_CAMEL["palette"]["sequential"]
 
 
 def test_post_workbook_dashboard_brand_without_design_theme_no_map_palette(

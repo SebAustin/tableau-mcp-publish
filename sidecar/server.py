@@ -374,6 +374,11 @@ class ThemeKpiTileModel(BaseModel):
     padding: int | None = None
     ban_color: str | None = Field(default=None, alias="banColor")
     use_semantic_delta_colors: bool = Field(default=True, alias="useSemanticDeltaColors")
+    # Design Excellence, Slice D4 FINAL SHAPE: the BAN customized-label's
+    # in-label CAPTION run color (e.g. "S A L E S"). Optional — the builder
+    # defaults to `ban_color` when `background` is set, else the graft's
+    # own "#555555" gray (see twb_builder._kpi_tile_ban_caption_color).
+    caption_color: str | None = Field(default=None, alias="captionColor")
 
 
 class ThemeHeaderModel(BaseModel):

@@ -328,6 +328,12 @@ export interface ThemeKpiTile {
   padding?: number;
   banColor?: string;
   useSemanticDeltaColors?: boolean;
+  /**
+   * Design Excellence, Slice D4 FINAL SHAPE: the BAN customized-label's
+   * in-label caption run color (e.g. "S A L E S"). Optional — the sidecar
+   * defaults to banColor when background is set, else "#555555".
+   */
+  captionColor?: string;
 }
 
 /** Header-band styling. */

@@ -1,9 +1,9 @@
-"""Design Excellence, Slice D4 — live-probe #2b hotfix.
+"""Design Excellence, Slice D4 — live-probe #2b hotfix (updated for the
+FINAL SHAPE, live-probe #3's bisect ladder).
 
 Probe #2b (workbook rebuilt from commit ``a8d2483``, the D4 probe-#2
 hotfix) still showed ``###`` and white (unstyled-looking) tiles. An offline
-diagnostic found four concrete, mined-evidence-backed defects, all fixed
-here:
+diagnostic found four concrete, mined-evidence-backed defects:
 
 1. DOUBLE-QUOTING BUG (the ``###`` root cause). ``_extract_currency_symbol``'s
    prefix regex (``^[^#0-9]*``) does not stop at a literal ``"`` — when
@@ -17,13 +17,25 @@ here:
    pre-existing ``"`` from the extracted prefix before re-wrapping —
    :func:`twb_builder._extract_currency_symbol` now always produces exactly
    ONE quote pair, regardless of which convention the input already used.
-2. COMPARISON MEASURE UNFORMATTED. ``kpi.comparison_measure`` (e.g. a raw
-   "Sales PP" float shown next to the primary BAN) got NO
-   ``default-format`` at all — :func:`twb_builder._kpi_tile_local_default_formats`
-   only ever handled ``primary_measure``/``delta_measure``. Fixed: the
-   comparison measure now gets the SAME classified compact format as the
-   primary, unconditionally (independent of ``use_semantic_delta_colors``,
-   which only governs the delta's arrow-direction format).
+   Still relevant after the FINAL SHAPE change: the format now lives on the
+   primary's CALCULATED column (:func:`twb_builder._append_kpi_ban_calc_column`)
+   instead of the raw field's local column, but ``_kpi_compact_format``/
+   ``_extract_currency_symbol`` compute the SAME value either way.
+2. COMPARISON MEASURE FORMAT — REVERSED after the FINAL SHAPE bisect ladder.
+   This round originally gave ``kpi.comparison_measure`` (e.g. a raw
+   "Sales PP" float shown next to the primary BAN) the SAME classified
+   compact format as the primary, stamped on its RAW field's worksheet-local
+   ``<column>``. Live-probe #3's bisect ladder (V7) proved a RAW field's
+   local ``default-format`` is silently IGNORED by Tableau Cloud for a naked
+   BAN view — the comparison measure's compact format was therefore always
+   dead weight, identical in kind to the (already-removed) primary/delta
+   raw-field mechanism. Per the FINAL SHAPE decision, the comparison
+   measure is NOT promoted to a calc column either (no mined worksheet
+   stacks more than one explicit value placeholder + a secondary delta line
+   in a single label; adding a THIRD calc column purely to carry a format
+   nothing reads would be speculative). It now stays a plain, UNFORMATTED
+   raw-field ``<text>`` encoding — see "Finding 2" below for the (inverted)
+   regression tests.
 3. WHITE TILES. The D2 zone-style ``background-color`` on the KPI tile
    ZONE was already correct, but the worksheet's own TABLE has an opaque
    white fill that paints on top of it. Mined verbatim from WB-118's
@@ -32,13 +44,17 @@ here:
    ``<style-rule element='table'><format attr='background-color'
    value='#00000000'/></style-rule>`` — :func:`twb_builder._kpi_tile_table_transparency_rule`
    emits this whenever ``kpi_tile.background`` is set, so the zone's navy
-   background shows through.
-4. OPTIONAL — centered BAN text, mined verbatim from the SAME WB-118
-   worksheet's OWN ``<table><panes><pane><style>`` (a DIFFERENT XSD
-   location from finding 3's table-level style):
-   ``<style-rule element='cell'><format attr='text-align'
+   background shows through. Unaffected by the FINAL SHAPE change.
+4. Centered BAN text, mined verbatim from the SAME WB-118 worksheet's OWN
+   ``<table><panes><pane><style>`` (a DIFFERENT XSD location from finding 3's
+   table-level style): ``<style-rule element='cell'><format attr='text-align'
    value='center'/></style-rule>``. :func:`twb_builder._kpi_tile_pane_style_rules`
-   emits this whenever ``design_theme.kpi_tile`` is present.
+   emits this whenever ``design_theme.kpi_tile`` is present — and, per the
+   FINAL SHAPE change, now ALSO emits a SECOND ``element='mark'`` rule
+   (``mark-labels-show``/``mark-labels-cull``) whenever the BAN label
+   mechanism is active (see that function's docstring for the bisect
+   provenance — V9/V10 proved this rule is REQUIRED for the label to render
+   at all).
 
 Tightening discipline (per the coordinator's explicit ask): the currency
 regression test asserts the DECODED attribute value against the literal
@@ -46,10 +62,9 @@ mined target string, not a re-derivation via the same helper the
 implementation uses — a double-quoting regression would otherwise pass a
 test that only checks internal self-consistency.
 
-See ``test_twb_kpi_styling.py``'s module docstring for the D4 baseline
-(zone-style/BAN-typography/title-legibility/delta-arrow mechanics this
-hotfix builds on) and ``test_twb_kpi_styling_integration.py`` for XSD +
-FastAPI integration coverage.
+See ``test_twb_kpi_styling.py``'s module docstring for the D4 baseline and
+FINAL SHAPE summary, and ``test_twb_kpi_styling_customized_label.py`` for
+the customized-label mechanism's full run-by-run coverage.
 """
 
 from __future__ import annotations
@@ -134,6 +149,20 @@ BRAND: dict[str, Any] = BrandModel(
 ).model_dump()  # type: ignore[arg-type]
 
 
+def _calc_field_name(field: str, *, delta: bool = False) -> str:
+    suffix = "_Delta" if delta else ""
+    return f"[{twb_builder._KPI_BAN_CALC_PREFIX}{twb_builder._slug(field)}{suffix}]"
+
+
+def _calc_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
+    prefix = f"[{twb_builder._KPI_BAN_CALC_PREFIX}"
+    return {
+        c.get("name"): c.get("default-format")
+        for c in worksheet.findall(".//datasource-dependencies/column")
+        if (c.get("name") or "").startswith(prefix)
+    }
+
+
 def _local_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
     return {
         c.get("name"): c.get("default-format")
@@ -142,7 +171,7 @@ def _local_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
 
 
 # ---------------------------------------------------------------------------
-# Finding 1 — double-quoting bug (the ### root cause)
+# Finding 1 — double-quoting bug (the ### root cause), now on the calc column
 # ---------------------------------------------------------------------------
 
 
@@ -169,8 +198,8 @@ def test_compact_currency_strips_pre_existing_quotes_no_double_quoting() -> None
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    value = local_formats["[Sales]"]
+    calc_formats = _calc_default_formats(worksheet)
+    value = calc_formats[_calc_field_name("Sales")]
     assert value == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
     assert '""' not in (value or ""), f"double-quoting regression: {value!r}"
 
@@ -191,20 +220,29 @@ def test_compact_currency_unquoted_input_unaffected() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Sales")] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
 
 
 # ---------------------------------------------------------------------------
-# Finding 2 — comparison measure unformatted
+# Finding 2 — comparison measure: REVERSED under the FINAL SHAPE.
+#
+# The round-2 hotfix gave the comparison measure the same compact format as
+# the primary, stamped on its RAW field's local column. Live-probe #3's
+# bisect ladder (V7) proved a raw field's local default-format is silently
+# ignored by Cloud for a naked BAN view — the comparison measure's compact
+# format was ALWAYS dead weight (identical mechanism to the one already
+# proven inert for primary/delta). It is no longer emitted: the comparison
+# measure stays a plain, unformatted raw-field <text> encoding.
 # ---------------------------------------------------------------------------
 
 
-def test_comparison_measure_gets_compact_format_too() -> None:
-    """The comparison measure (e.g. "Sales PP", shown alongside the primary
-    BAN) must get the same classified compact format as the primary,
-    unconditionally — independent of use_semantic_delta_colors, which only
-    governs the DELTA's arrow-direction format."""
+def test_comparison_measure_gets_no_local_default_format_dead_weight_removed() -> None:
+    """FINAL SHAPE reversal: the comparison measure's raw local column never
+    gets a default-format — that mechanism was proven inert (bisect V7) and
+    is not replicated for comparison (no calc column either, since no mined
+    worksheet stacks a comparison value inside the same label as the
+    primary/delta)."""
     sheet = {
         "title": "KPI Sales Comparison",
         "mark_type": "text",
@@ -235,8 +273,13 @@ def test_comparison_measure_gets_compact_format_too() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales Comparison']")
     assert worksheet is not None
     local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
-    assert local_formats["[Sales PP]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert local_formats.get("[Sales PP]") is None
+    # No calc column for the comparison measure either.
+    calc_formats = _calc_default_formats(worksheet)
+    assert _calc_field_name("Sales PP") not in calc_formats
+    # The comparison measure's <text> encoding stays a plain raw-field ref.
+    encoded_columns = [t.get("column") for t in worksheet.findall(".//panes/pane/encodings/text")]
+    assert any(c is not None and c.endswith(".[sum:Sales PP:qk]") for c in encoded_columns)
 
 
 def test_comparison_measure_absent_when_not_set() -> None:
@@ -246,14 +289,18 @@ def test_comparison_measure_absent_when_not_set() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    # KPI_SHEET_SALES has no comparison_measure — only primary + delta keys.
-    local_formats = _local_default_formats(worksheet)
-    assert set(local_formats) == {"[Sales]", "[Sales Delta]"}
+    # KPI_SHEET_SALES has no comparison_measure — only primary + delta calc
+    # columns exist (both compact/arrow-formatted).
+    calc_formats = _calc_default_formats(worksheet)
+    assert set(calc_formats) == {
+        _calc_field_name("Sales"),
+        _calc_field_name("Sales Delta", delta=True),
+    }
 
 
-def test_comparison_measure_percent_classified_unchanged() -> None:
-    """A percent-hinted comparison measure follows the SAME classification
-    rule as the primary — unchanged (not K-suffixed)."""
+def test_comparison_measure_percent_unformatted_regardless_of_classification() -> None:
+    """A percent-hinted comparison measure gets no format either — the
+    dead-weight removal applies uniformly, independent of classification."""
     sheet = {
         "title": "KPI Discount Comparison",
         "mark_type": "text",
@@ -284,11 +331,12 @@ def test_comparison_measure_percent_classified_unchanged() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Discount Comparison']")
     assert worksheet is not None
     local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Discount]"] == "0.0%"
+    assert local_formats.get("[Discount]") is None
 
 
 # ---------------------------------------------------------------------------
-# Finding 3 — white tiles (transparent table background)
+# Finding 3 — white tiles (transparent table background); unaffected by the
+# FINAL SHAPE change
 # ---------------------------------------------------------------------------
 
 
@@ -349,11 +397,11 @@ def test_chart_sheet_table_background_unaffected() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Finding 4 — optional: centered BAN text (pane-scoped, mined verbatim)
+# Finding 4 — centered BAN text + (FINAL SHAPE) mark-labels-show/cull
 # ---------------------------------------------------------------------------
 
 
-def test_kpi_tile_pane_text_align_center() -> None:
+def test_kpi_tile_pane_text_align_center_and_mark_labels_rule() -> None:
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
@@ -366,8 +414,19 @@ def test_kpi_tile_pane_text_align_center() -> None:
     assert pane_cell_rule is not None
     formats = {f.get("attr"): f.get("value") for f in pane_cell_rule.findall("format")}
     assert formats == {"text-align": "center"}
+
+    # Design Excellence, Slice D4 FINAL SHAPE (live-probe #3's V9-V12): a
+    # SECOND style-rule, element='mark', is REQUIRED for the
+    # <customized-label> to render at all.
+    pane_mark_rule = pane.find("style/style-rule[@element='mark']")
+    assert pane_mark_rule is not None
+    mark_formats = {f.get("attr"): f.get("value") for f in pane_mark_rule.findall("format")}
+    assert mark_formats == {"mark-labels-show": "true", "mark-labels-cull": "true"}
+
     # MUST be the last child of <pane> (Stylesheet-G ordering).
     assert pane[-1].tag == "style"
+    # selection-relaxation-option is set on the pane itself (mined fidelity).
+    assert pane.get("selection-relaxation-option") == "selection-relaxation-allow"
 
 
 def test_kpi_tile_pane_style_absent_without_kpi_tile_block() -> None:
@@ -385,12 +444,13 @@ def test_kpi_tile_pane_style_absent_without_kpi_tile_block() -> None:
     pane = worksheet.find(".//panes/pane")
     assert pane is not None
     assert pane.find("style") is None
+    assert pane.get("selection-relaxation-option") is None
 
 
 def test_chart_sheet_pane_style_unaffected_by_kpi_tile_theme() -> None:
-    """Scoping proof: the pane-level text-align rule is elif-gated against
-    _is_labelable_chart_sheet — a bar chart still gets ITS OWN D3 pane
-    style-rules (mark-labels/datalabel), not the KPI tile's text-align."""
+    """Scoping proof: the pane-level text-align/mark-labels rules are
+    elif-gated against _is_labelable_chart_sheet — a bar chart still gets
+    ITS OWN D3 pane style-rules (mark-labels/datalabel), not the KPI tile's."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -406,11 +466,13 @@ def test_chart_sheet_pane_style_unaffected_by_kpi_tile_theme() -> None:
     pane = chart_ws.find(".//panes/pane")
     assert pane is not None
     # No design_theme.chrome set on THEME_KPI -> no D3 pane style either;
-    # the key assertion is that text-align never leaks onto a chart sheet.
+    # the key assertion is that text-align/mark-labels never leak onto a
+    # chart sheet.
     pane_style = pane.find("style")
     if pane_style is not None:
         attrs = {f.get("attr") for f in pane_style.findall(".//format")}
         assert "text-align" not in attrs
+        assert "mark-labels-show" not in attrs
 
 
 # ---------------------------------------------------------------------------

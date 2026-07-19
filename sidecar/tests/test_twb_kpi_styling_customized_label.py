@@ -1,52 +1,68 @@
-"""Design Excellence, Slice D4 — live-probe #3 hotfix: BAN typography via
-``<customized-label>``.
+"""Design Excellence, Slice D4 FINAL SHAPE — BAN typography via
+``<customized-label>``, proven by a live-probe #3 offline bisect ladder.
 
-Fresh renders (probe #3, after the round-2 hotfix committed as ``a8d2483``)
-still showed the render ignoring cell-rule fonts/colors and local compact
-formats, even though the published XML was independently verified correct.
-A direct diff against WB-118's real, published "Sales KPI (BAN) New"
-worksheet (WB-118.twbx) found the decisive
-difference and REVERSED this builder's earlier D4 assessment:
+Live-probe #3's fresh renders showed the round-3 hotfix's ``<customized-label>``
+being silently ignored by Tableau Cloud — even though the published XML was
+independently verified correct (escaped-text placeholders, white 36px runs,
+worksheet-local compact/arrow default-formats). This builder's earlier
+assessment (font-size/font-color from theme/brand, plain ``"\\n"``
+separators, no caption run, escaped-text placeholders, raw-field local
+default-formats) looked independently plausible but simply did not render.
 
-- Their pane keeps ALL its ``<text>`` encodings AND adds a
-  ``<customized-label>`` — verified directly: pane children, in order, are
-  ``view, mark, encodings, customized-label, style``. The label does not
-  replace the encodings; it is a presentation template layered on top.
-- The CDATA-style placeholder run (``<[ds].[instance]>``) renders the
-  referenced field's value USING its resolved ``default-format`` — which
-  is exactly why the round-2 hotfix's worksheet-local compact/arrow
-  ``default-format`` values (correct in the published XML all along) never
-  visibly took effect: nothing was READING them. ``<customized-label>`` is
-  that missing reader.
-- The TABLE-level ``element='cell'`` font-size/font-family/color rule this
-  slice originally used for BAN typography is DEAD — fresh renders proved
-  it does nothing for a naked (rows/cols empty) Text mark. It has been
-  DELETED (``_kpi_tile_field_style_rule`` no longer exists); see
-  ``test_twb_kpi_styling.py``'s D4-3 section, now a permanent regression
-  guard.
+Rather than continue guessing, an offline bisect ladder of a dozen
+``.twbx`` variants (V0-V12; kept in scratchpad, never committed to the
+repo) isolated the EXACT working shape by starting from a near-verbatim
+GRAFT of WB-118's real, published "Sales KPI (BAN) New" worksheet
+(WB-118.twbx) and making the smallest possible
+edits, instead of continuing to morph this builder's own shape one
+attribute at a time:
 
-See ``twb_builder._kpi_tile_customized_label``'s docstring for the full
-run-shape rationale and every documented divergence from the mined
-worksheet (no caption run — zone titles already label the tiles; a plain
-``"\\n"`` instead of the mined ``"Æ\\n"`` glyph; primary+delta only, no
-comparison run, since no mined worksheet stacks more than one explicit
-value placeholder in a single label).
+- V0 (the graft, unmodified): renders correctly on Cloud.
+- V1-V5 (individual attributes — fontalignment, trailing runs, global
+  vs. local default-format, CDATA vs. escaped text, caption-qualified
+  placeholders — added to THIS builder's shape one at a time): all still
+  rendered the plain default label. None of these individually explain it.
+- V7 (a worksheet-local CALCULATED column's own default-format, instead of
+  a RAW field's): its compact value rendered — but via the UNLABELED
+  shelf's own fallback text-mark, not the customized-label (the label was
+  STILL broken). This proved raw-field local default-format is inert on
+  Cloud, independent of the label question.
+- V9/V10 (this builder's shape + calc columns + a pane-level
+  ``mark-labels-show``/``mark-labels-cull`` rule): rendered BLANK — worse
+  than the plain-default fallback, because mark-labels-show suppressed
+  that fallback too. Proved mark-labels-show is NECESSARY but not
+  SUFFICIENT alone.
+- V11/V12 (the GRAFT itself + calc columns, changing nothing else — caption
+  run, glyph-prefixed newline runs, CDATA placeholders, mark-labels rule,
+  selection-relaxation, all verbatim): rendered the caption + a correctly
+  compact-formatted value. PROVEN.
+
+:func:`twb_builder._kpi_tile_customized_label` now reproduces V11/V12's
+shape byte-for-byte, with VALUES (not structure) parameterized off
+``kpi_tile``/``brand``/the calc-column instances built by
+:func:`twb_builder._append_kpi_ban_calc_column`.
 
 Test groups
 -----------
-CL-1  Pane child ORDER (encodings -> customized-label -> style), XSD-verified
-CL-2  Encodings coexist — customized-label does NOT drop other <text> fields
-CL-3  Primary run: fontcolor/fontname/fontsize from ban typography + ban_color
-CL-4  Placeholder field refs match the ACTUAL <text> encoding instance names
-CL-5  Delta run: smaller fontsize, fontcolor, no fontname; newline separator
-CL-6  No caption run; documented divergences
-CL-7  Comparison measure gets NO dedicated label run (documented)
-CL-8  Gating: absent kpi_tile / no delta / no brand
-CL-9  No-theme byte-identical; XSD validity (both entry points)
+CL-1  Pane child ORDER + selection-relaxation-option, XSD-verified
+CL-2  Encodings: primary/delta repointed at calc instances, comparison stays raw
+CL-3  Caption run: letter-spaced uppercase title, color, fontsize
+CL-4  Primary value run: CDATA placeholder, ban typography, NO fontname
+CL-5  Newline-glyph separator runs (literal "Æ\\n"/"Æ\\n\\n", not plain "\\n")
+CL-6  Delta run: fixed fontsize 12, same value color, no fontname, CDATA
+CL-7  Comparison measure gets NO dedicated label run and NO calc column
+CL-8  Gating: absent kpi_tile / no delta / no primary measure / no brand fallback
+CL-10 No-theme byte-identical; XSD validity (both entry points)
+
+CL-9 (pane-level mark-labels-show/cull rule) and the two-KPI-tiles-same-
+datasource XSD case moved to ``test_twb_kpi_styling_integration.py`` (D4-11)
+to keep this file under the ~800-line file-size guideline — same split
+discipline as ``test_twb_chrome.py`` / ``test_twb_chrome_integration.py``.
 """
 
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
@@ -185,6 +201,16 @@ def _field(measure: str) -> str:
     return f"{DS_REF}.{twb_builder._measure_instance(measure)}"
 
 
+def _calc_instance(field: str, *, delta: bool = False) -> str:
+    suffix = "_Delta" if delta else ""
+    name = f"{twb_builder._KPI_BAN_CALC_PREFIX}{twb_builder._slug(field)}{suffix}"
+    return f"[usr:{name}:qk]"
+
+
+def _calc_field(field: str, *, delta: bool = False) -> str:
+    return f"{DS_REF}.{_calc_instance(field, delta=delta)}"
+
+
 def _pane(worksheet: ET.Element) -> ET.Element:
     pane = worksheet.find(".//panes/pane")
     assert pane is not None
@@ -195,8 +221,19 @@ def _label_runs(worksheet: ET.Element) -> list[ET.Element]:
     return worksheet.findall(".//panes/pane/customized-label/formatted-text/run")
 
 
+def _label_run_texts_raw(xml_str: str) -> list[str]:
+    """Extract the customized-label's run TEXT CONTENT from the RAW XML
+    string (not a re-parsed ElementTree) so CDATA sections survive intact —
+    ET.tostring() always re-escapes CDATA content back to '&lt;...&gt;' on
+    round-trip, which would hide the exact distinction CL-4/CL-6 test."""
+    label_start = xml_str.index("<customized-label>")
+    label_end = xml_str.index("</customized-label>") + len("</customized-label>")
+    label_xml = xml_str[label_start:label_end]
+    return re.findall(r"<run[^>]*>(.*?)</run>", label_xml, re.S)
+
+
 # ---------------------------------------------------------------------------
-# CL-1  Pane child ORDER
+# CL-1  Pane child ORDER + selection-relaxation-option
 # ---------------------------------------------------------------------------
 
 
@@ -224,14 +261,8 @@ def test_pane_child_order_encodings_then_customized_label_then_style() -> None:
     assert tags == ["view", "mark", "encodings", "customized-label", "style"]
 
 
-# ---------------------------------------------------------------------------
-# CL-2  Encodings coexist with customized-label
-# ---------------------------------------------------------------------------
-
-
-def test_all_three_text_encodings_survive_alongside_customized_label() -> None:
-    """The decisive reversal: customized-label does NOT replace/drop the
-    other encoded measures — all 3 <text> elements stay declared."""
+def test_pane_gets_selection_relaxation_option() -> None:
+    """Mined fidelity — part of the proven V11/V12 shape."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -244,18 +275,63 @@ def test_all_three_text_encodings_survive_alongside_customized_label() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    encodings = worksheet.findall(".//panes/pane/encodings/text")
-    columns = {e.get("column") for e in encodings}
-    assert columns == {_field("Sales"), _field("Sales PP"), _field("Sales Delta")}
+    pane = _pane(worksheet)
+    assert pane.get("selection-relaxation-option") == "selection-relaxation-allow"
+
+
+# ---------------------------------------------------------------------------
+# CL-2  Encodings: primary/delta repointed at calc instances
+# ---------------------------------------------------------------------------
+
+
+def test_primary_and_delta_encodings_repointed_at_calc_instances() -> None:
+    """FINAL SHAPE: the primary/delta <text> shelf encodings reference the
+    worksheet-local CALCULATED columns, not the raw fields — the calc
+    column's own default-format is what actually renders (bisect V7)."""
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    columns = {e.get("column") for e in worksheet.findall(".//panes/pane/encodings/text")}
+    assert columns == {
+        _calc_field("Sales"),
+        _field("Sales PP"),
+        _calc_field("Sales Delta", delta=True),
+    }
     assert worksheet.find(".//panes/pane/customized-label") is not None
 
 
+def test_comparison_measure_stays_raw_field_encoding() -> None:
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    columns = [e.get("column") for e in worksheet.findall(".//panes/pane/encodings/text")]
+    assert _field("Sales PP") in columns
+
+
 # ---------------------------------------------------------------------------
-# CL-3  Primary run typography
+# CL-3  Caption run
 # ---------------------------------------------------------------------------
 
 
-def test_primary_run_gets_ban_typography_and_color() -> None:
+def test_caption_run_is_letter_spaced_uppercase_title() -> None:
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -269,25 +345,62 @@ def test_primary_run_gets_ban_typography_and_color() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     runs = _label_runs(worksheet)
-    primary_run = runs[0]
-    assert primary_run.get("fontcolor") == "#ffffff"
-    assert primary_run.get("fontname") == "Tableau Bold"
-    assert primary_run.get("fontsize") == "36"
-    # Alphabetical attribute order (fontcolor, fontname, fontsize) — same
-    # discipline as _build_text_zone's <run> construction.
-    assert list(primary_run.attrib.keys()) == ["fontcolor", "fontname", "fontsize"]
+    caption_run = runs[0]
+    assert caption_run.text == "K P I   S A L E S"  # "KPI Sales" letter-spaced/uppercased
+    assert caption_run.get("fontalignment") == "0"
+    assert caption_run.get("fontsize") == "7"
+    # background set -> caption color defaults to ban_color (contrast on
+    # the same themed background as the value runs).
+    assert caption_run.get("fontcolor") == "#ffffff"
+
+
+def test_caption_color_defaults_to_gray_when_no_background_set() -> None:
+    theme = _kpi_theme(
+        kpi_tile={
+            "background": None,
+            "border": None,
+            "padding": 4,
+            "ban_color": "#ffffff",
+            "use_semantic_delta_colors": True,
+        }
+    )
+    xml = twb_builder.build_twb_xml(
+        "DS", "kpi_ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_KPI_BAND, design_theme=theme
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    caption_run = _label_runs(worksheet)[0]
+    assert caption_run.get("fontcolor") == "#555555"
+
+
+def test_caption_color_explicit_override_wins() -> None:
+    theme = _kpi_theme(
+        kpi_tile={
+            "background": "#2f2e41",
+            "border": None,
+            "padding": 4,
+            "ban_color": "#ffffff",
+            "use_semantic_delta_colors": True,
+            "caption_color": "#f2c94c",
+        }
+    )
+    xml = twb_builder.build_twb_xml(
+        "DS", "kpi_ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_KPI_BAND, design_theme=theme
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    caption_run = _label_runs(worksheet)[0]
+    assert caption_run.get("fontcolor") == "#f2c94c"
 
 
 # ---------------------------------------------------------------------------
-# CL-4  Placeholder field refs match the ACTUAL <text> encoding
+# CL-4  Primary value run: CDATA placeholder, ban typography, NO fontname
 # ---------------------------------------------------------------------------
 
 
-def test_primary_placeholder_matches_actual_text_encoding_instance() -> None:
-    """Independent cross-check: the placeholder run's text must equal
-    exactly one of the worksheet's OWN <text> encoding column values
-    (angle-bracket wrapped) — read from the live XML, not re-derived via
-    the same _measure_instance() helper the implementation uses."""
+def test_primary_run_gets_ban_typography_no_fontname() -> None:
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -297,76 +410,74 @@ def test_primary_placeholder_matches_actual_text_encoding_instance() -> None:
         design_theme=THEME_KPI,
         brand=BRAND,
     )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    runs = _label_runs(worksheet)
+    primary_run = runs[2]  # caption, separator, PRIMARY VALUE, ...
+    assert primary_run.get("fontcolor") == "#ffffff"
+    assert primary_run.get("fontsize") == "36"  # brand.typography.ban.size
+    # Design Excellence, Slice D4 FINAL SHAPE: NO fontname — V11/V12 (the
+    # proven shape) carry none; an earlier version of this function set one
+    # from brand.typography.ban.font, but that attribute was never part of
+    # any variant that actually rendered.
+    assert primary_run.get("fontname") is None
+    assert primary_run.get("fontalignment") == "0"
+    # Alphabetical attribute order (fontalignment, fontcolor, fontsize).
+    assert list(primary_run.attrib.keys()) == ["fontalignment", "fontcolor", "fontsize"]
+
+
+def test_primary_placeholder_is_cdata_and_matches_calc_encoding() -> None:
+    """The placeholder must be a REAL CDATA section (not escaped text — the
+    graft's own mined form) and must reference the SAME calc instance the
+    primary <text> shelf encoding uses."""
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    run_texts = _label_run_texts_raw(xml)
+    primary_marker = run_texts[2]
+    assert primary_marker == f"<![CDATA[<{_calc_field('Sales')}>]]>"
+
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     encoded_columns = {e.get("column") for e in worksheet.findall(".//panes/pane/encodings/text")}
-    runs = _label_runs(worksheet)
-    primary_run = runs[0]
-    assert primary_run.text is not None
-    assert primary_run.text.startswith("<") and primary_run.text.endswith(">")
-    placeholder_column = primary_run.text[1:-1]
-    assert placeholder_column in encoded_columns
-    assert placeholder_column == _field("Sales")
+    assert _calc_field("Sales") in encoded_columns
+    # ET's own re-parse (which un-escapes CDATA to plain text) confirms the
+    # placeholder's DECODED content is the expected "<[ds].[instance]>" form.
+    primary_run = _label_runs(worksheet)[2]
+    assert primary_run.text == f"<{_calc_field('Sales')}>"
 
 
-# ---------------------------------------------------------------------------
-# CL-5  Delta run + newline separator
-# ---------------------------------------------------------------------------
-
-
-def test_delta_run_smaller_fontsize_same_color_no_fontname() -> None:
-    xml = twb_builder.build_twb_xml(
-        "DS",
-        "kpi_ds",
-        "site",
-        SHEETS_BASIC,
-        dashboards=DASHBOARD_KPI_BAND,
-        design_theme=THEME_KPI,
-        brand=BRAND,
-    )
-    root = ET.fromstring(xml)
-    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
-    assert worksheet is not None
-    runs = _label_runs(worksheet)
-    assert len(runs) == 3  # primary, newline, delta
-
-    newline_run = runs[1]
-    assert newline_run.attrib == {}
-    assert newline_run.text == "\n"
-
-    delta_run = runs[2]
-    assert delta_run.get("fontname") is None
-    assert delta_run.get("fontcolor") == "#ffffff"
-    assert delta_run.get("fontsize") == "18"  # round(36 / 2)
-    assert delta_run.text == f"<{_field('Sales Delta')}>"
-
-
-def test_delta_run_fallback_fontsize_without_brand() -> None:
+def test_primary_fontsize_fallback_17_without_brand() -> None:
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    runs = _label_runs(worksheet)
-    delta_run = runs[2]
-    assert delta_run.get("fontsize") == str(twb_builder._KPI_LABEL_DELTA_FALLBACK_FONTSIZE)
-    primary_run = runs[0]
+    primary_run = _label_runs(worksheet)[2]
+    assert primary_run.get("fontsize") == "17"
     assert primary_run.get("fontname") is None
-    assert primary_run.get("fontsize") is None
-    assert primary_run.get("fontcolor") == "#ffffff"
 
 
 # ---------------------------------------------------------------------------
-# CL-6  No caption run; documented divergences
+# CL-5  Newline-glyph separator runs
 # ---------------------------------------------------------------------------
 
 
-def test_no_caption_run_zone_title_labels_the_tile_instead() -> None:
-    """Mined worksheets open with a caption run (e.g. "S A L E S"). This
-    builder deliberately omits it — the per-worksheet element='title' rule
-    (Slice D4) already labels the tile via its zone title."""
+def test_newline_runs_use_the_mined_glyph_not_a_plain_newline() -> None:
+    """Design Excellence, Slice D4 FINAL SHAPE: an earlier hotfix round used
+    a plain '\\n' (documented as a deliberate, reasoned divergence from the
+    mined 'Æ\\n' glyph); live-probe #3's bisect ladder (V9/V10) proved that
+    divergence was part of the FAILING shape — the literal glyph is
+    required."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -380,25 +491,114 @@ def test_no_caption_run_zone_title_labels_the_tile_instead() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     runs = _label_runs(worksheet)
-    texts = [r.text for r in runs]
-    assert not any(t and t.strip().isupper() and " " in (t or "") for t in texts if t), texts
-    # First run IS the primary value placeholder, not a caption string.
-    assert runs[0].text == f"<{_field('Sales')}>"
-    # The title rule is still present and does the labeling job instead.
-    assert worksheet.find("table/style/style-rule[@element='title']") is not None
+    # caption(0), separator(1), primary(2), newline(3), delta(4), trailing(5)
+    assert runs[1].text == "Æ\n\n"
+    assert runs[1].attrib == {"fontalignment": "0"}
+    assert runs[3].text == "Æ\n"
+    assert runs[3].attrib == {"fontalignment": "0"}
+    assert runs[5].text == "Æ\n"
+    assert runs[5].attrib == {"fontalignment": "0"}
+
+
+def test_single_trailing_newline_when_no_delta_measure() -> None:
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        [KPI_SHEET_PRIMARY_ONLY],
+        dashboards=[
+            {
+                "name": "Executive Dashboard",
+                "titles": ["KPI Sales Primary Only"],
+                "layout_grammar": {
+                    "kind": "kpi_band_over_charts",
+                    "kpi_tile_titles": ["KPI Sales Primary Only"],
+                    "chart_titles": [],
+                },
+            }
+        ],
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales Primary Only']")
+    assert worksheet is not None
+    runs = _label_runs(worksheet)
+    assert len(runs) == 4  # caption, separator, primary value, trailing newline
+    assert runs[3].text == "Æ\n"
 
 
 # ---------------------------------------------------------------------------
-# CL-7  Comparison measure gets no dedicated label run
+# CL-6  Delta run
 # ---------------------------------------------------------------------------
 
 
-def test_comparison_measure_has_no_dedicated_label_run() -> None:
-    """Documented decision: no mined worksheet stacks more than one value
-    placeholder in a single label (WB-118 splits primary/delta into
-    SEPARATE adjacent worksheets). Comparison's compact default-format is
-    still emitted (round-2 hotfix) for tooltip/data use — just not given
-    its own visible label line."""
+def test_delta_run_fixed_fontsize_same_color_no_fontname() -> None:
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        SHEETS_BASIC,
+        dashboards=DASHBOARD_KPI_BAND,
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
+    assert worksheet is not None
+    runs = _label_runs(worksheet)
+    assert len(runs) == 6  # caption, separator, primary, newline, delta, trailing
+
+    delta_run = runs[4]
+    assert delta_run.get("fontname") is None
+    assert delta_run.get("fontcolor") == "#ffffff"
+    # Design Excellence, Slice D4 FINAL SHAPE: a FIXED 12 (V12's exact
+    # tested value) — NOT derived as half the primary's fontsize (an
+    # earlier version of this function did that; the ladder never tested
+    # the derived-half form, only the literal 12).
+    assert delta_run.get("fontsize") == "12"
+    assert delta_run.text == f"<{_calc_field('Sales Delta', delta=True)}>"
+
+
+def test_delta_run_absent_when_no_delta_measure() -> None:
+    xml = twb_builder.build_twb_xml(
+        "DS",
+        "kpi_ds",
+        "site",
+        [KPI_SHEET_PRIMARY_ONLY],
+        dashboards=[
+            {
+                "name": "Executive Dashboard",
+                "titles": ["KPI Sales Primary Only"],
+                "layout_grammar": {
+                    "kind": "kpi_band_over_charts",
+                    "kpi_tile_titles": ["KPI Sales Primary Only"],
+                    "chart_titles": [],
+                },
+            }
+        ],
+        design_theme=THEME_KPI,
+        brand=BRAND,
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales Primary Only']")
+    assert worksheet is not None
+    runs = _label_runs(worksheet)
+    assert len(runs) == 4
+    assert runs[2].text == f"<{_calc_field('Sales')}>"
+
+
+# ---------------------------------------------------------------------------
+# CL-7  Comparison measure: no dedicated label run, no calc column
+# ---------------------------------------------------------------------------
+
+
+def test_comparison_measure_has_no_dedicated_label_run_or_calc_column() -> None:
+    """Documented decision: no mined worksheet stacks more than a
+    primary+delta pair of value placeholders in a single label (WB-118
+    splits comparison into a SEPARATE, adjacent worksheet). The
+    comparison measure's raw <text> encoding stays declared and dependency-
+    declared, but gets NO calc column and NO label line."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -413,15 +613,20 @@ def test_comparison_measure_has_no_dedicated_label_run() -> None:
     assert worksheet is not None
     runs = _label_runs(worksheet)
     placeholder_texts = {r.text for r in runs if r.text and r.text.startswith("<")}
-    assert placeholder_texts == {f"<{_field('Sales')}>", f"<{_field('Sales Delta')}>"}
+    assert placeholder_texts == {
+        f"<{_calc_field('Sales')}>",
+        f"<{_calc_field('Sales Delta', delta=True)}>",
+    }
     assert f"<{_field('Sales PP')}>" not in placeholder_texts
 
-    # But the comparison measure's own compact default-format is untouched.
-    local_formats = {
-        c.get("name"): c.get("default-format")
-        for c in worksheet.findall(".//datasource-dependencies/column")
+    dep_names = {
+        c.get("name") for c in worksheet.findall(".//datasource-dependencies/column")
     }
-    assert local_formats["[Sales PP]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert "[Sales PP]" in dep_names  # raw field still declared (the encoding needs it)
+    calc_prefix = f"[{twb_builder._KPI_BAN_CALC_PREFIX}"
+    assert not any(
+        n is not None and n.startswith(calc_prefix) and "Sales_PP" in n for n in dep_names
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -455,44 +660,14 @@ def test_customized_label_absent_without_design_theme() -> None:
     assert worksheet.find(".//panes/pane/customized-label") is None
 
 
-def test_customized_label_has_one_run_when_no_delta_measure() -> None:
-    sheets = [KPI_SHEET_PRIMARY_ONLY]
-    dashboard = [
-        {
-            "name": "Executive Dashboard",
-            "titles": ["KPI Sales Primary Only"],
-            "title": "Executive",
-            "subtitle": None,
-            "text_zones": [],
-            "layout_grammar": {
-                "kind": "kpi_band_over_charts",
-                "kpi_tile_titles": ["KPI Sales Primary Only"],
-                "chart_titles": [],
-            },
-        }
-    ]
-    xml = twb_builder.build_twb_xml(
-        "DS", "kpi_ds", "site", sheets, dashboards=dashboard, design_theme=THEME_KPI, brand=BRAND
-    )
-    root = ET.fromstring(xml)
-    worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales Primary Only']")
-    assert worksheet is not None
-    runs = _label_runs(worksheet)
-    assert len(runs) == 1
-    assert runs[0].text == f"<{_field('Sales')}>"
-
-
 def test_customized_label_absent_when_no_primary_measure() -> None:
     """Defensive: a kpi_tile sheet with an empty kpi spec (no
-    primary_measure) emits no label at all."""
+    primary_measure) emits no label, no calc columns, at all."""
     sheet = {**KPI_SHEET_PRIMARY_ONLY, "title": "KPI Empty", "kpi": {}}
     dashboard = [
         {
             "name": "Executive Dashboard",
             "titles": ["KPI Empty"],
-            "title": "Executive",
-            "subtitle": None,
-            "text_zones": [],
             "layout_grammar": {
                 "kind": "kpi_band_over_charts",
                 "kpi_tile_titles": ["KPI Empty"],
@@ -507,10 +682,18 @@ def test_customized_label_absent_when_no_primary_measure() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Empty']")
     assert worksheet is not None
     assert worksheet.find(".//panes/pane/customized-label") is None
+    assert twb_builder._KPI_BAN_CALC_PREFIX not in ET.tostring(worksheet, encoding="unicode")
 
 
 # ---------------------------------------------------------------------------
-# CL-9  No-theme byte-identical; XSD validity
+# CL-9  Pane-level mark-labels-show/cull rule + the two-KPI-tiles-same-
+# datasource XSD case move to test_twb_kpi_styling_integration.py (D4-11) —
+# this file was over the ~800-line file-size guideline; same split
+# discipline as test_twb_chrome.py / test_twb_chrome_integration.py.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# CL-10  No-theme byte-identical; XSD validity
 # ---------------------------------------------------------------------------
 
 
@@ -556,3 +739,10 @@ def test_xsd_valid_customized_label_dashboard_embedded(tmp_path: Path) -> None:
         brand=BRAND,
     )
     _assert_xsd_valid(xml)
+
+
+# The two-KPI-tiles-same-datasource XSD case and the pane-level
+# mark-labels-show/cull rule coverage (CL-9) live in
+# test_twb_kpi_styling_integration.py (D4-11) — this file was over the
+# ~800-line file-size guideline; same split discipline as
+# test_twb_chrome.py / test_twb_chrome_integration.py.

@@ -2,77 +2,55 @@
 
 Fixes the three live-probe #1 findings on the KPI band (workbook 2527341):
 (a) KPI numbers showing ``###`` (numeric overflow in ~250px tiles) — fixed by
-    emitting a COMPACT number/currency format on the primary measure;
-(b) KPI worksheet title labels dark-on-navy (illegible) — fixed by a
-    per-worksheet ``element='title'`` style-rule using ``kpi_tile.ban_color``;
+    emitting a COMPACT number/currency format;
+(b) KPI worksheet title labels dark-on-navy (illegible) — originally fixed by
+    a per-worksheet ``element='title'`` style-rule; SUPERSEDED (see below) by
+    an in-label caption + dashboard zone-level title suppression;
 (c) KPI tiles carrying no zone-style at all (correct for D2, which
     deliberately deferred KPI-tile styling to this slice) — fixed by a themed
     ``<zone-style>`` on both the tile zones and the KPI band container.
 
-Mined-location summary (see the D4 report for full exemplar-XML citations)
+FINAL SHAPE (live-probe #3's bisect ladder, V0-V12)
 ----------------------------------------------------------------------------
-- Compact numbers/currency and BAN font-size/color: a per-FIELD ``<format
-  attr='...' field='[ds].[column-instance]' value='...'/>`` inside the
-  worksheet's own TABLE-level ``<style><style-rule element='cell'>`` — mirrors
-  WB-117's ``worksheet[10]/table/style/style-rule[1]`` (``text-format
-  field='[Sample - Superstore].[sum:Sales:qk]'
-  value='c"$"#,##0;("$"#,##0)'``, ``font-size field='[...].[:Measure
-  Names]' value='9'``) and WB-015's ``worksheet[5]/table/
-  style/style-rule[2]`` (``text-format value='n#,##0,.0K;-#,##0,.0K'``,
-  no ``field=`` — the blanket/table-wide variant, cited for the compact
-  NUMBER pattern only). ``design/corpus/recipes/chrome_rules.yaml`` carries
-  both shapes.
-- Title legibility: a per-WORKSHEET (not workbook-level) ``element='title'``
-  style-rule at the same TABLE-level ``<style>`` — mirrors
-  ``/workbook/worksheets/worksheet[9]/table/style/style-rule[3]`` (attr=
-  'color') and ``worksheet[1]/table/style/style-rule[4]`` (attr='font-family')
-  in ``chrome_rules.yaml``. Deliberately NOT the workbook-level
-  ``_workbook_style_rules`` rule D3 already built for ``chrome.title_color``
-  — that rule is workbook-WIDE and would incorrectly recolor every chart
-  worksheet's title too.
-- Zone-style box model (tiles + band): the SAME mined ``<zone-style>``
-  vocabulary D2 already established (``design/corpus/recipes/
-  zone_styles.yaml``), now also applied to ``kpi_band_over_charts`` KPI-tile
-  zones and their containing band flow zone.
+Three live-probe rounds after the original D4 land, Tableau Cloud fresh
+renders still ignored the BAN typography/compact-formats this slice
+published — even though the XML was independently verified correct. An
+offline bisect ladder of a dozen ``.twbx`` variants (kept in scratchpad,
+never committed) isolated the EXACT working shape by starting from a
+verbatim graft of WB-118's real, published "Sales KPI (BAN) New"
+worksheet (WB-118.twbx) and making the smallest
+possible edits, rather than continuing to morph this builder's own
+(independently-plausible but non-rendering) shape:
 
-BAN-styling location — REVISED after live probe #3
-------------------------------------------------------------
-D4's original assessment (see git history) speculated then rejected a
-``<customized-label>`` approach, believing it would REPLACE a mark's
-entire rendered label and drop comparison/delta measures from view. Live
-probe #3's fresh renders proved the TABLE-level ``element='cell'``
-font-size/font-family/color rule that assessment led to renders NOTHING
-for a naked BAN view. A direct diff against WB-118's real, published
-"Sales KPI (BAN) New" worksheet (WB-118.twbx)
-showed the earlier assessment was wrong on the specific "replaces the
-label" claim: that worksheet's ``<pane>`` keeps its full 3-field
-``<encodings>`` list AND adds a ``<customized-label>`` — the two coexist;
-the label is a presentation template layered on top. BAN typography (and
-making the worksheet-local compact/arrow default-formats VISIBLE, since
-Tableau's placeholder substitution renders a field's value via its
-resolved default-format) now lives in ``<customized-label>`` — see
-``test_twb_kpi_styling_customized_label.py`` for that mechanism's full
-test coverage and mined-evidence citations, including the documented
-divergences (no caption run, plain newline, primary+delta only — not all
-three encoded measures get their own label run).
+1. COMPACT/ARROW FORMAT lives on a worksheet-local CALCULATED column's OWN
+   ``default-format`` (:func:`twb_builder._append_kpi_ban_calc_column`) —
+   NOT a raw field's local ``<column>`` (the earlier hotfix's mechanism,
+   :func:`twb_builder._kpi_tile_local_default_formats`, now REMOVED — bisect
+   variant V7 proved Cloud silently ignores a ``default-format`` on a raw
+   field's local dependency column for a naked BAN view).
+2. The ``<customized-label>`` (:func:`twb_builder._kpi_tile_customized_label`)
+   must reproduce the graft's OWN run idiom byte-for-byte: a letter-spaced
+   UPPERCASE caption run derived from the tile's title, literal
+   glyph-prefixed ``"Æ\\n"`` newline runs (NOT a plain ``"\\n"`` — an earlier
+   hotfix round's assumption), and CDATA (not escaped-text) placeholder
+   runs. Partial adoption is WORSE than none — variants that added only some
+   of these traits to this builder's shape rendered a BLANK mark, not a
+   partial label.
+3. A pane-level ``<style-rule element='mark'>`` (``mark-labels-show``/
+   ``mark-labels-cull``, both ``'true'``) is REQUIRED alongside the existing
+   ``text-align: center`` rule (:func:`twb_builder._kpi_tile_pane_style_rules`)
+   — its absence silently drops the ``<customized-label>`` back to the
+   plain default text-mark render.
+4. Because the in-label caption now labels the tile, the per-worksheet
+   title-color rule (:func:`twb_builder._kpi_tile_title_style_rule`) is
+   SKIPPED, and the dashboard zone hosting the tile gets
+   ``show-title='false'`` (mirroring WB-118's own mined zone attribute)
+   so the title is never shown twice.
 
-Delta-color assessment (item 6)
----------------------------------
-True "color the delta by sign" needs either (a) a NEW calculated boolean
-field (e.g. ``[Delta] < 0``) plus the mined value-to-color ``<encoding
-attr='color' type='palette'><map to='#hex'><bucket>...</bucket></map>
-</encoding>`` shape (WB-133), or (b) a format-code trick. This
-builder has NO calculated-field emission anywhere — adding it is a new
-capability, not a styling tweak, and out of scope here. Per the plan's
-explicit fallback, this slice instead ships the mined FORMAT-based arrow
-pattern (``*▲ #,##;▼ #,##``, WB-117's
-``default-format='*▲ #,##;▼ #,##'`` on ``[MOM - Sales (copy)_...]``) on the
-delta measure's field when ``kpi_tile.use_semantic_delta_colors`` is true:
-direction is visible (▲/▼), no new calc machinery, real mined XML.
-``design/corpus/recipes/chrome_rules.yaml`` also independently mines the
-bare ``*▲;▼`` variant (WB-114) and percent variants
-(``*▲0.0%; ▼0.0%``) at the SAME ``element='cell'`` location, corroborating
-the format-based arrow technique generally (not just this one field value).
+See ``test_twb_kpi_styling_customized_label.py`` for the customized-label
+mechanism's full test coverage and ``test_twb_kpi_styling_hotfix.py`` for
+the earlier (still-relevant) transparency/pane-style hotfix coverage plus
+the comparison-measure format reversal.
 
 Test groups
 -----------
@@ -80,20 +58,16 @@ D4-1  Tile zone-style from ``kpi_tile`` (background/border/padding)
 D4-2  KPI band container gets ``kpi_tile.background`` only (continuous band)
 D4-3  Table-level cell rule dead-mechanism regression guard (removed, D4-3
       moved to ``test_twb_kpi_styling_customized_label.py``)
-D4-4  Compact format per classification (currency/number/percent) on primary
-D4-5  Title legibility rule (per-worksheet, not workbook-wide)
-D4-6  Delta arrow-format (mined fallback for color-by-sign)
+D4-4  Compact format per classification (currency/number/percent) on the
+      PRIMARY's calc column (FINAL SHAPE: no longer the raw field)
+D4-5  Title suppression: in-label caption + zone show-title='false' replace
+      the per-worksheet title-color rule
+D4-6  Delta calc column format (arrow vs compact, per use_semantic_delta_colors)
 D4-7  No-theme byte-identical (both entry points)
 D4-8  No ``kpi_tile`` block -> tiles remain fully unstyled
 
 D4-9 (XSD validity) and D4-10 (FastAPI integration) live in the companion
-file ``test_twb_kpi_styling_integration.py``. Live-probe-driven hotfix
-rounds live in ``test_twb_kpi_styling_hotfix.py`` (round 2: local
-default-formats, table transparency, text-align) and
-``test_twb_kpi_styling_customized_label.py`` (round 3: BAN typography via
-``<customized-label>``) — split at the ~800-line file-size guideline, same
-discipline as Slice D3's
-``test_twb_chrome.py``/``test_twb_chrome_integration.py``.
+file ``test_twb_kpi_styling_integration.py``.
 """
 
 from __future__ import annotations
@@ -231,6 +205,20 @@ def _field(measure: str) -> str:
     return f"{DS_REF}.{twb_builder._measure_instance(measure)}"
 
 
+def _calc_field_name(field: str, *, delta: bool = False) -> str:
+    """The worksheet-local CALCULATED column's bracketed name for *field*
+    (Slice D4 FINAL SHAPE — see ``twb_builder._append_kpi_ban_calc_column``)."""
+    suffix = "_Delta" if delta else ""
+    return f"[{twb_builder._KPI_BAN_CALC_PREFIX}{twb_builder._slug(field)}{suffix}]"
+
+
+def _calc_instance(field: str, *, delta: bool = False) -> str:
+    """The calc column's fully-qualified ``<text>``/placeholder instance name."""
+    suffix = "_Delta" if delta else ""
+    name = f"{twb_builder._KPI_BAN_CALC_PREFIX}{twb_builder._slug(field)}{suffix}"
+    return f"[usr:{name}:qk]"
+
+
 def _cell_formats(worksheet: ET.Element) -> list[dict[str, str | None]]:
     rule = worksheet.find("table/style/style-rule[@element='cell']")
     if rule is None:
@@ -243,42 +231,40 @@ def _text_encoding_columns(worksheet: ET.Element) -> list[str]:
 
     Live-probe #2 tightening: tests cross-check style/format targets against
     THIS (an independent read of what the mark really encodes) rather than
-    only recomputing the expected value via the same ``_measure_instance()``
-    helper the implementation itself uses — recomputing via the same helper
-    cannot catch a future divergence between the encoding-building and
-    format-building code paths (exactly the class of bug this hotfix closes).
+    only recomputing the expected value via the same helpers the
+    implementation itself uses.
     """
     return [t.get("column") for t in worksheet.findall(".//panes/pane/encodings/text")]
 
 
 def _local_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
-    """``{raw bracketed field name: default-format}`` for THIS worksheet's own
-    ``<datasource-dependencies><column>`` declarations (the live-probe #2
-    hotfix location — see ``twb_builder._kpi_tile_local_default_formats``)."""
+    """``{bracketed field name: default-format}`` for THIS worksheet's own
+    ``<datasource-dependencies><column>`` declarations — includes BOTH raw
+    fields (never carry a ``default-format`` for a kpi_tile sheet, Slice D4
+    FINAL SHAPE) and the CALCULATED BAN columns (always do, when present)."""
     return {
         c.get("name"): c.get("default-format")
         for c in worksheet.findall(".//datasource-dependencies/column")
     }
 
 
+def _calc_default_formats(worksheet: ET.Element) -> dict[str, str | None]:
+    """``{calc field name: default-format}`` — only the CALCULATED BAN
+    columns (name starts with ``Calculation_BAN_``), filtering out the
+    (never-formatted) raw dependency columns for a cleaner assertion."""
+    prefix = f"[{twb_builder._KPI_BAN_CALC_PREFIX}"
+    return {k: v for k, v in _local_default_formats(worksheet).items() if k.startswith(prefix)}
+
+
 def _shared_default_formats(root: ET.Element) -> dict[str, str | None]:
     """``{raw bracketed field name: default-format}`` for the SHARED/global
     ``<datasources><datasource><column>`` declarations (brand-driven,
     Slice D3/E1's ``classify_measure_format`` — must stay UNCHANGED by the
-    KPI-tile-local override, proving "don't disturb brand's default-format
+    KPI-tile-local mechanism, proving "don't disturb brand's default-format
     behavior" for every other worksheet referencing the same raw field)."""
     ds = root.find(".//datasources/datasource")
     assert ds is not None
     return {c.get("name"): c.get("default-format") for c in ds.findall("column")}
-
-
-def _raw_field_from_instance(column: str) -> str:
-    """Decode the raw field name embedded in an instance-qualified column
-    string like ``"[ds].[sum:Sales:qk]"`` -> ``"Sales"`` — used to
-    independently verify a local default-format target against what a
-    ``<text>`` encoding ACTUALLY references, not what a test fixture assumes."""
-    instance = column.split(".", 1)[1]  # "[sum:Sales:qk]" (or "[sum:Sales Delta:qk]")
-    return instance[1:-1].split(":", 1)[1].rsplit(":", 1)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -372,25 +358,25 @@ def test_table_level_cell_rule_never_emitted_dead_mechanism_stays_removed() -> N
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     assert _cell_formats(worksheet) == []
-    # The table-level <style> still carries the title + transparency rules
-    # (both proven-working) — only the dead cell rule is gone.
+    # Design Excellence, Slice D4 FINAL SHAPE: the table-level <style> now
+    # carries ONLY the transparency rule — the title-color rule ALSO no
+    # longer applies (see D4-5): the in-label caption + zone show-title
+    # suppression replace it whenever the BAN mechanism is active.
     style = worksheet.find("table/style")
     assert style is not None
     elements = {r.get("element") for r in style.findall("style-rule")}
-    assert elements == {"title", "table"}
+    assert elements == {"table"}
 
 
 # ---------------------------------------------------------------------------
 # D4-4  Compact format per classification (currency/number/percent)
 #
-# Live-probe #2 hotfix: the compact format lives on THIS worksheet's own
-# ``<datasource-dependencies><column default-format=...>`` declaration (a
-# plain WORKSHEET-LOCAL default-format), NOT the ``element='cell'
-# text-format`` rule (D4-3's cell rule is cosmetic-only now — see its
-# section header). Root cause: verified against WB-118's real, published
-# "Sales KPI (BAN) New" worksheet (WB-118.twbx)
-# — its primary BAN measure carries the compact pattern as a plain
-# default-format on its OWN worksheet-local <column>, not a cell override.
+# Design Excellence, Slice D4 FINAL SHAPE (live-probe #3 bisect ladder, V7):
+# the compact format lives on a worksheet-local CALCULATED column's OWN
+# ``default-format`` (twb_builder._append_kpi_ban_calc_column) — NOT the
+# raw field's local column (the earlier hotfix's mechanism, proven inert by
+# bisect variant V7: Cloud silently ignores a default-format on a RAW
+# field's local dependency column for a naked BAN view).
 # ---------------------------------------------------------------------------
 
 
@@ -408,16 +394,19 @@ def test_compact_currency_format_on_currency_classified_primary() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
 
-    # Independent cross-check: decode the raw field name from the worksheet's
-    # OWN <text> encoding (not from the test fixture) and confirm THAT exact
-    # name is what carries the local default-format.
+    # Independent cross-check: the primary <text> encoding must reference
+    # the CALCULATED column's instance, not the raw field's.
     encoded_columns = _text_encoding_columns(worksheet)
-    assert _field("Sales") in encoded_columns
-    raw_primary = _raw_field_from_instance(_field("Sales"))
-    assert raw_primary == "Sales"
+    assert f"{DS_REF}.{_calc_instance('Sales')}" in encoded_columns
+    assert _field("Sales") not in encoded_columns
 
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Sales")] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+
+    # The raw field's own local column never gets a default-format at all
+    # (that mechanism was removed as dead weight — see D4-3's docstring).
     local_formats = _local_default_formats(worksheet)
-    assert local_formats[f"[{raw_primary}]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert local_formats.get("[Sales]") is None
 
 
 def test_compact_number_format_on_number_classified_primary() -> None:
@@ -427,8 +416,8 @@ def test_compact_number_format_on_number_classified_primary() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Quantity']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Quantity]"] == "n#,##0,.0K;-#,##0,.0K"
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Quantity")] == "n#,##0,.0K;-#,##0,.0K"
 
 
 def test_percent_format_unchanged_not_compacted() -> None:
@@ -446,9 +435,9 @@ def test_percent_format_unchanged_not_compacted() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Discount']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
+    calc_formats = _calc_default_formats(worksheet)
     expected = twb_builder.classify_measure_format("Discount", BRAND["formats"])
-    assert local_formats["[Discount]"] == expected == "0.0%"
+    assert calc_formats[_calc_field_name("Discount")] == expected == "0.0%"
 
 
 def test_compact_currency_symbol_parameterized_from_brand() -> None:
@@ -470,8 +459,8 @@ def test_compact_currency_symbol_parameterized_from_brand() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Sales]"] == 'c"€"#,##0,.0K;-"€"#,##0,.0K'
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Sales")] == 'c"€"#,##0,.0K;-"€"#,##0,.0K'
 
 
 def test_compact_format_absent_without_kpi_tile_block_even_with_brand() -> None:
@@ -488,9 +477,10 @@ def test_compact_format_absent_without_kpi_tile_block_even_with_brand() -> None:
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
     assert _cell_formats(worksheet) == []
-    # No kpi_tile block -> no LOCAL default-format override is stamped either
-    # (same as any ordinary, non-kpi_tile sheet); rendering falls back to the
-    # SHARED datasource's brand-driven default-format ("$#,##0").
+    # No kpi_tile block -> no CALCULATED BAN column is emitted at all — the
+    # raw field's own local column never gets one either; rendering falls
+    # back to the SHARED datasource's brand-driven default-format ("$#,##0").
+    assert _calc_default_formats(worksheet) == {}
     local_formats = _local_default_formats(worksheet)
     assert local_formats.get("[Sales]") is None
     shared_formats = _shared_default_formats(root)
@@ -498,10 +488,10 @@ def test_compact_format_absent_without_kpi_tile_block_even_with_brand() -> None:
 
 
 def test_local_default_format_does_not_disturb_shared_datasource_default_format() -> None:
-    """The critical non-regression guard: the KPI tile's LOCAL compact
-    override must NEVER touch the SHARED/global datasource <column> that
-    every OTHER worksheet referencing the same raw field relies on
-    (Slice D3/E1's classify_measure_format via brand.formats)."""
+    """The critical non-regression guard: the KPI tile's calc-column format
+    must NEVER touch the SHARED/global datasource <column> that every OTHER
+    worksheet referencing the same raw field relies on (Slice D3/E1's
+    classify_measure_format via brand.formats)."""
     xml = twb_builder.build_twb_xml(
         "DS",
         "kpi_ds",
@@ -516,46 +506,64 @@ def test_local_default_format_does_not_disturb_shared_datasource_default_format(
     assert shared_formats["[Sales]"] == "$#,##0", (
         "Shared datasource default-format must stay the brand's NORMAL "
         "(uncompacted) format — the compact pattern lives only on the KPI "
-        "tile worksheet's own LOCAL dependency column"
+        "tile worksheet's own CALCULATED dependency column"
     )
 
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
-    assert local_formats["[Sales]"] != shared_formats["[Sales]"]
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Sales")] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert calc_formats[_calc_field_name("Sales")] != shared_formats["[Sales]"]
 
     # The chart worksheet also references "Sales" but is NOT a kpi_tile — it
-    # gets NO local default-format override at all (unaffected, same as
-    # before this slice); it renders via the SHARED datasource's format above.
+    # gets NO calc column at all (unaffected, same as before this slice); it
+    # renders via the SHARED datasource's format above.
     chart_ws = root.find(".//worksheets/worksheet[@name='Revenue by Region']")
     assert chart_ws is not None
-    chart_local_formats = _local_default_formats(chart_ws)
-    assert chart_local_formats.get("[Sales]") is None
+    assert _calc_default_formats(chart_ws) == {}
 
 
 # ---------------------------------------------------------------------------
-# D4-5  Title legibility rule (per-worksheet, NOT workbook-wide)
+# D4-5  Title suppression: in-label caption + zone show-title='false'
+#
+# Design Excellence, Slice D4 FINAL SHAPE: since the customized-label now
+# carries an in-label caption run (derived from the tile's title — see
+# test_twb_kpi_styling_customized_label.py), the per-worksheet title-color
+# rule this slice originally used is REDUNDANT whenever the BAN mechanism
+# is active — kept only as a defensive fallback for the degenerate case
+# where kpi_tile theming is present but the sheet's kpi spec has no
+# primary_measure (so no label/suppression happens either).
 # ---------------------------------------------------------------------------
 
 
-def test_kpi_tile_title_color_rule_present() -> None:
+def test_kpi_tile_title_color_rule_absent_when_ban_active() -> None:
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    title_rule = worksheet.find("table/style/style-rule[@element='title']")
-    assert title_rule is not None
-    formats = {f.get("attr"): f.get("value") for f in title_rule.findall("format")}
-    assert formats == {"color": "#ffffff"}
+    assert worksheet.find("table/style/style-rule[@element='title']") is None
 
 
-def test_chart_sheet_title_unaffected_by_kpi_tile_ban_color() -> None:
-    """Scoping proof: the title rule lands on the KPI worksheet's OWN
-    table-level <style> only — the chart worksheet's title must be untouched
-    (unlike D3's workbook-level chrome.title_color, which would be global)."""
+def test_kpi_tile_zone_show_title_false_when_kpi_tile_active() -> None:
+    """Mirrors WB-118's own mined zone attribute
+    (WB-118.twbx: ``<zone ...
+    name='Sales KPI (BAN) New' show-title='false' ...>``)."""
+    xml = twb_builder.build_twb_xml(
+        "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
+    )
+    root = ET.fromstring(xml)
+    tile_zone = root.find(".//dashboards/dashboard/zones//zone[@name='KPI Sales']")
+    assert tile_zone is not None
+    assert tile_zone.get("show-title") == "false"
+
+
+def test_chart_sheet_unaffected_by_kpi_tile_title_suppression() -> None:
+    """Scoping proof: the title-color rule/show-title suppression land on
+    the KPI worksheet/zone only — the chart worksheet/zone must be
+    untouched (unlike D3's workbook-level chrome.title_color, which would
+    be global)."""
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
@@ -565,6 +573,35 @@ def test_chart_sheet_title_unaffected_by_kpi_tile_ban_color() -> None:
     assert chart_ws.find("table/style/style-rule[@element='title']") is None
     # No workbook-level <style> either (THEME_KPI has no `chrome` block).
     assert root.find("style") is None
+
+    chart_zone = root.find(".//dashboards/dashboard/zones//zone[@name='Revenue by Region']")
+    assert chart_zone is not None
+    assert chart_zone.get("show-title") is None
+
+
+def test_title_color_rule_present_as_fallback_when_no_primary_measure() -> None:
+    """Defensive fallback: kpi_tile theming is present but this specific
+    sheet's kpi spec has no primary_measure — no BAN label (or its zone
+    suppression) happens, so the title-color rule stays as a safety net."""
+    sheet = {**KPI_SHEET_SALES, "title": "KPI Empty", "kpi": {}}
+    dashboard = [
+        {
+            "name": "Executive Dashboard",
+            "titles": ["KPI Empty"],
+            "layout_grammar": {
+                "kind": "kpi_band_over_charts",
+                "kpi_tile_titles": ["KPI Empty"],
+                "chart_titles": [],
+            },
+        }
+    ]
+    xml = twb_builder.build_twb_xml(
+        "DS", "kpi_ds", "site", [sheet], dashboards=dashboard, design_theme=THEME_KPI
+    )
+    root = ET.fromstring(xml)
+    worksheet = root.find(".//worksheets/worksheet[@name='KPI Empty']")
+    assert worksheet is not None
+    assert worksheet.find("table/style/style-rule[@element='title']") is not None
 
 
 def test_title_color_rule_absent_when_ban_color_unset() -> None:
@@ -583,15 +620,14 @@ def test_title_color_rule_absent_when_ban_color_unset() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
+    # ban_active is independent of ban_color (the label still emits, just
+    # with the default value/caption color) -> the title rule stays absent.
     assert worksheet.find("table/style/style-rule[@element='title']") is None
 
 
 # ---------------------------------------------------------------------------
-# D4-6  Delta arrow-format (mined fallback for color-by-sign)
-#
-# Same live-probe #2 relocation as D4-4: the arrow-direction pattern lives
-# on the delta measure's own WORKSHEET-LOCAL default-format, not the
-# (ineffective, for naked BAN views) cell-level text-format rule.
+# D4-6  Delta calc-column format (arrow vs compact, per
+# use_semantic_delta_colors) — Design Excellence, Slice D4 FINAL SHAPE
 # ---------------------------------------------------------------------------
 
 
@@ -605,21 +641,22 @@ def test_delta_arrow_format_when_semantic_delta_colors_true() -> None:
 
     # Independent cross-check against the worksheet's OWN <text> encoding.
     encoded_columns = _text_encoding_columns(worksheet)
-    assert _field("Sales Delta") in encoded_columns
-    raw_delta = _raw_field_from_instance(_field("Sales Delta"))
-    assert raw_delta == "Sales Delta"
+    delta_col = f"{DS_REF}.{_calc_instance('Sales Delta', delta=True)}"
+    assert delta_col in encoded_columns
+    assert _field("Sales Delta") not in encoded_columns
 
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats[f"[{raw_delta}]"] == "*▲ #,##;▼ #,##"
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats[_calc_field_name("Sales Delta", delta=True)] == "*▲ #,##;▼ #,##"
     # No table-level cell rule exists at all any more (see
     # test_table_level_cell_rule_never_emitted_dead_mechanism_stays_removed);
-    # the delta's compact/arrow format is made VISIBLE by a
-    # <customized-label> placeholder run instead — see
-    # test_twb_kpi_styling_customized_label.py.
+    # the delta's format is made VISIBLE by a <customized-label> placeholder
+    # run instead — see test_twb_kpi_styling_customized_label.py.
     assert _cell_formats(worksheet) == []
 
 
-def test_delta_arrow_format_absent_when_semantic_delta_colors_false() -> None:
+def test_delta_gets_compact_not_arrow_format_when_semantic_delta_colors_false() -> None:
+    """use_semantic_delta_colors only governs WHICH format the delta calc
+    column gets — the calc column (and its label line) still exist."""
     theme = _kpi_theme(
         kpi_tile={
             "background": "#2f2e41",
@@ -635,32 +672,31 @@ def test_delta_arrow_format_absent_when_semantic_delta_colors_false() -> None:
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Sales']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    assert local_formats.get("[Sales Delta]") is None
+    calc_formats = _calc_default_formats(worksheet)
+    delta_key = _calc_field_name("Sales Delta", delta=True)
+    assert calc_formats[delta_key] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
     # Primary measure's own compact format is unaffected by the flag (no
     # brand passed here -> default "$" symbol, still the compact pattern).
-    assert local_formats["[Sales]"] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
+    assert calc_formats[_calc_field_name("Sales")] == 'c"$"#,##0,.0K;-"$"#,##0,.0K'
 
 
-def test_delta_arrow_format_absent_when_no_delta_measure() -> None:
+def test_no_delta_calc_column_when_no_delta_measure() -> None:
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI
     )
     root = ET.fromstring(xml)
     worksheet = root.find(".//worksheets/worksheet[@name='KPI Quantity']")
     assert worksheet is not None
-    local_formats = _local_default_formats(worksheet)
-    # Only the primary measure's own local override is present — no delta
+    # Only the primary measure's own calc column is present — no delta
     # field exists on this sheet's kpi spec at all.
-    assert local_formats == {"[Quantity]": "n#,##0,.0K;-#,##0,.0K"}
-    # No table-level cell rule (dead mechanism, removed); BAN
-    # typography/cosmetics now live on <customized-label> — see
-    # test_twb_kpi_styling_customized_label.py for that coverage, and
-    # confirm here only that no delta run exists when there's no delta
-    # measure at all (<customized-label> has exactly one value run).
+    calc_formats = _calc_default_formats(worksheet)
+    assert calc_formats == {_calc_field_name("Quantity"): "n#,##0,.0K;-#,##0,.0K"}
     assert _cell_formats(worksheet) == []
     label_runs = worksheet.findall(".//panes/pane/customized-label//run")
-    assert len(label_runs) == 1
+    # Caption + separator + one value run + one trailing newline (no delta
+    # pair) — see test_twb_kpi_styling_customized_label.py for the full
+    # run-by-run coverage.
+    assert len(label_runs) == 4
 
 
 # ---------------------------------------------------------------------------
@@ -745,6 +781,7 @@ def test_no_kpi_tile_block_leaves_tiles_fully_unstyled() -> None:
     tile_zone = root.find(".//dashboards/dashboard/zones//zone[@name='KPI Sales']")
     assert tile_zone is not None
     assert tile_zone.find("zone-style") is None
+    assert tile_zone.get("show-title") is None
 
     band = root.find(".//dashboards/dashboard/zones//zone[@h='20000'][@param='horz']")
     assert band is not None
@@ -754,4 +791,9 @@ def test_no_kpi_tile_block_leaves_tiles_fully_unstyled() -> None:
     assert worksheet is not None
     assert worksheet.find("table/style/style-rule[@element='cell']") is None
     assert worksheet.find("table/style/style-rule[@element='title']") is None
-
+    assert worksheet.find(".//panes/pane/customized-label") is None
+    assert worksheet.find(".//panes/pane/style/style-rule[@element='mark']") is None
+    assert _calc_default_formats(worksheet) == {}
+    pane = worksheet.find(".//panes/pane")
+    assert pane is not None
+    assert pane.get("selection-relaxation-option") is None

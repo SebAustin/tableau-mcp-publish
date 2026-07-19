@@ -323,6 +323,8 @@ export const ThemeKpiTileSchema = z.object({
   padding: z.number().optional(),
   banColor: z.string().optional(),
   useSemanticDeltaColors: z.boolean().optional(),
+  /** BAN customized-label caption run color (see sidecar.ts ThemeKpiTile). */
+  captionColor: z.string().optional(),
 });
 export type ThemeKpiTile = z.infer<typeof ThemeKpiTileSchema>;
 

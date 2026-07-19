@@ -271,23 +271,24 @@ def _add_dependency_columns(
     parent: ET.Element,
     dimensions: list[str],
     measures: list[str],
-    measure_default_formats: dict[str, str] | None = None,
 ) -> None:
     """Append dimension/measure ``<column>``/``<column-instance>`` pairs to *parent*.
 
     Args:
-        parent:                  The ``<datasource-dependencies>`` element to append into.
-        dimensions:               Dimension field names.
-        measures:                 Measure field names.
-        measure_default_formats:  Optional ``{raw field name: default-format value}``
-                                  map (Design Excellence, Slice D4 hotfix — see
-                                  :func:`_kpi_tile_local_default_formats`). When a
-                                  measure's name is a key, its WORKSHEET-LOCAL
-                                  ``<column>`` declaration (NOT the shared/global
-                                  datasource ``<column>`` :func:`classify_measure_format`
-                                  writes to) gets a ``default-format`` attribute.
-                                  Absent/no match (the default): no attribute is
-                                  added, unchanged from before this param existed.
+        parent:      The ``<datasource-dependencies>`` element to append into.
+        dimensions:  Dimension field names.
+        measures:    Measure field names.
+
+    Design Excellence, Slice D4 FINAL-SHAPE note: an earlier hotfix round
+    threaded an optional ``measure_default_formats`` map through here to
+    stamp ``default-format`` directly on a RAW measure's worksheet-local
+    ``<column>`` (KPI-tile compact/arrow formatting). Live-probe #3's bisect
+    ladder (V7 specifically) proved Tableau Cloud IGNORES a ``default-format``
+    on a raw (non-calculated) field's local dependency column for a naked
+    BAN view — the param has been removed as dead weight. KPI-tile BAN
+    values now carry their format on a dedicated worksheet-local CALCULATED
+    column instead (see :func:`_append_kpi_ban_calc_column`), which V7/V11/
+    V12 proved Cloud DOES honor.
     """
     for field in dimensions:
         ET.SubElement(
@@ -313,8 +314,6 @@ def _add_dependency_columns(
             "role": "measure",
             "type": "quantitative",
         }
-        if measure_default_formats and field in measure_default_formats:
-            measure_attrs["default-format"] = measure_default_formats[field]
         ET.SubElement(parent, "column", measure_attrs)
         ET.SubElement(
             parent,
@@ -455,40 +454,66 @@ def _build_worksheet(
     XPath provenance. Absent ``design_theme`` (the default): byte-identical
     to before this slice.
 
-    Styled KPI tiles (Design Excellence, Slice D4; hotfixed across three
-    live-probe rounds)
+    Styled KPI tiles (Design Excellence, Slice D4; FINAL SHAPE after a
+    live-probe bisect ladder — V0-V12, see the module-level "BAN mechanism"
+    comment block above :data:`_KPI_COMPACT_NUMBER_FORMAT` for the full
+    provenance)
     ---------------------------------------------------------------------
     When ``sheet["kind"] == "kpi_tile"`` AND ``design_theme["kpi_tile"]`` is
-    present:
+    present AND ``sheet["kpi"]["primary_measure"]`` is set (the
+    ``kpi_ban_active`` gate):
 
-    - The compact number/currency format on the primary and comparison
-      measures (fixes numeric overflow in narrow tiles) and the mined
-      arrow-direction format on the delta measure (when
-      ``kpi_tile["use_semantic_delta_colors"]`` is set) are stamped as a
-      plain ``default-format`` attribute on this worksheet's OWN
-      ``<datasource-dependencies><column>`` declaration — see
-      :func:`_kpi_tile_local_default_formats` for why.
+    - A worksheet-local CALCULATED ``<column>`` per BAN value
+      (:func:`_append_kpi_ban_calc_column`) — ``[Calculation_BAN_<primary>]
+      = SUM([primary])`` always, plus ``[Calculation_BAN_<delta>_Delta] =
+      SUM([delta])`` when ``kpi.delta_measure`` is set — each carrying the
+      compact number/currency (or, for the delta column, the mined
+      arrow-direction) format as its OWN ``default-format``. Live-probe
+      #3's bisect ladder (V7) proved a RAW field's local ``default-format``
+      is silently ignored by Tableau Cloud for a naked BAN view; a
+      CALCULATED field's own local ``default-format`` is NOT. The primary
+      and delta ``<text>`` shelf encodings are repointed at these calc
+      instances; the comparison measure (when set) stays a plain,
+      unformatted raw-field ``<text>`` encoding (stamping a compact format
+      on ITS raw local column was proven equally inert, so it is no longer
+      emitted at all — dead weight removed, not left in place).
     - A transparent-background TABLE-level ``<style-rule element='table'>``
       (:func:`_kpi_tile_table_transparency_rule`) reveals the KPI tile
       ZONE's themed background through the worksheet's own (otherwise
       opaque white) table fill, when ``kpi_tile["background"]`` is set.
     - A ``<customized-label>`` (:func:`_kpi_tile_customized_label`) on the
-      PANE — the mechanism that actually renders BAN font-size/font-name
-      (from ``brand["typography"]["ban"]``), BAN color (from
-      ``kpi_tile["ban_color"]``), AND makes the worksheet-local
-      compact/arrow default-formats above visible (placeholder
-      substitution renders a field's value using its resolved
-      default-format) — live probe #3 proved the EARLIER table-level
-      ``element='cell'`` font-size/font-family/color rule renders nothing
-      for a naked BAN view; that mechanism has been removed.
+      PANE, in the bisect-proven "graft" run idiom: a letter-spaced
+      UPPERCASE caption run derived from the tile's OWN title (e.g.
+      ``"Sales"`` -> ``"S A L E S"``), the mined literal ``"Æ\\n"``
+      glyph-prefixed newline-separator runs (V9/V10 proved a plain ``"\\n"``
+      is NOT part of the working shape), and one CDATA placeholder run per
+      BAN value (``<[ds].[calc instance]>``) referencing the calc columns
+      above. NO ``fontname`` attribute is ever emitted (V11/V12, the
+      proven-working shape, carry none — an untested attribute is not
+      risked here; BAN font family follows the workbook default instead,
+      a documented, honest limitation).
     - A pane-level ``<style-rule element='cell'><format attr='text-align'
-      value='center'/></style-rule>`` (:func:`_kpi_tile_pane_style_rules`)
-      centers the BAN text, mined verbatim from the same real worksheet.
-    - A per-worksheet TABLE-level ``element='title'`` style-rule
-      (:func:`_kpi_tile_title_style_rule`) is also added when
-      ``kpi_tile["ban_color"]`` is set, fixing dark-on-navy title legibility
-      WITHOUT recoloring every other worksheet's title (unlike D3's
-      workbook-level ``chrome.title_color``).
+      value='center'/></style-rule>`` PLUS ``<style-rule element='mark'>``
+      (``mark-labels-show``/``mark-labels-cull`` both ``'true'``) —
+      :func:`_kpi_tile_pane_style_rules`. Live-probe #3's V9/V10 proved
+      mark-labels-show is NECESSARY (its absence silently drops the
+      ``<customized-label>`` back to a plain default text-mark, or — once
+      mark-labels-show is added to our OTHER attributes alone — to a BLANK
+      mark) but not sufficient alone; V11/V12 (the full proven shape)
+      confirm it IS sufficient combined with the rest of this mechanism.
+    - ``selection-relaxation-option='selection-relaxation-allow'`` on the
+      ``<pane>`` element (mined fidelity, part of the proven V11/V12 shape).
+    - The per-worksheet TABLE-level ``element='title'`` style-rule
+      (:func:`_kpi_tile_title_style_rule`) is SKIPPED — the in-label
+      caption run above already labels the tile, and the dashboard zone
+      that hosts this worksheet suppresses its title entirely
+      (``show-title='false'``, mirroring WB-118's own mined KPI-tile
+      zone attribute — see :func:`_build_dashboard`/:func:`_append_worksheet_zones`),
+      making a title-color fix for text that will never render genuinely
+      dead weight. (Kept as a defensive fallback for the degenerate case
+      where ``kpi_tile`` theming is present but this specific sheet's
+      ``kpi`` spec has no ``primary_measure`` — then no label/suppression
+      happens either, so the title may still be visible.)
 
     No-op for non-``kpi_tile`` sheets or when ``design_theme["kpi_tile"]``
     is absent.
@@ -539,6 +564,16 @@ def _build_worksheet(
     # --- KPI tile spec -----------------------------------------------------
     kpi_spec = sheet.get("kpi")  # optional {primary_measure, comparison_measure?, delta_measure?}
     is_kpi_tile = sheet_kind == "kpi_tile"
+
+    # Design Excellence, Slice D4 FINAL SHAPE: whether the proven BAN
+    # customized-label mechanism (calc columns, label, mark-labels-show/
+    # cull, selection-relaxation) should be emitted for THIS sheet — a
+    # SINGLE shared predicate so every call site below (dependency columns,
+    # pane attrs, encodings, label, pane style, title-rule skip) can never
+    # diverge on the gating condition.
+    kpi_ban_active = bool(
+        is_kpi_tile and theme_kpi_tile and kpi_spec and kpi_spec.get("primary_measure")
+    )
 
     # --- Filled map (choropleth) spec --------------------------------------
     geo_spec = sheet.get("geo")  # optional {geo_field, geo_role, color_measure?}
@@ -610,17 +645,42 @@ def _build_worksheet(
         if geo_color and str(geo_color) not in dep_measures:
             dep_measures.append(str(geo_color))
 
-    # Design Excellence, Slice D4 hotfix (live probe #2): stamp the compact
-    # format directly on the KPI tile's OWN worksheet-local dependency
-    # <column> (see _kpi_tile_local_default_formats's docstring for why the
-    # element='cell' text-format override alone does not take effect on a
-    # naked/gridless BAN view).
-    kpi_local_default_formats = _kpi_tile_local_default_formats(
-        kpi_spec if is_kpi_tile else None, theme_kpi_tile, brand_formats
-    )
-    _add_dependency_columns(
-        deps, dep_dims, dep_measures, measure_default_formats=kpi_local_default_formats
-    )
+    _add_dependency_columns(deps, dep_dims, dep_measures)
+
+    # Design Excellence, Slice D4 FINAL SHAPE (live-probe #3 bisect ladder,
+    # V7/V11/V12): worksheet-local CALCULATED columns carrying the BAN
+    # values' compact/arrow default-format — see _append_kpi_ban_calc_column
+    # for why a CALCULATED column is used instead of stamping default-format
+    # on the raw field's own local column (that mechanism is proven inert).
+    # Appended AFTER the raw dependency columns above (same <deps> element;
+    # the calc formulas reference the just-declared raw fields by name).
+    kpi_primary_calc_instance: str | None = None
+    kpi_delta_calc_instance: str | None = None
+    if kpi_ban_active and kpi_spec and theme_kpi_tile:
+        primary_field = str(kpi_spec["primary_measure"])
+        kpi_primary_calc_instance = _append_kpi_ban_calc_column(
+            deps,
+            primary_field,
+            suffix="",
+            caption=f"{primary_field} (BAN)",
+            default_format=_kpi_compact_format(primary_field, brand_formats or {}),
+        )
+        delta_field = kpi_spec.get("delta_measure")
+        if delta_field:
+            delta_field = str(delta_field)
+            delta_format = (
+                _KPI_DELTA_ARROW_FORMAT
+                if theme_kpi_tile.get("use_semantic_delta_colors")
+                else _kpi_compact_format(delta_field, brand_formats or {})
+            )
+            kpi_delta_calc_instance = _append_kpi_ban_calc_column(
+                deps,
+                delta_field,
+                suffix="_Delta",
+                caption=f"{delta_field} (BAN Delta)",
+                default_format=delta_format,
+            )
+
     # <aggregation> is required by the XSD (last mandatory child of <view>)
     ET.SubElement(view, "aggregation", {"value": "true"})
 
@@ -630,12 +690,20 @@ def _build_worksheet(
     # <style/> when there is nothing to say (see _build_style_element).
     table_rules = _table_style_rules(theme_chrome, sheet.get("style_rules"))
     if is_kpi_tile:
-        # Slice D4: per-worksheet title-legibility rule (KPI band titles on a
-        # dark tile background) — appended to the SAME rules list so it lands
-        # in the SAME <style> as everything else above.
-        kpi_title_rule = _kpi_tile_title_style_rule(theme_kpi_tile)
-        if kpi_title_rule is not None:
-            table_rules = [*table_rules, kpi_title_rule]
+        # Design Excellence, Slice D4 FINAL SHAPE: the per-worksheet
+        # title-legibility rule is SKIPPED whenever kpi_ban_active — the
+        # in-label caption already labels the tile, and the dashboard zone
+        # hosting it suppresses the title entirely (show-title='false',
+        # mirroring WB-118's own mined zone attribute — see
+        # _build_dashboard), making a title-color fix for never-rendered
+        # text genuinely dead weight. Kept as a defensive fallback for the
+        # degenerate case (kpi_tile theming present, but this sheet's kpi
+        # spec has no primary_measure) where neither the label nor the
+        # zone-level suppression happens.
+        if not kpi_ban_active:
+            kpi_title_rule = _kpi_tile_title_style_rule(theme_kpi_tile)
+            if kpi_title_rule is not None:
+                table_rules = [*table_rules, kpi_title_rule]
         # Live-probe #2b hotfix: transparent table background so the KPI
         # tile ZONE's navy background-color (Slice D2) shows through instead
         # of being hidden behind the table's own opaque white fill.
@@ -715,6 +783,11 @@ def _build_worksheet(
 
     else:
         pane = ET.SubElement(panes, "pane")
+        if kpi_ban_active:
+            # Design Excellence, Slice D4 FINAL SHAPE: mined fidelity, part
+            # of the proven V11/V12 shape (our non-kpi_tile panes carry no
+            # attributes at all, so this is the pane's only attribute).
+            pane.set("selection-relaxation-option", "selection-relaxation-allow")
         pane_view = ET.SubElement(pane, "view")
         ET.SubElement(pane_view, "breakdown", {"value": "auto"})
 
@@ -747,13 +820,24 @@ def _build_worksheet(
 
         # Text encoding(s)
         if is_kpi_tile and kpi_spec:
-            # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397)
+            # Multi-measure text: primary, comparison, delta (mirrors wb1 ~3394-3397).
+            # Design Excellence, Slice D4 FINAL SHAPE: when kpi_ban_active,
+            # the primary/delta encodings are repointed at their CALCULATED
+            # column instances (kpi_primary_calc_instance/
+            # kpi_delta_calc_instance) instead of the raw field — the
+            # comparison measure ALWAYS stays a raw-field encoding (never
+            # calc-backed; see _append_kpi_ban_calc_column's docstring).
+            kpi_field_instances = {
+                "primary_measure": kpi_primary_calc_instance,
+                "delta_measure": kpi_delta_calc_instance,
+            }
             for kpi_field_key in ("primary_measure", "comparison_measure", "delta_measure"):
                 kpi_field = kpi_spec.get(kpi_field_key)
-                if kpi_field:
-                    encoding_elements.append(
-                        ("text", f"{ds_ref}.{_measure_instance(str(kpi_field))}")
-                    )
+                if not kpi_field:
+                    continue
+                calc_instance = kpi_field_instances.get(kpi_field_key)
+                instance = calc_instance if calc_instance else _measure_instance(str(kpi_field))
+                encoding_elements.append(("text", f"{ds_ref}.{instance}"))
         elif mark_type == "text" and measures and not is_kpi_tile:
             # Plain text mark: single-measure text encoding (original behaviour)
             encoding_elements.append(("text", f"{ds_ref}.{_measure_instance(measures[0])}"))
@@ -763,14 +847,23 @@ def _build_worksheet(
             for tag, col_val in encoding_elements:
                 ET.SubElement(encodings_el, tag, {"column": col_val})
 
-        # Live-probe #3 hotfix: <customized-label> — the mechanism that
-        # ACTUALLY renders BAN typography/compact-formats (see
+        # Design Excellence, Slice D4 FINAL SHAPE: <customized-label> — the
+        # mechanism that ACTUALLY renders BAN typography and makes the calc
+        # columns' compact/arrow default-formats visible (see
         # _kpi_tile_customized_label's docstring). MUST come after
         # <encodings> and before <style> (PaneSpecification-G's
         # CustomLabel-G / Stylesheet-G ordering — verified against the
-        # mined pane). No-op when design_theme has no kpi_tile block.
+        # mined pane). None when kpi_primary_calc_instance is None (i.e.
+        # kpi_ban_active is False).
         if is_kpi_tile:
-            kpi_label_el = _kpi_tile_customized_label(kpi_spec, theme_kpi_tile, brand_ban, ds_ref)
+            kpi_label_el = _kpi_tile_customized_label(
+                theme_kpi_tile,
+                brand_ban,
+                ds_ref,
+                title,
+                primary_calc_instance=kpi_primary_calc_instance,
+                delta_calc_instance=kpi_delta_calc_instance,
+            )
             if kpi_label_el is not None:
                 pane.append(kpi_label_el)
 
@@ -781,11 +874,17 @@ def _build_worksheet(
         if _is_labelable_chart_sheet(sheet):
             _append_style_rules(pane, _pane_style_rules(theme_chrome))
         elif is_kpi_tile:
-            # Live-probe #2b hotfix (finding 4, optional): centered BAN text
-            # — a pane-scoped element='cell' rule (mirrors WB-118's own
+            # Live-probe #2b hotfix (finding 4): centered BAN text — a
+            # pane-scoped element='cell' rule (mirrors WB-118's own
             # <table><panes><pane><style>), also MUST be the LAST child of
-            # <pane>. No-op when design_theme has no kpi_tile block.
-            _append_style_rules(pane, _kpi_tile_pane_style_rules(theme_kpi_tile))
+            # <pane>. Design Excellence, Slice D4 FINAL SHAPE (live-probe
+            # #3's V9-V12): a SECOND element='mark' rule
+            # (mark-labels-show/cull) is added whenever kpi_ban_active — see
+            # _kpi_tile_pane_style_rules's docstring. No-op when
+            # design_theme has no kpi_tile block.
+            _append_style_rules(
+                pane, _kpi_tile_pane_style_rules(theme_kpi_tile, kpi_ban_active)
+            )
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
     if is_map_filled:
@@ -1088,6 +1187,7 @@ def _append_worksheet_zones(
     titles: list[str],
     id_start: int,
     zone_style_formats: dict[str, str] | None = None,
+    show_title: bool = True,
 ) -> None:
     """Append equal-sized horizontal worksheet zones to *parent*.
 
@@ -1105,6 +1205,19 @@ def _append_worksheet_zones(
                               default): no ``<zone-style>`` is emitted — callers
                               that style KPI-tile bands must omit this (KPI
                               tiles are not themed until Slice D4).
+        show_title:          Design Excellence, Slice D4 FINAL SHAPE. When
+                              ``False``, every zone gets ``show-title='false'``
+                              — mirrors WB-118's OWN mined KPI-tile zone
+                              attribute (``WB-118.twbx``:
+                              ``<zone ... name='Sales KPI (BAN) New'
+                              show-title='false' ...>``), used when the
+                              worksheet's own ``<customized-label>`` already
+                              carries an in-label caption (see
+                              :func:`_kpi_tile_customized_label`) so the
+                              dashboard doesn't show the title twice. Default
+                              ``True`` (the attribute is omitted entirely,
+                              Tableau's own default): unchanged from before
+                              this param existed.
     """
     n = len(titles)
     if n == 0:
@@ -1113,18 +1226,11 @@ def _append_worksheet_zones(
     unit_w = GRID // n
     for i, title in enumerate(titles):
         w = unit_w if i < n - 1 else GRID - (n - 1) * unit_w
-        ws_zone = ET.SubElement(
-            parent,
-            "zone",
-            {
-                "h": "100000",
-                "id": str(id_start + i),
-                "name": title,
-                "w": str(w),
-                "x": str(i * unit_w),
-                "y": "0",
-            },
-        )
+        zone_attrs: dict[str, str] = {"h": "100000", "id": str(id_start + i), "name": title}
+        if not show_title:
+            zone_attrs["show-title"] = "false"
+        zone_attrs.update({"w": str(w), "x": str(i * unit_w), "y": "0"})
+        ws_zone = ET.SubElement(parent, "zone", zone_attrs)
         ET.SubElement(
             ws_zone,
             "layout-cache",
@@ -1344,43 +1450,55 @@ def _table_style_rules(
 
 
 # ---------------------------------------------------------------------------
-# Styled KPI tiles (Design Excellence, Slice D4)
+# Styled KPI tiles (Design Excellence, Slice D4; FINAL SHAPE after a
+# live-probe #3 offline bisect ladder, V0-V12)
 #
-# Fixes live-probe findings on the KPI band across THREE probe rounds: (a)
+# Fixes live-probe findings on the KPI band across FOUR probe rounds: (a)
 # numeric overflow (### in narrow tiles) via a compact number/currency
 # format; (b) illegible dark-on-navy titles via a per-worksheet title-color
-# rule; (c) unstyled tiles via the D2 zone-style box model, now also applied
-# to kpi_tile zones; (d) a table-level opaque-white fill hiding the tile
-# zone's themed background; (e) BAN typography (font/color) not rendering.
+# rule (later superseded, see #4 below); (c) unstyled tiles via the D2
+# zone-style box model, now also applied to kpi_tile zones; (d) a
+# table-level opaque-white fill hiding the tile zone's themed background;
+# (e) BAN typography/compact-formats not rendering AT ALL on Tableau Cloud,
+# despite three independently-plausible-looking mechanisms in a row (a
+# TABLE-level cell rule, then a WORKSHEET-LOCAL raw-field default-format +
+# a customized-label with brand-driven styling) — root-caused only by an
+# offline bisect ladder (a dozen ``.twbx`` variants, V0-V12, isolating one
+# variable at a time against a verbatim graft of WB-118's real, published
+# "Sales KPI (BAN) New" worksheet, WB-118.twbx).
 #
-# THREE mined locations, each covering a DIFFERENT concern (this shape
-# emerged over three probe-driven corrections — see each helper's own
-# docstring for the full root-cause writeup of why it lives where it does):
+# FOUR mined locations, each covering a DIFFERENT concern (see each
+# helper's own docstring for the full root-cause writeup of why it lives
+# where it does):
 #
-# 1. NUMBER FORMATTING (compact primary/comparison + delta arrow-direction):
-#    a plain ``default-format`` attribute on the KPI tile's OWN
-#    WORKSHEET-LOCAL ``<datasource-dependencies><column>`` declaration —
-#    mirrors WB-118's real, published "Sales KPI (BAN) New" worksheet
-#    (WB-118.twbx), whose primary BAN measure
-#    carries ``default-format='c"$"#,##0,.0K;-"$"#,##0,.0K'`` there.
-#    :func:`_kpi_tile_local_default_formats`. This value is what a
-#    ``customized-label`` placeholder run (below) ultimately renders.
-# 2. BAN TYPOGRAPHY (font-size/font-name/color): the PANE's own
+# 1. NUMBER FORMATTING (compact primary + delta arrow-direction): a plain
+#    ``default-format`` attribute on a worksheet-local CALCULATED column's
+#    OWN ``<datasource-dependencies><column>`` declaration
+#    (:func:`_append_kpi_ban_calc_column`) — NOT the raw field's local
+#    column (an earlier hotfix round's mechanism, PROVEN inert by the
+#    bisect ladder's V7: Cloud silently ignores a default-format on a raw
+#    field's local dependency column for a naked BAN view). This value is
+#    what a ``customized-label`` placeholder run (below) ultimately renders.
+# 2. BAN TYPOGRAPHY + the label's run STRUCTURE itself: the PANE's own
 #    ``<customized-label>`` — :func:`_kpi_tile_customized_label`. Mirrors
 #    WB-118's "Sales KPI (BAN) New" pane structure (``view, mark,
-#    encodings, customized-label, style``) verbatim: multi-run
-#    ``formatted-text`` with placeholder-substitution runs
-#    (``<[ds].[instance]>``) that render using the field's OWN
-#    default-format from #1. An EARLIER version of this slice tried a
-#    TABLE-level field-scoped ``element='cell'`` rule for this — live probe
-#    #3's fresh renders proved that mechanism does nothing on a naked BAN
-#    view; it has been removed (:func:`_kpi_tile_customized_label`'s
-#    docstring has the full before/after).
+#    encodings, customized-label, style``) AND its run idiom (caption run,
+#    glyph-prefixed newline runs, CDATA placeholders) verbatim — the bisect
+#    ladder proved partial adoption of this shape (e.g. mark-labels-show
+#    added to an otherwise-different run structure) renders a BLANK mark,
+#    worse than not adopting it at all.
 # 3. TABLE/PANE CHROME: a transparent TABLE-level ``background-color``
 #    (:func:`_kpi_tile_table_transparency_rule`) so the zone's themed
-#    background shows through, plus a PANE-level ``text-align: center``
-#    (:func:`_kpi_tile_pane_style_rules`) — both mined verbatim from the
-#    SAME WB-118 worksheet.
+#    background shows through, plus a PANE-level ``text-align: center`` AND
+#    (FINAL SHAPE) ``mark-labels-show``/``mark-labels-cull`` rule
+#    (:func:`_kpi_tile_pane_style_rules`) — REQUIRED for the
+#    customized-label to render at all, not merely cosmetic. All mined
+#    verbatim from the SAME WB-118 worksheet.
+# 4. TITLE SUPPRESSION: since #2's label now carries an in-label caption,
+#    the per-worksheet title-color rule (:func:`_kpi_tile_title_style_rule`)
+#    is skipped, and the dashboard zone hosting the tile gets
+#    ``show-title='false'`` (:func:`_append_worksheet_zones`) — mirrors
+#    WB-118's own mined KPI-tile zone attribute.
 # ---------------------------------------------------------------------------
 
 # Mined compact-number pattern (WB-015, /workbook/worksheets/
@@ -1391,9 +1509,9 @@ _KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
 # Mined delta arrow-direction pattern (WB-117's
 # WB-117.twbx, default-format='*▲ #,##;▼ #,##'
 # on [MOM - Sales (copy)_233624247371403264] et al.) -- the D7-deferred
-# fallback for true color-by-sign (see _kpi_tile_local_default_formats's
+# fallback for true color-by-sign (see _append_kpi_ban_calc_column's
 # docstring). Direction is visible (▲/▼) without any new calc-field
-# machinery.
+# machinery beyond the BAN mechanism itself.
 _KPI_DELTA_ARROW_FORMAT = "*▲ #,##;▼ #,##"
 
 _CURRENCY_SYMBOL_RE = re.compile(r"^([^#0-9]*)")
@@ -1555,11 +1673,12 @@ def _kpi_tile_table_transparency_rule(
 
 def _kpi_tile_pane_style_rules(
     kpi_tile: dict[str, Any] | None,
+    kpi_ban_active: bool = False,
 ) -> list[tuple[str, dict[str, str]]]:
     """Return PANE-level ``(element, formats)`` pairs for a themed KPI tile.
 
-    Design Excellence, Slice D4 hotfix (live-probe #2b finding 4 — optional,
-    mined verbatim from the SAME WB-118 worksheet's OWN
+    Design Excellence, Slice D4 hotfix (live-probe #2b finding 4, mined
+    verbatim from WB-118's real "Sales KPI (BAN) New" worksheet's OWN
     ``<table><panes><pane><style>``): ``<style-rule element='cell'>
     <format attr='text-align' value='center'/></style-rule>`` — centers the
     BAN text within the tile. This is a PANE-scoped ``element='cell'`` rule
@@ -1570,215 +1689,310 @@ def _kpi_tile_pane_style_rules(
     (``design_theme.kpi_tile`` present), independent of ``ban_color``/
     typography specifics.
 
+    Design Excellence, Slice D4 FINAL SHAPE (live-probe #3's bisect ladder,
+    V9-V12): a SECOND rule, ``<style-rule element='mark'><format
+    attr='mark-labels-show' value='true'/><format attr='mark-labels-cull'
+    value='true'/></style-rule>``, is appended whenever *kpi_ban_active* is
+    true — mined verbatim from the SAME worksheet's pane ``<style>`` (it
+    carries BOTH rules). V9/V10 proved this rule is NECESSARY for the
+    ``<customized-label>`` to render at all on Tableau Cloud (its absence
+    silently drops the label back to the plain default text-mark; V9/V10
+    themselves, missing one other proven-shape trait, went further and
+    rendered a BLANK mark instead — mark-labels-show suppressed the
+    fallback too) though not sufficient alone; V11/V12 (the full
+    graft-derived shape) confirmed it IS sufficient combined with the rest
+    of :func:`_kpi_tile_customized_label`'s run idiom. Gated separately
+    from the ``cell``/``text-align`` rule above (which stays independent of
+    whether the label mechanism specifically is active) because a KPI tile
+    with ``kpi_tile`` theming but no working label (e.g. no
+    ``primary_measure``) has no mark labels to show.
+
     Returns an empty list when *kpi_tile* is falsy.
     """
     if not kpi_tile:
         return []
-    return [("cell", {"text-align": "center"})]
+    rules: list[tuple[str, dict[str, str]]] = [("cell", {"text-align": "center"})]
+    if kpi_ban_active:
+        rules.append(("mark", {"mark-labels-show": "true", "mark-labels-cull": "true"}))
+    return rules
 
 
-def _kpi_tile_local_default_formats(
-    kpi_spec: dict[str, Any] | None,
-    kpi_tile: dict[str, Any] | None,
-    brand_formats: dict[str, Any] | None,
-) -> dict[str, str]:
-    """Return ``{raw field name: default-format}`` for the KPI tile's OWN
-    WORKSHEET-LOCAL ``<datasource-dependencies><column>`` declarations.
+_KPI_BAN_CALC_PREFIX = "Calculation_BAN_"
 
-    Design Excellence, Slice D4 HOTFIX (live probe #2 — workbook 2527341:
-    KPI tiles still rendered ``###`` after the original D4 land). ROOT CAUSE:
-    ``<style-rule element='cell'><format attr='text-format' field='...'/>``
-    (this slice's original mechanism) does NOT reliably override a field's
-    RENDERED number format for a naked (rows/cols empty) BAN-style Text mark
-    when that field ALSO carries a ``default-format`` — verified against
-    WB-118's real, published ``"Sales KPI (BAN) New"`` worksheet
-    (WB-118.twbx): its PRIMARY BAN measure
-    (``[Calculation_1864208809275256837]``) carries the compact pattern
-    ``c"$"#,##0,.0K;-"$"#,##0,.0K`` as a plain ``default-format`` on BOTH its
-    shared-datasource ``<column>`` AND its worksheet-LOCAL ``<column>``
-    declaration inside ITS OWN ``<datasource-dependencies>`` — NOT a
-    cell-level ``text-format`` override. The ONE field in that SAME
-    worksheet that DOES carry a cell-level ``text-format`` override
-    (``[Calculation_1864208809278013448]``, "Prev Year (BANs)") has NO
-    ``default-format`` anywhere: the cell-level override is used there
-    ONLY because nothing else governs that field's format. Once a
-    ``default-format`` exists on a field referenced by a naked BAN view,
-    it wins over any competing cell-level ``text-format``.
 
-    Fix: stamp ``default-format`` directly on the KPI tile's OWN
-    worksheet-local dependency ``<column>`` — NOT the shared/global
-    datasource ``<column>`` :func:`classify_measure_format` still writes to
-    (via ``brand``) — so every OTHER worksheet referencing the same raw
-    field keeps its normal (non-compact) brand format, while THIS
-    worksheet's own BAN rendering actually reflects the compact pattern.
+def _append_kpi_ban_calc_column(
+    deps: ET.Element,
+    field: str,
+    *,
+    suffix: str,
+    caption: str,
+    default_format: str,
+) -> str:
+    """Append a worksheet-local CALCULATED ``<column>`` + ``<column-instance>``
+    pair to *deps* (a worksheet's own ``<datasource-dependencies>``), and
+    return its fully-qualified instance name fragment (e.g.
+    ``"[usr:Calculation_BAN_Sales:qk]"``).
+
+    Design Excellence, Slice D4 FINAL SHAPE — replaces the earlier
+    ``_kpi_tile_local_default_formats`` mechanism (stamping ``default-format``
+    directly on a RAW field's worksheet-local ``<column>``), which
+    live-probe #3's bisect ladder (V7) proved Tableau Cloud silently
+    IGNORES for a naked BAN view. A CALCULATED field's own local
+    ``default-format`` is NOT ignored (V7/V11/V12 all confirmed the exact
+    formatted value renders). Mirrors WB-118's real, mined calc-column
+    shape verbatim (verified directly against their own dependency block,
+    e.g. their "Sales % Chg" calc)::
+
+        <column caption="..." datatype="real" default-format="..."
+                name="[Calculation_BAN_<field>[suffix]]" role="measure"
+                type="quantitative">
+          <calculation class="tableau" formula="SUM([<field>])" />
+        </column>
+        <column-instance column="[Calculation_BAN_<field>[suffix]]"
+                          derivation="User"
+                          name="[usr:Calculation_BAN_<field>[suffix]:qk]"
+                          pivot="key" type="quantitative" />
+
+    ``derivation="User"`` (the ``usr:`` instance prefix) mirrors WB-118's
+    OWN convention, verified against two real examples in the SAME
+    worksheet: a calc whose formula does NOT already aggregate gets
+    ``derivation='Sum'`` (``sum:`` prefix); a calc whose formula ALREADY
+    contains an aggregation function (as ``SUM([field])`` always does) gets
+    ``derivation='User'`` (``usr:`` prefix).
+
+    Args:
+        deps:            The worksheet's ``<datasource-dependencies>`` element.
+        field:           The RAW field name the calc sums (e.g. ``"Sales"``).
+        suffix:          Appended to the calc's field name for uniqueness —
+                         ``""`` for the primary BAN value, ``"_Delta"`` for
+                         the delta value (so a sheet whose primary and delta
+                         happen to reference the same raw field never
+                         collides).
+        caption:         Human-readable caption for the calc column.
+        default_format:  The compact/arrow ``default-format`` value.
 
     Returns:
-        ``{primary_measure: compact format}`` (via :func:`_kpi_compact_format`,
-        always, once *kpi_tile* + a primary measure are present) plus
-        ``{comparison_measure: compact format}`` (same classification,
-        whenever ``kpi_spec["comparison_measure"]`` is set — live-probe #2b
-        found the comparison measure, e.g. a raw "Sales PP" float, got NO
-        default-format at all and ALSO overflowed; it needs the same
-        treatment as the primary, unconditionally, independent of
-        ``use_semantic_delta_colors`` which only governs the DELTA's
-        arrow-direction format) plus ``{delta_measure:
-        _KPI_DELTA_ARROW_FORMAT}`` when ``kpi_spec["delta_measure"]`` is set
-        AND ``kpi_tile["use_semantic_delta_colors"]`` is true. Empty when
-        *kpi_tile* is falsy, *kpi_spec* is falsy, or *kpi_spec* has no
-        ``primary_measure``.
+        The instance name fragment, e.g. ``"[usr:Calculation_BAN_Sales:qk]"``
+        (unqualified — same contract as :func:`_measure_instance`; callers
+        prefix with ``f"{ds_ref}."``).
     """
-    formats: dict[str, str] = {}
-    if not kpi_tile or not kpi_spec:
-        return formats
-    primary = kpi_spec.get("primary_measure")
-    if not primary:
-        return formats
+    calc_field_name = f"{_KPI_BAN_CALC_PREFIX}{_slug(field)}{suffix}"
+    column_el = ET.SubElement(
+        deps,
+        "column",
+        {
+            "caption": caption,
+            "datatype": "real",
+            "default-format": default_format,
+            "name": f"[{calc_field_name}]",
+            "role": "measure",
+            "type": "quantitative",
+        },
+    )
+    ET.SubElement(column_el, "calculation", {"class": "tableau", "formula": f"SUM([{field}])"})
+    instance_name = f"[usr:{calc_field_name}:qk]"
+    ET.SubElement(
+        deps,
+        "column-instance",
+        {
+            "column": f"[{calc_field_name}]",
+            "derivation": "User",
+            "name": instance_name,
+            "pivot": "key",
+            "type": "quantitative",
+        },
+    )
+    return instance_name
 
-    formats[str(primary)] = _kpi_compact_format(str(primary), brand_formats or {})
 
-    comparison = kpi_spec.get("comparison_measure")
-    if comparison:
-        formats[str(comparison)] = _kpi_compact_format(str(comparison), brand_formats or {})
+# Design Excellence, Slice D4 FINAL SHAPE — customized-label run-idiom
+# constants, all taken VERBATIM from the bisect ladder's proven-working
+# shape (V0's graft, confirmed rendering by V11/V12 combined with calc
+# columns + mark-labels-show/cull + selection-relaxation — see
+# _kpi_tile_pane_style_rules/_append_kpi_ban_calc_column's docstrings and
+# the module-level "BAN mechanism" comment block above
+# _KPI_COMPACT_NUMBER_FORMAT for the full ladder provenance).
+_KPI_LABEL_CAPTION_FONTSIZE = 7
+_KPI_LABEL_VALUE_FONTSIZE_FALLBACK = 17
+_KPI_LABEL_DELTA_FONTSIZE = 12
+_KPI_LABEL_DEFAULT_VALUE_COLOR = "#555555"
+# The mined literal "Æ" glyph-prefixed newline run text — undocumented
+# Tableau Desktop label-editor semantics, but PROVEN part of the working
+# shape (V9/V10 showed a plain "\n" substitute does NOT render; V1's
+# fontalignment/trailing-run addition alone did not fix a plain-"\n" label
+# either — only the graft's OWN literal runs, verbatim, render).
+_KPI_LABEL_NEWLINE_GLYPH = "Æ\n"  # "Æ\n"
+_KPI_LABEL_CAPTION_SEPARATOR = _KPI_LABEL_NEWLINE_GLYPH + "\n"  # "Æ\n\n"
 
-    delta = kpi_spec.get("delta_measure")
-    if delta and kpi_tile.get("use_semantic_delta_colors"):
-        formats[str(delta)] = _KPI_DELTA_ARROW_FORMAT
+# ElementTree cannot emit CDATA natively (ET.tostring always escapes "<"/
+# ">" inside element text). A placeholder run's text is written as this
+# plain, XML-safe sentinel-wrapped marker during tree construction, then
+# _finalize_xml's regex substitution (run AFTER ET.tostring has already
+# escaped everything ELSE correctly) converts it into a real
+# <![CDATA[<...>]]> section, matching WB-118's mined placeholder form.
+# Two-pass technique proven in the offline bisect ladder (V0/V3/V6/V9-V12,
+# .../scratchpad/bisect/build_ladder.py) before being ported here verbatim.
+_CDATA_MARKER_START = "CDATA_MARKER_START"
+_CDATA_MARKER_END = "CDATA_MARKER_END"
+_CDATA_MARKER_RE = re.compile(f"{_CDATA_MARKER_START}(.*?){_CDATA_MARKER_END}")
 
-    return formats
+
+def _kpi_tile_caption_text(title: str) -> str:
+    """Return the letter-spaced UPPERCASE caption text for a KPI tile's
+    in-label caption run (e.g. ``"Sales"`` -> ``"S A L E S"``) — mirrors
+    WB-118's mined ``"S A L E S"``/``"P R O F I T"`` caption runs
+    (WB-118.twbx, "Sales KPI (BAN) New") and
+    the bisect ladder's confirmed-working V11/V12 shape."""
+    return " ".join(title.strip().upper())
 
 
-_KPI_LABEL_DELTA_FALLBACK_FONTSIZE = 12
-_KPI_LABEL_NEWLINE = "\n"
+def _kpi_tile_ban_value_color(kpi_tile: dict[str, Any] | None) -> str:
+    """Return the BAN value runs' fontcolor: ``kpi_tile.ban_color`` when
+    set, else :data:`_KPI_LABEL_DEFAULT_VALUE_COLOR` (the graft's own
+    ``#555555`` — legible against the default, unstyled white table fill
+    a KPI tile has when no themed background is set)."""
+    tile = kpi_tile or {}
+    ban_color = tile.get("ban_color")
+    return str(ban_color) if ban_color else _KPI_LABEL_DEFAULT_VALUE_COLOR
+
+
+def _kpi_tile_ban_caption_color(kpi_tile: dict[str, Any] | None) -> str:
+    """Return the caption run's fontcolor.
+
+    ``kpi_tile.caption_color`` wins when explicitly set. Otherwise: when
+    ``kpi_tile.background`` is set (a themed, often-dark tile), default to
+    the SAME color as the value runs (:func:`_kpi_tile_ban_value_color`) —
+    the caption sits on the same background, so it needs the same
+    contrast treatment. When no themed background is set, default to
+    :data:`_KPI_LABEL_DEFAULT_VALUE_COLOR` (the graft's own gray, legible
+    on a plain white tile).
+    """
+    tile = kpi_tile or {}
+    explicit = tile.get("caption_color")
+    if explicit:
+        return str(explicit)
+    if tile.get("background"):
+        return _kpi_tile_ban_value_color(kpi_tile)
+    return _KPI_LABEL_DEFAULT_VALUE_COLOR
 
 
 def _kpi_tile_customized_label(
-    kpi_spec: dict[str, Any] | None,
     kpi_tile: dict[str, Any] | None,
     ban_font: dict[str, Any] | None,
     ds_ref: str,
+    title: str,
+    *,
+    primary_calc_instance: str | None,
+    delta_calc_instance: str | None,
 ) -> ET.Element | None:
     """Return a ``<customized-label>`` for the KPI tile's pane, or ``None``.
 
-    Design Excellence, Slice D4 — THIRD hotfix round (live probe #3):
-    REPLACES the ``element='cell'`` font-size/font-family/color rule this
-    builder previously emitted (``_kpi_tile_field_style_rule``, now
-    deleted — live probe #3's fresh renders proved it does nothing for a
-    naked BAN view; the mechanism below is what actually renders BAN
-    typography), and makes the worksheet-local default-formats (compact/
-    arrow, :func:`_kpi_tile_local_default_formats`) visible — Tableau's
-    placeholder-substitution mechanism renders a
-    referenced field's value USING its resolved ``default-format``.
+    Design Excellence, Slice D4 FINAL SHAPE (live-probe #3's bisect ladder,
+    V0/V9-V12) — encodes the run idiom PROVEN to render on Tableau Cloud, in
+    place of an earlier, independently-plausible-looking shape (fontsize/
+    fontcolor from brand+theme, plain ``"\\n"`` separators, no caption run,
+    escaped-text placeholders) that a live probe showed rendered NOTHING —
+    the label silently fell back to the plain default text-mark. A dozen
+    offline bisect variants (V0-V12, kept in scratchpad, never committed)
+    isolated the exact difference: this builder's shape needed the graft's
+    OWN caption run, its literal glyph-prefixed ``"Æ\\n"`` newline runs, its
+    CDATA (not escaped-text) placeholder form, AND a pane-level
+    ``mark-labels-show``/``mark-labels-cull`` rule
+    (:func:`_kpi_tile_pane_style_rules`) — EVERY one of those traits,
+    together; V9/V10 (missing only the run idiom, mark-labels-show added
+    alone) rendered a BLANK mark, proving partial adoption is worse than
+    none. This function now reproduces that idiom byte-for-byte, with
+    VALUES (not structure) parameterized off ``kpi_tile``/``brand``/the
+    calc-column instances built by :func:`_append_kpi_ban_calc_column`.
 
     Verified DIRECTLY against WB-118's real, published "Sales KPI (BAN)
     New" worksheet (WB-118.twbx): its
     ``<pane>`` children, IN ORDER, are ``view, mark, encodings,
     customized-label, style`` — ``<customized-label>`` COEXISTS with the
     full ``<encodings>`` list (all measures stay declared; the label is a
-    presentation template layered on top, not a replacement) — reversing
-    this builder's earlier D4 assessment that the construct necessarily
-    drops other encoded fields from view. Confirmed against the XSD's
-    ``PaneSpecification-G`` sequence (``encodings`` -> ``HiddenFields`` ->
-    ``DropLine`` -> ``Trendline`` -> ``ReferenceLine`` -> ``[CustomTooltip]``
-    -> ``[CustomLabel]`` -> ``[Stylesheet]``) — since this builder emits
-    none of the optional groups between ``encodings`` and ``CustomLabel``,
-    the effective order is exactly ``encodings, customized-label, style``,
-    matching the mined pane byte-for-byte.
+    presentation template layered on top, not a replacement). Confirmed
+    against the XSD's ``PaneSpecification-G`` sequence (``encodings`` ->
+    ``HiddenFields`` -> ``DropLine`` -> ``Trendline`` -> ``ReferenceLine``
+    -> ``[CustomTooltip]`` -> ``[CustomLabel]`` -> ``[Stylesheet]``) — since
+    this builder emits none of the optional groups between ``encodings``
+    and ``CustomLabel``, the effective order is exactly ``encodings,
+    customized-label, style``, matching the mined pane byte-for-byte.
 
-    Run shape (mirrors the SAME worksheet's own runs: ``fontalignment``,
-    ``fontcolor``, ``fontsize`` attrs; a CDATA-style placeholder run
-    ``<[ds].[instance]>`` whose text Tableau substitutes with the field's
-    value rendered via ITS OWN default-format; a plain unstyled run as a
-    line separator):
+    Run shape (every run carries ``fontalignment='0'``, mirroring the
+    graft verbatim):
 
-    1. PRIMARY value run: ``fontsize`` from ``brand.typography.ban.size``,
-       ``fontname`` from ``ban.font`` (mirrors this codebase's OWN existing
-       precedent for brand-driven title/subtitle runs — see
-       ``_title_or_subtitle_run_attrs``: a named font carries boldness
-       instead of a separate ``bold`` attribute), ``fontcolor`` from
-       ``kpi_tile.ban_color``. Attrs omitted (not defaulted) when their
-       source is absent — same discipline as every other D4 helper.
-    2. Newline separator run (plain, no attrs).
-    3. DELTA value run (only when ``kpi_spec.delta_measure`` is set):
-       smaller — ``round(ban.size / 2)`` when brand.typography.ban is
-       present, else :data:`_KPI_LABEL_DELTA_FALLBACK_FONTSIZE` — same
-       ``fontcolor`` as the primary. No ``fontname`` (mined secondary/
-       caption runs consistently carry fewer attrs than the primary value
-       run).
+    1. CAPTION run: letter-spaced uppercase tile title
+       (:func:`_kpi_tile_caption_text`), ``fontsize``
+       :data:`_KPI_LABEL_CAPTION_FONTSIZE`, ``fontcolor`` from
+       :func:`_kpi_tile_ban_caption_color`.
+    2. Separator run: the literal glyph-prefixed double newline
+       (:data:`_KPI_LABEL_CAPTION_SEPARATOR`, ``"Æ\\n\\n"``), no other attrs.
+    3. PRIMARY value run: a CDATA placeholder referencing
+       *primary_calc_instance*, ``fontsize`` from
+       ``brand.typography.ban.size`` when present else
+       :data:`_KPI_LABEL_VALUE_FONTSIZE_FALLBACK`, ``fontcolor`` from
+       :func:`_kpi_tile_ban_value_color`. NO ``fontname`` — the proven
+       V11/V12 shape carries none; BAN font family follows the workbook
+       default instead (a documented, honest limitation — an earlier
+       version of this function set ``fontname`` from
+       ``brand.typography.ban.font``, but that attribute was NEVER part of
+       any variant that actually rendered, so it is not risked here).
+    4. Newline run: the literal glyph-prefixed single newline
+       (:data:`_KPI_LABEL_NEWLINE_GLYPH`, ``"Æ\\n"``).
+    5. DELTA value run (only when *delta_calc_instance* is set): a CDATA
+       placeholder referencing it, ``fontsize`` :data:`_KPI_LABEL_DELTA_FONTSIZE`
+       (a fixed, proven value — NOT derived as half the primary's fontsize,
+       unlike an earlier version of this function; V12 tested exactly
+       ``12``, nothing else), same ``fontcolor`` as the primary.
+    6. A second trailing newline run (same glyph form), always LAST when a
+       delta run was emitted — mirrors the graft's own trailing run and
+       V12's exact shape.
 
-    Deliberate divergences from the mined worksheet (documented, not
-    silent):
-
-    - NO caption run (e.g. mined "S A L E S"/"P R O F I T"). This builder's
-      zone titles already label each tile (Slice D4's per-worksheet
-      ``element='title'`` rule); a redundant in-label caption is
-      unnecessary here.
-    - The newline separator uses a PLAIN ``"\\n"`` character, not the
-      mined literal ``"Æ\\n"`` glyph-prefixed form. That glyph's exact
-      semantics are undocumented (likely a Tableau Desktop label-editor
-      artifact for a manually-inserted line break); a bare newline is the
-      standard, unambiguous way to represent a line break in ``xs:string``
-      run content and needs no unverified assumption about the glyph.
-    - COMPARISON measure is NOT given its own value run: no single mined
-      worksheet stacks more than ONE explicit value placeholder inside a
-      single ``customized-label`` (WB-118 splits "primary" and
-      "delta/%-change" into SEPARATE, adjacent worksheets rather than one
-      combined label — see the D4 report for the full survey across every
-      BAN-shaped worksheet in this exemplar). Primary+delta in ONE label is
-      therefore a COMPOSITION of mined primitives (multi-run
-      formatted-text, placeholder substitution, run styling) applied per
-      explicit instruction, not a verbatim single-source mirror — the
-      comparison measure's compact ``default-format`` is still emitted
-      (:func:`_kpi_tile_local_default_formats`) for tooltip/data use, just
-      not rendered as its own label line.
-
-    Returns ``None`` when *kpi_tile* is falsy, *kpi_spec* is falsy, or
-    *kpi_spec* has no ``primary_measure``.
+    Returns ``None`` when *primary_calc_instance* is falsy (mirrors
+    ``kpi_ban_active``'s gating exactly — the caller only passes a calc
+    instance once ``kpi_tile``, ``kpi_spec``, and
+    ``kpi_spec.primary_measure`` are all present).
     """
-    if not kpi_tile or not kpi_spec:
-        return None
-    primary = kpi_spec.get("primary_measure")
-    if not primary:
+    if not primary_calc_instance:
         return None
 
-    ban_color = kpi_tile.get("ban_color")
+    caption_color = _kpi_tile_ban_caption_color(kpi_tile)
+    value_color = _kpi_tile_ban_value_color(kpi_tile)
     ban_size = ban_font.get("size") if ban_font else None
-    ban_font_name = ban_font.get("font") if ban_font else None
+    primary_fontsize = (
+        int(ban_size) if ban_size is not None else _KPI_LABEL_VALUE_FONTSIZE_FALLBACK
+    )
 
     label_el = ET.Element("customized-label")
     formatted_text_el = ET.SubElement(label_el, "formatted-text")
 
     def _append_run(
-        text: str,
-        *,
-        fontcolor: str | None = None,
-        fontname: str | None = None,
-        fontsize: float | int | None = None,
+        text: str, *, fontcolor: str | None = None, fontsize: int | None = None
     ) -> None:
-        # Alphabetical attribute order (fontcolor, fontname, fontsize) —
-        # same discipline as _build_text_zone's <run> construction.
-        run_attrs: dict[str, str] = {}
+        # Alphabetical attribute order (fontalignment, fontcolor, fontsize)
+        # — matches the graft's own mined run attribute order.
+        run_attrs: dict[str, str] = {"fontalignment": "0"}
         if fontcolor:
-            run_attrs["fontcolor"] = str(fontcolor)
-        if fontname:
-            run_attrs["fontname"] = str(fontname)
+            run_attrs["fontcolor"] = fontcolor
         if fontsize is not None:
-            run_attrs["fontsize"] = str(int(fontsize))
+            run_attrs["fontsize"] = str(fontsize)
         run_el = ET.SubElement(formatted_text_el, "run", run_attrs)
         run_el.text = text
 
-    primary_field = f"{ds_ref}.{_measure_instance(str(primary))}"
-    _append_run(
-        f"<{primary_field}>", fontcolor=ban_color, fontname=ban_font_name, fontsize=ban_size
-    )
+    def _append_value_run(field_ref: str, *, fontsize: int) -> None:
+        marker = f"{_CDATA_MARKER_START}{field_ref}{_CDATA_MARKER_END}"
+        _append_run(marker, fontcolor=value_color, fontsize=fontsize)
+        _append_run(_KPI_LABEL_NEWLINE_GLYPH)
 
-    delta = kpi_spec.get("delta_measure")
-    if delta:
-        _append_run(_KPI_LABEL_NEWLINE)
-        delta_field = f"{ds_ref}.{_measure_instance(str(delta))}"
-        delta_size = (
-            round(ban_size / 2) if ban_size is not None else _KPI_LABEL_DELTA_FALLBACK_FONTSIZE
-        )
-        _append_run(f"<{delta_field}>", fontcolor=ban_color, fontsize=delta_size)
+    _append_run(
+        _kpi_tile_caption_text(title),
+        fontcolor=caption_color,
+        fontsize=_KPI_LABEL_CAPTION_FONTSIZE,
+    )
+    _append_run(_KPI_LABEL_CAPTION_SEPARATOR)
+    _append_value_run(f"{ds_ref}.{primary_calc_instance}", fontsize=primary_fontsize)
+    if delta_calc_instance:
+        _append_value_run(f"{ds_ref}.{delta_calc_instance}", fontsize=_KPI_LABEL_DELTA_FONTSIZE)
 
     return label_el
 
@@ -1900,7 +2114,14 @@ def _build_dashboard(
                          OWN container zone ``kpi_tile["background"]`` alone
                          (continuous band look) — absent ``kpi_tile``, KPI
                          tiles stay fully unstyled even when other
-                         ``design_theme`` blocks are set. Absent
+                         ``design_theme`` blocks are set. Design Excellence,
+                         Slice D4 FINAL SHAPE: every KPI-tile zone ALSO gets
+                         ``show-title='false'`` whenever ``kpi_tile`` theming
+                         is active — each tile's own worksheet now carries an
+                         in-label caption (:func:`_kpi_tile_customized_label`),
+                         so the zone's own title would duplicate it; mirrors
+                         WB-118's own mined KPI-tile zone attribute (see
+                         :func:`_append_worksheet_zones`'s docstring). Absent
                          ``design_theme`` entirely (``None``, the default):
                          no ``<zone-style>`` is ever emitted (byte-identical
                          determinism guard, same discipline as ``brand``).
@@ -2136,8 +2357,19 @@ def _build_dashboard(
                 # gets kpi_tile.background ONLY (continuous band look) as its
                 # OWN zone-style, appended LAST (after its tile children) per
                 # the XSD's "zone-style is the last child of a zone" rule.
+                # Design Excellence, Slice D4 FINAL SHAPE: whenever kpi_tile
+                # theming is active, every tile's worksheet now carries an
+                # in-label caption (_kpi_tile_customized_label) — the zone's
+                # own title would duplicate it, so it is suppressed here
+                # (show-title='false', mirroring WB-118's own mined KPI
+                # tile zone attribute — see _append_worksheet_zones's
+                # docstring).
                 _append_worksheet_zones(
-                    kpi_flow, effective_kpi, id_start=3, zone_style_formats=kpi_zone_style_formats
+                    kpi_flow,
+                    effective_kpi,
+                    id_start=3,
+                    zone_style_formats=kpi_zone_style_formats,
+                    show_title=not bool(theme_kpi_tile),
                 )
                 _append_zone_style(kpi_flow, kpi_band_background_formats)
 
@@ -2454,6 +2686,38 @@ def _append_story_window(
     ET.SubElement(win, "simple-id", {"uuid": _quuid(50000 + story_index + 1)})
 
 
+def _finalize_xml(workbook: ET.Element) -> str:
+    """Serialize *workbook* to a declaration-prefixed XML string, converting
+    any KPI-tile customized-label placeholder runs' ``CDATA_MARKER_START``/
+    ``CDATA_MARKER_END``-wrapped text (see :func:`_kpi_tile_customized_label`)
+    into a real ``<![CDATA[...]]>`` section.
+
+    ``xml.etree.ElementTree`` cannot emit CDATA natively — ``ET.tostring()``
+    always escapes ``<``/``>`` inside element text, which would turn the
+    mined ``<[ds].[instance]>`` placeholder form into
+    ``&lt;[ds].[instance]&gt;``. This two-pass technique (write an
+    XML-safe sentinel string as the run's ``.text`` during tree
+    construction; AFTER ``ET.tostring()`` has already correctly escaped
+    everything ELSE, regex-substitute the — still-untouched, since it
+    contains no ``<``/``>``/``&`` characters — sentinel wrapper into a
+    literal CDATA section) was proven deterministic in the offline bisect
+    ladder (``.../scratchpad/bisect/build_ladder.py``, variants V0/V3/V6/
+    V9-V12) before being ported here. It is confined to this ONE
+    finalization call site (shared by :func:`build_twb_xml` and
+    :func:`build_embedded_twb_xml`) so every other element's normal
+    escaping stays untouched; a workbook with no KPI-tile customized-label
+    (the vast majority) has no marker text at all and this is a no-op
+    substitution.
+    """
+    xml_body = ET.tostring(workbook, encoding="unicode")
+
+    def _replace(match: re.Match[str]) -> str:
+        return f"<![CDATA[<{match.group(1)}>]]>"
+
+    xml_body = _CDATA_MARKER_RE.sub(_replace, xml_body)
+    return f"<?xml version='1.0' encoding='utf-8' ?>\n{xml_body}"
+
+
 def build_twb_xml(
     datasource_name: str,
     datasource_content_url: str,
@@ -2729,8 +2993,7 @@ def build_twb_xml(
     )
     ET.SubElement(explain, "explanation-types")
 
-    xml_body = ET.tostring(workbook, encoding="unicode")
-    return f"<?xml version='1.0' encoding='utf-8' ?>\n{xml_body}"
+    return _finalize_xml(workbook)
 
 
 def build_starter_twbx(
@@ -3126,8 +3389,7 @@ def build_embedded_twb_xml(
     )
     ET.SubElement(explain, "explanation-types")
 
-    xml_body = ET.tostring(workbook, encoding="unicode")
-    return f"<?xml version='1.0' encoding='utf-8' ?>\n{xml_body}"
+    return _finalize_xml(workbook)
 
 
 def build_embedded_twbx(

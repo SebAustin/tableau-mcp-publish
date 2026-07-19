@@ -446,6 +446,9 @@ def test_design_theme_round_trips() -> None:
             "padding": 10,
             "ban_color": "#ffffff",
             "use_semantic_delta_colors": True,
+            # Design Excellence, Slice D4 FINAL SHAPE: new optional field
+            # (see server.ThemeKpiTileModel.caption_color), unset here.
+            "caption_color": None,
         },
         "header": {
             "background": "#0b1f3a",

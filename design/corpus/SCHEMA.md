@@ -211,3 +211,45 @@ persona match > audience match > default `analyst_clean`, alphabetical theme-nam
 tag — enforced by `tests/designCorpus.test.ts`. This resolution function itself is **out of scope
 for D0** (no `src/design/selectTheme.ts` is added in this slice); D0 only guarantees the corpus has
 enough tag coverage for it to be implementable deterministically.
+
+## Discovered render constraints (Design Excellence, Slice D4 FINAL SHAPE)
+
+A recipe/theme literal being schema-valid and mined-verbatim does not guarantee Tableau Cloud
+actually *renders* it — the KPI-tile (BAN) `<customized-label>` mechanism took three live-probe
+hotfix rounds plus a dedicated offline bisect ladder (a dozen `.twbx` variants, V0–V12, isolating
+one variable at a time against WB-118's real, published "Sales KPI (BAN) New" worksheet,
+`WB-118.twbx`) to get right. These constraints are **render-time**
+facts about the Tableau Cloud engine, not corpus/provenance facts about the mined XML — they don't
+fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's own record of
+"XSD-valid ≠ Cloud-renders", so a future slice doesn't have to re-discover them:
+
+1. **A `<customized-label>` requires a pane-level `mark-labels-show`/`mark-labels-cull` style-rule
+   to render at all.** Its absence doesn't just leave the label unstyled — it silently drops the
+   whole `<customized-label>` back to the mark's plain default text-mark render. Worse: adding
+   `mark-labels-show` to an OTHERWISE-non-matching label shape renders a completely BLANK mark
+   (no fallback text either) — partial adoption of the proven shape is worse than none. The rule
+   must coexist with the pane's OWN `element='cell'` `text-align` rule, both mined from the same
+   worksheet's `<table><panes><pane><style>`.
+2. **The label's run idiom must be reproduced structurally, not just semantically equivalent.**
+   A caption run (letter-spaced uppercase field/tile name), literal glyph-prefixed `"Æ\n"`
+   newline-separator runs (not a plain `"\n"` — semantically identical but NOT part of the working
+   shape), and CDATA (not XML-escaped-text) placeholder runs (`<![CDATA[<[ds].[instance]>]]>`) are
+   all part of ONE mechanism — omitting any one of them (independently verified via the bisect
+   ladder) leaves the label non-rendering, even though every individual substitution produces an
+   equally XSD-valid, semantically-identical XML info-set.
+3. **A `default-format` on a RAW (non-calculated) field's worksheet-local
+   `<datasource-dependencies><column>` is silently ignored by Tableau Cloud for a naked (rows/cols
+   empty) BAN view**, even when the SAME field is referenced by a `<customized-label>` placeholder
+   that IS rendering correctly. A CALCULATED field's own worksheet-local `default-format`
+   (`<column><calculation class='tableau' formula='SUM([field])'/></column>`, `derivation='User'`)
+   is NOT ignored — this is the only mechanism proven to make a compact/arrow number format visible
+   inside a BAN tile. A plain `<text>` shelf encoding of an UNFORMATTED calculated field (with no
+   working label at all) still renders that field's own compact value as the mark's plain default
+   text — this is a DIFFERENT, unlabeled fallback rendering path, not evidence the label mechanism
+   itself is working.
+
+See `sidecar/twb_builder.py`'s `_kpi_tile_customized_label`/`_append_kpi_ban_calc_column`/
+`_kpi_tile_pane_style_rules` docstrings for the encoding of these constraints into the builder, and
+`sidecar/tests/test_twb_kpi_styling_customized_label.py`'s module docstring for the full bisect-
+ladder narrative (V0 control graft → V1–V5 individual-attribute isolation → V7 raw-vs-calculated
+field format → V9/V10 mark-labels-show necessary-but-not-sufficient → V11/V12 proof).

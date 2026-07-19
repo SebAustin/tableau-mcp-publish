@@ -163,10 +163,29 @@ def classify_measure_format(field_name: str, formats: dict[str, Any]) -> str:
     return str(formats.get("number") or _DEFAULT_NUMBER_FORMAT)
 
 
-def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
-    """Return the workbook-level ``<preferences><color-palette>`` element.
+def _append_color_palette(
+    parent: ET.Element, *, name: str, palette_type: str, colors: list[str]
+) -> None:
+    """Append a ``<color-palette custom='true' name='...' type='...'>`` child.
 
-    Mirrors "Visualize Quota Attainment for Executives in Multiple Ways" ~26-41::
+    Shared by the categorical/sequential/diverging registrations below —
+    same ``custom``/``name``/``type`` attribute order and per-``<color>``
+    hex-normalization for every palette kind.
+    """
+    palette_el = ET.SubElement(
+        parent,
+        "color-palette",
+        {"custom": "true", "name": name, "type": palette_type},
+    )
+    for color in colors:
+        ET.SubElement(palette_el, "color").text = _normalize_hex_color(color)
+
+
+def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
+    """Return the workbook-level ``<preferences>`` element with its registered palettes.
+
+    Categorical (mirrors "Visualize Quota Attainment for Executives in
+    Multiple Ways" ~26-41)::
 
         <preferences>
           <color-palette custom='true' name='Barkbus Secondary Light' type='regular'>
@@ -174,6 +193,25 @@ def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
             ...
           </color-palette>
         </preferences>
+
+    Always emitted when a brand block is present (unconditionally, same as
+    before Slice D6 — ``categorical`` may legitimately be empty, matching
+    pre-D6 behavior of emitting a childless ``<color-palette>``).
+
+    Sequential/diverging (Design Excellence, Slice D6): when
+    ``brand.palette.sequential``/``diverging`` is non-empty, an ADDITIONAL
+    ``<color-palette custom='true' name='<brandName> Sequential'
+    type='ordered-sequential'>``/``...Diverging.../type='ordered-diverging'``
+    is appended — mirrors the mined ``WB-062``/``WB-015``
+    entries in ``design/corpus/recipes/palettes.yaml`` (``type:
+    ordered-sequential``/``ordered-diverging``, ``custom: true``). Gated
+    ONLY on the relevant list being non-empty — independent of
+    ``design_theme`` (a harmless additive registration; the corresponding
+    per-encoding ``palette=`` REFERENCE, which does need ``design_theme``,
+    lives in :func:`_build_worksheet`). Absent list -> no element (never an
+    empty placeholder ``<color-palette>``) — this is the "categorical only"
+    behavior the byte-identical guards in ``test_twb_branding.py`` and
+    ``test_twb_palettes.py`` both rely on.
 
     Placed as the FIRST child of ``<workbook>`` (before ``<datasources>``),
     matching the reference's position and the XSD's ``WorkbookFile-CT``
@@ -183,15 +221,30 @@ def _build_preferences_element(brand: dict[str, Any]) -> ET.Element:
     palette = brand.get("palette") or {}
     brand_name = str(brand.get("brand_name") or "Brand")
     categorical = [str(c) for c in (palette.get("categorical") or [])]
+    sequential = [str(c) for c in (palette.get("sequential") or [])]
+    diverging = [str(c) for c in (palette.get("diverging") or [])]
 
     preferences_el = ET.Element("preferences")
-    palette_el = ET.SubElement(
+    _append_color_palette(
         preferences_el,
-        "color-palette",
-        {"custom": "true", "name": f"{brand_name} Palette", "type": "regular"},
+        name=f"{brand_name} Palette",
+        palette_type="regular",
+        colors=categorical,
     )
-    for color in categorical:
-        ET.SubElement(palette_el, "color").text = _normalize_hex_color(color)
+    if sequential:
+        _append_color_palette(
+            preferences_el,
+            name=f"{brand_name} Sequential",
+            palette_type="ordered-sequential",
+            colors=sequential,
+        )
+    if diverging:
+        _append_color_palette(
+            preferences_el,
+            name=f"{brand_name} Diverging",
+            palette_type="ordered-diverging",
+            colors=diverging,
+        )
     return preferences_el
 
 
@@ -578,6 +631,21 @@ def _build_worksheet(
     # --- Filled map (choropleth) spec --------------------------------------
     geo_spec = sheet.get("geo")  # optional {geo_field, geo_role, color_measure?}
     is_map_filled = mark_type == "map_filled" or geo_spec is not None
+    map_color_measure = geo_spec.get("color_measure") if (is_map_filled and geo_spec) else None
+
+    # Design Excellence, Slice D6: brand sequential palette on the map's
+    # color-measure encoding. Gated on BOTH design_theme being present AND
+    # brand.palette.sequential being non-empty (see _map_filled_palette_name)
+    # — protects the no-theme byte-identical guard (test_twb_palettes.py
+    # group C). None -> no <style-rule> appended below (byte-identical).
+    map_palette_rule: ET.Element | None = None
+    if map_color_measure and design_theme is not None:
+        map_palette_name = _map_filled_palette_name(brand)
+        if map_palette_name is not None:
+            map_palette_rule = _map_filled_palette_style_rule(
+                field_column=f"{ds_ref}.{_measure_instance(str(map_color_measure))}",
+                palette_name=map_palette_name,
+            )
 
     worksheet = ET.Element("worksheet", {"name": title})
     table = ET.SubElement(worksheet, "table")
@@ -717,6 +785,12 @@ def _build_worksheet(
     # <customized-label> instead (see _kpi_tile_customized_label, appended
     # below in the <panes> section).
     style_el = _build_style_element(table_rules)
+    if map_palette_rule is not None:
+        # Design Excellence, Slice D6: appended as an independent style-rule
+        # (Stylesheet-G's style-rule sequence is unbounded/unordered by
+        # element name) — never merged into table_rules's (element, formats)
+        # tuple shape, which only models <format> children, not <encoding>.
+        style_el.append(map_palette_rule)
     table.append(style_el)
 
     # --- <panes> ------------------------------------------------------
@@ -1573,6 +1647,67 @@ def _table_style_rules(
         if element and formats:
             rules.append((element, formats))
     return rules
+
+
+# ---------------------------------------------------------------------------
+# Brand sequential palette on filled-map color encodings (Design Excellence,
+# Slice D6)
+# ---------------------------------------------------------------------------
+
+
+def _map_filled_palette_style_rule(field_column: str, palette_name: str) -> ET.Element:
+    """Return a ``<style-rule element='mark'><encoding attr='color' .../></style-rule>``.
+
+    Mirrors the scratchpad-restored ``WB-058``'s own
+    ``<table><style><style-rule element='mark'><encoding attr='color'
+    field='[none:...:ok]&#10;[none:...:ok]' palette='miller_stone_10_0'
+    type='palette'/></style-rule>`` — the only real, verified mined construct
+    pairing a ``palette=`` attribute directly on an ``<encoding attr='color'>``
+    element (``Encoding-G``'s ``palette`` attribute in the TWB XSD).
+    Attribute insertion order (``attr``, ``field``, ``palette``, ``type``)
+    matches the mined example exactly (also alphabetical, the codebase's
+    general attribute-ordering discipline).
+
+    Here ``palette_name`` references the brand's OWN ``<preferences>``
+    registration (:func:`_build_preferences_element`) instead of a Tableau
+    built-in name like ``miller_stone_10_0`` — the sequential ramp's color
+    stops live in exactly one place, not duplicated per worksheet.
+
+    Deviation, documented: 3 separate mined exemplars (``WB-015`` x2,
+    ``WB-062``/``WB-063`` x5) instead embed a full, unnamed
+    ``<color-palette type='ordered-sequential'>`` directly inside a
+    ``type='custom-interpolated'`` encoding (duplicating the color stops per
+    worksheet rather than referencing a name by ``palette=``). That shape is
+    used 8x across the corpus vs. this attribute-reference shape's 1x, but
+    the plan explicitly calls for the ``palette='<brandName> Sequential'``
+    reference form (single source of truth) — see the D6 slice report for
+    the full trade-off writeup.
+    """
+    rule_el = ET.Element("style-rule", {"element": "mark"})
+    ET.SubElement(
+        rule_el,
+        "encoding",
+        {"attr": "color", "field": field_column, "palette": palette_name, "type": "palette"},
+    )
+    return rule_el
+
+
+def _map_filled_palette_name(brand: dict[str, Any] | None) -> str | None:
+    """Return ``'<brandName> Sequential'`` when ``brand.palette.sequential`` is non-empty.
+
+    ``None`` when ``brand`` is absent or its sequential list is empty —
+    callers use this as the single gate for whether the map-filled color
+    encoding gets a ``palette=`` reference at all (the OTHER gate,
+    ``design_theme is not None``, is checked separately by the caller — see
+    :func:`_build_worksheet`).
+    """
+    if not brand:
+        return None
+    sequential = (brand.get("palette") or {}).get("sequential") or []
+    if not sequential:
+        return None
+    brand_name = str(brand.get("brand_name") or "Brand")
+    return f"{brand_name} Sequential"
 
 
 # ---------------------------------------------------------------------------

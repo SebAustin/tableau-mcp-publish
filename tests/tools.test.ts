@@ -642,6 +642,24 @@ describe("build_from_plan (M6)", () => {
     expect("designTheme" in call).toBe(false);
   });
 
+  // Design Excellence, Slice D7: plan.interactions (auto-set by design_dashboard
+  // when a designTheme was selected AND the plan has >=2 chart sheets) must flow
+  // through to buildDashboardWorkbook — same forwarding discipline as designTheme.
+  it("D7: forwards plan.interactions to buildDashboardWorkbook when present", async () => {
+    const interactions = { crossFilter: true };
+    await invoke("build_from_plan", { plan: { ...basePlan, interactions } });
+    expect(ctx.sidecar.buildDashboardWorkbook).toHaveBeenCalledWith(
+      expect.objectContaining({ interactions }),
+    );
+  });
+
+  it("D7: omits interactions from buildDashboardWorkbook when the plan carries none", async () => {
+    await invoke("build_from_plan", { plan: basePlan });
+    const call = ctx.sidecar.buildDashboardWorkbook.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(call).toBeDefined();
+    expect("interactions" in call).toBe(false);
+  });
+
   // E2E-2: datasourceSpec.filePath → hyperPath threaded through to buildDashboardWorkbook
   it("E2E-2: with datasourceSpec.filePath, threads hyperPath from buildDatasourceFromFile into buildDashboardWorkbook", async () => {
     const planWithSpec = {

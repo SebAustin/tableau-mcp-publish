@@ -353,6 +353,25 @@ export const DesignThemeSchema = z.object({
 export type DesignTheme = z.infer<typeof DesignThemeSchema>;
 
 // ---------------------------------------------------------------------------
+// Interactions (Design Excellence, Slice D7 — verified XML only). Mirrors
+// sidecar.ts's Interactions / sidecar's InteractionsModel. Both flags
+// optional/default false — additive, never required by an existing plan.
+// ---------------------------------------------------------------------------
+
+/**
+ * Dashboard interaction toggles. `crossFilter` emits one `tsc:tsl-filter`
+ * action per chart worksheet on a dashboard with >=2 chart sheets (KPI
+ * tiles are never a source or a target); `highlight` emits one `tsc:brush`
+ * action per chart worksheet that carries a color encoding. Absent (or both
+ * flags false/omitted): unchanged behavior — no `<actions>` element.
+ */
+export const InteractionsSchema = z.object({
+  crossFilter: z.boolean().optional(),
+  highlight: z.boolean().optional(),
+});
+export type Interactions = z.infer<typeof InteractionsSchema>;
+
+// ---------------------------------------------------------------------------
 // DashboardPlan
 // ---------------------------------------------------------------------------
 
@@ -384,6 +403,15 @@ export const DashboardPlanSchema = z.object({
    * sidecar unread by the builder. Absent → unchanged behavior.
    */
   designTheme: DesignThemeSchema.optional(),
+  // --- Design Excellence, Slice D7: dashboard interaction toggles ---
+  /**
+   * Cross-filter / highlight action toggles (verified mined XML only).
+   * `designDashboard.ts` auto-sets `crossFilter: true` when a `designTheme`
+   * was selected AND the plan has >=2 chart sheets. `build_from_plan`
+   * forwards this to the sidecar unread otherwise. Absent → unchanged
+   * behavior (no `<actions>` element).
+   */
+  interactions: InteractionsSchema.optional(),
   // --- Phase E1 (Slice A): brand/persona provenance, resolved by the tool layer ---
   /** Named persona (from brand.yaml) that resolved this plan's audience + overrides, if any. */
   personaName: z.string().optional(),

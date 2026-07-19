@@ -24,6 +24,7 @@ import {
   DashboardProposalSchema,
   ClarifyingQuestionsSchema,
   DesignThemeSchema,
+  InteractionsSchema,
   MarkTypeEnum,
   SheetKindEnum,
   isDashboardPlan,
@@ -715,6 +716,90 @@ describe("DashboardPlanSchema — unknown-key handling (consistent with existing
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.designTheme).not.toHaveProperty("unknownThemeField");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §10 — Design Excellence, Slice D7: interactions (dashboard actions,
+// verified mined XML only)
+// ---------------------------------------------------------------------------
+
+describe("InteractionsSchema", () => {
+  it("parses a full interactions payload with both flags set", () => {
+    const result = InteractionsSchema.safeParse({ crossFilter: true, highlight: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.crossFilter).toBe(true);
+      expect(result.data.highlight).toBe(true);
+    }
+  });
+
+  it("parses an empty object — both flags optional/undefined", () => {
+    const result = InteractionsSchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.crossFilter).toBeUndefined();
+      expect(result.data.highlight).toBeUndefined();
+    }
+  });
+
+  it("parses with only crossFilter set", () => {
+    const result = InteractionsSchema.safeParse({ crossFilter: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.crossFilter).toBe(true);
+      expect(result.data.highlight).toBeUndefined();
+    }
+  });
+
+  it("rejects a non-boolean crossFilter value", () => {
+    const result = InteractionsSchema.safeParse({ crossFilter: "yes" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("DashboardPlan — interactions (optional round-trip)", () => {
+  it("parses a plan without interactions unchanged (backward-compat)", () => {
+    const result = DashboardPlanSchema.safeParse(MINIMAL_PLAN);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.interactions).toBeUndefined();
+    }
+  });
+
+  it("round-trips interactions: {crossFilter: true} through DashboardPlanSchema.parse", () => {
+    const plan = DashboardPlanSchema.parse({
+      ...MINIMAL_PLAN,
+      interactions: { crossFilter: true },
+    });
+    expect(plan.interactions).toEqual({ crossFilter: true });
+  });
+
+  it("round-trips a full interactions block (both flags true)", () => {
+    const plan = DashboardPlanSchema.parse({
+      ...MINIMAL_PLAN,
+      interactions: { crossFilter: true, highlight: true },
+    });
+    expect(plan.interactions).toEqual({ crossFilter: true, highlight: true });
+  });
+
+  it("rejects a plan whose interactions.crossFilter is not a boolean", () => {
+    const result = DashboardPlanSchema.safeParse({
+      ...MINIMAL_PLAN,
+      interactions: { crossFilter: "yes" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("strips an unrecognized key inside interactions rather than rejecting it", () => {
+    const result = DashboardPlanSchema.safeParse({
+      ...MINIMAL_PLAN,
+      interactions: { crossFilter: true, unknownInteractionField: "ignored" },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.interactions).not.toHaveProperty("unknownInteractionField");
     }
   });
 });

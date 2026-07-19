@@ -409,6 +409,34 @@ class DesignThemeModel(BaseModel):
     chrome: ThemeChromeModel | None = None
 
 
+class InteractionsModel(BaseModel):
+    """Dashboard interaction toggles (Design Excellence, Slice D7 — verified XML only).
+
+    Mirrors sidecar.ts's ``Interactions`` / planner/schema.ts's
+    ``InteractionsSchema``. Both flags default to ``False`` — omitting
+    ``interactions`` entirely, or sending ``{}``, keeps the builder's
+    pre-D7 output byte-identical (no ``<actions>`` element is ever emitted).
+
+    ``cross_filter``: one ``tsc:tsl-filter`` ``<action>`` per chart worksheet
+    on a dashboard with >=2 chart sheets (mirrors WB-118's
+    ``WB-118.twbx`` "State FA"/"Cat FA"/...
+    action family — real mined XML, see
+    ``design/corpus/recipes/actions.yaml``).
+
+    ``highlight``: one ``tsc:brush`` ``<action>`` per chart worksheet that
+    carries a color encoding (mirrors WB-114's ``WB-114.twbx``
+    "Highlight 1 (generated)" action).
+
+    See ``twb_builder._build_actions``'s docstring for the full derivation,
+    including the exact mined XPath citations for the exclude-list semantics.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    cross_filter: bool = Field(default=False, alias="crossFilter")
+    highlight: bool = False
+
+
 class DashboardWorkbookRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -443,6 +471,11 @@ class DashboardWorkbookRequest(BaseModel):
     # by twb_builder._build_story (raises ValueError, listing valid names,
     # otherwise). Absent → byte-identical output to before this slice.
     stories: list[StoryModel] | None = None
+    # Design Excellence, Slice D7: optional dashboard interaction toggles
+    # (cross-filter / highlight actions — verified mined XML only). Absent
+    # (or both flags False) → byte-identical output to before this slice, no
+    # <actions> element is ever emitted. See InteractionsModel's docstring.
+    interactions: InteractionsModel | None = None
 
 
 class FileRequest(BaseModel):
@@ -621,6 +654,13 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
         req.design_theme.model_dump() if req.design_theme is not None else None
     )
 
+    # Design Excellence, Slice D7: model_dump() the optional interactions
+    # block once, snake_case (same MODEL_DUMP LESSON). None when absent,
+    # keeping both build paths byte-identical to before this slice.
+    interactions_dict: dict[str, Any] | None = (
+        req.interactions.model_dump() if req.interactions is not None else None
+    )
+
     if req.hyper_path:
         hyper_file = Path(req.hyper_path)
         if not hyper_file.is_file():
@@ -641,6 +681,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             brand=brand_dict,
             stories=stories_list,
             design_theme=design_theme_dict,
+            interactions=interactions_dict,
         )
     else:
         twbx_path = twb_builder.build_starter_twbx(
@@ -657,6 +698,7 @@ def workbook_dashboard(req: DashboardWorkbookRequest) -> dict[str, str]:
             brand=brand_dict,
             stories=stories_list,
             design_theme=design_theme_dict,
+            interactions=interactions_dict,
         )
     return {"path": str(twbx_path)}
 

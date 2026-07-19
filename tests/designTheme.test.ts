@@ -58,7 +58,12 @@ async function invoke(server: FakeServer, rawArgs: Record<string, unknown>) {
 interface ProposalResult {
   kind: string;
   summary: string;
-  plan: { audience: string; designTheme?: { name: string } };
+  plan: {
+    audience: string;
+    designTheme?: { name: string };
+    interactions?: { crossFilter?: boolean; highlight?: boolean };
+    sheets: Array<{ kind?: string }>;
+  };
 }
 
 let tmpDir: string | undefined;
@@ -372,5 +377,95 @@ describe("design_dashboard integration (real corpus)", () => {
     const res = await invoke(server, { mode: "interview" });
     const result = (res.structuredContent as { result: { kind: string } }).result;
     expect(result.kind).toBe("questions");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Design Excellence, Slice D7 — auto-enable cross-filtering (real corpus)
+// ---------------------------------------------------------------------------
+
+describe("design_dashboard — Slice D7 interactions auto-enable (real corpus)", () => {
+  it("auto-enables crossFilter when a designTheme is selected AND the plan has >=2 chart sheets", async () => {
+    const server = makeServer();
+    const res = await invoke(server, {
+      mode: "directed",
+      audience: "analyst",
+      directions: "a bar chart of revenue by region and a trend line of revenue over time",
+      fieldHints: [
+        { name: "order_date", dataType: "date" },
+        { name: "revenue", dataType: "number" },
+        { name: "region", dataType: "string" },
+      ],
+      datasourceLuid: "DS",
+      datasourceName: "Sales",
+      projectName: "Sales",
+    });
+    const result = (res.structuredContent as { result: ProposalResult }).result;
+    expect(result.kind).toBe("proposal");
+    // Precondition: this scenario really does select a theme and produce >=2
+    // chart sheets — otherwise the assertion below would be vacuously true.
+    expect(result.plan.designTheme?.name).toBe("analyst_clean");
+    const chartSheetCount = result.plan.sheets.filter((s) => s.kind !== "kpi_tile").length;
+    expect(chartSheetCount).toBeGreaterThanOrEqual(2);
+
+    expect(result.plan.interactions).toEqual({ crossFilter: true });
+    expect(result.summary).toMatch(/Cross-filtering enabled\./);
+  });
+
+  it("does NOT auto-enable crossFilter when the plan has fewer than 2 chart sheets", async () => {
+    const server = makeServer();
+    const res = await invoke(server, {
+      mode: "autonomous",
+      persona: "ceo",
+      businessQuestion: "How is revenue trending?",
+      fieldHints: [
+        { name: "order_date", dataType: "date" },
+        { name: "revenue", dataType: "number" },
+      ],
+      datasourceLuid: "DS",
+      datasourceName: "Sales",
+      projectName: "Sales",
+    });
+    const result = (res.structuredContent as { result: ProposalResult }).result;
+    // Precondition: this scenario selects a theme (executive_dark) but only
+    // produces 1 chart sheet (a KPI band with a single trend chart).
+    expect(result.plan.designTheme?.name).toBe("executive_dark");
+    const chartSheetCount = result.plan.sheets.filter((s) => s.kind !== "kpi_tile").length;
+    expect(chartSheetCount).toBeLessThan(2);
+
+    expect(result.plan.interactions).toBeUndefined();
+    expect(result.summary).not.toMatch(/Cross-filtering enabled/);
+  });
+
+  it("does NOT auto-enable crossFilter when no designTheme was selected (fail-soft corpus)", async () => {
+    vi.mocked(loadThemes).mockImplementationOnce(() => {
+      throw new Error("Design theme directory not found (simulated)");
+    });
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const server = makeServer();
+      const res = await invoke(server, {
+        mode: "directed",
+        audience: "analyst",
+        directions: "a bar chart of revenue by region and a trend line of revenue over time",
+        fieldHints: [
+          { name: "order_date", dataType: "date" },
+          { name: "revenue", dataType: "number" },
+          { name: "region", dataType: "string" },
+        ],
+        datasourceLuid: "DS",
+        datasourceName: "Sales",
+        projectName: "Sales",
+      });
+      const result = (res.structuredContent as { result: ProposalResult }).result;
+      expect(result.plan.designTheme).toBeUndefined();
+      const chartSheetCount = result.plan.sheets.filter((s) => s.kind !== "kpi_tile").length;
+      expect(chartSheetCount).toBeGreaterThanOrEqual(2);
+
+      expect(result.plan.interactions).toBeUndefined();
+      expect(result.summary).not.toMatch(/Cross-filtering enabled/);
+    } finally {
+      stderrSpy.mockRestore();
+    }
   });
 });

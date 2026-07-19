@@ -32,7 +32,7 @@ import { generatePlan, generateInterview } from "../planner/plan.js";
 import type { PlanInput } from "../planner/plan.js";
 import { buildProposal } from "../planner/proposal.js";
 import { FieldHintSchema, AudienceEnum, DashboardLayoutEnum } from "../planner/schema.js";
-import type { Audience, DashboardPlan, DesignTheme } from "../planner/schema.js";
+import type { Audience, DashboardPlan, DesignTheme, Interactions } from "../planner/schema.js";
 import type { AudienceConstraintOverrides } from "../planner/audience.js";
 import { loadBrand, resolvePersona } from "../branding/load.js";
 import { loadThemes } from "../design/loadThemes.js";
@@ -376,7 +376,30 @@ export function registerDesignDashboard(server: McpServer, ctx: ToolContext): vo
         }
       }
 
-      const themedPlan: DashboardPlan = designTheme ? { ...plan, designTheme } : plan;
+      // ---------------------------------------------------------------------
+      // Design Excellence, Slice D7: auto-enable cross-filtering when a
+      // design theme was selected AND the plan has >=2 chart sheets —
+      // interactivity is part of "design excellence", not a separate opt-in.
+      // Deterministic: no user-facing toggle exists yet for this tool call,
+      // so the decision is derived purely from the plan itself. "Chart"
+      // mirrors the sidecar/plan.ts convention used everywhere else in this
+      // codebase: any sheet whose kind isn't "kpi_tile" counts (an unset
+      // kind defaults to chart). `highlight` is intentionally NOT
+      // auto-enabled here — out of this slice's scope.
+      // ---------------------------------------------------------------------
+      let interactions: Interactions | undefined;
+      if (designTheme) {
+        const chartSheetCount = plan.sheets.filter((s) => s.kind !== "kpi_tile").length;
+        if (chartSheetCount >= 2) {
+          interactions = { crossFilter: true };
+        }
+      }
+
+      const themedPlan: DashboardPlan = {
+        ...plan,
+        ...(designTheme ? { designTheme } : {}),
+        ...(interactions ? { interactions } : {}),
+      };
       const proposal = buildProposal(themedPlan);
 
       return toolResult(formatProposalText(proposal), { result: proposal });

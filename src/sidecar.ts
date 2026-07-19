@@ -359,6 +359,28 @@ export interface DesignTheme {
   chrome?: ThemeChrome;
 }
 
+// ---------------------------------------------------------------------------
+// Dashboard interaction toggles (Design Excellence, Slice D7 — verified XML
+// only). Mirrors the sidecar's InteractionsModel / planner/schema.ts's
+// InteractionsSchema.
+// ---------------------------------------------------------------------------
+
+/**
+ * Dashboard interaction toggles (matches sidecar's InteractionsModel). Both
+ * flags default to `false` server-side when omitted — omitting `interactions`
+ * entirely, or sending `{}`, keeps the builder's pre-D7 output byte-identical
+ * (no `<actions>` element is ever emitted).
+ *
+ * `crossFilter`: emits one `tsc:tsl-filter` action per chart worksheet on a
+ * dashboard with >=2 chart sheets (KPI tiles are never a source or a target).
+ * `highlight`: emits one `tsc:brush` action per chart worksheet that carries
+ * a color encoding.
+ */
+export interface Interactions {
+  crossFilter?: boolean;
+  highlight?: boolean;
+}
+
 export interface DashboardWorkbookArgs extends WorkbookArgs {
   /** Sheet titles to include in the dashboard (subset or all of sheets[].title). */
   dashboardSheetTitles: string[];
@@ -414,6 +436,13 @@ export interface DashboardWorkbookArgs extends WorkbookArgs {
    * Omit to keep the pre-story output byte-identical.
    */
   stories?: Story[];
+  // --- Design Excellence, Slice D7: optional dashboard interaction toggles ---
+  /**
+   * Cross-filter / highlight action toggles (verified mined XML only — see
+   * `Interactions`'s docstring). Omit (or send both flags `false`) to keep
+   * the pre-D7 output byte-identical (no `<actions>` element).
+   */
+  interactions?: Interactions;
 }
 
 const HEALTH_TIMEOUT_MS = 30_000;
@@ -737,6 +766,13 @@ export class AuthoringSidecar {
     // produces the snake_case dict twb_builder._build_story reads).
     if (args.stories !== undefined) {
       payload["stories"] = args.stories;
+    }
+    // Design Excellence, Slice D7: interaction toggles, forwarded as-is
+    // (camelCase on the wire; the sidecar's InteractionsModel accepts it and
+    // its model_dump() produces the snake_case dict twb_builder._build_actions
+    // reads).
+    if (args.interactions !== undefined) {
+      payload["interactions"] = args.interactions;
     }
     const { path } = await this.post<BuildResult>("/workbook/dashboard", payload);
     return { twbxPath: path };

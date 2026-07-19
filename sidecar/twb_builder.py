@@ -602,9 +602,7 @@ def _build_worksheet(
     # downstream rules list is empty -> byte-identical.
     theme_kpi_tile: dict[str, Any] | None = design_theme.get("kpi_tile") if design_theme else None
     brand_formats: dict[str, Any] | None = brand.get("formats") if brand else None
-    brand_ban: dict[str, Any] | None = (
-        (brand.get("typography") or {}).get("ban") if brand else None
-    )
+    brand_ban: dict[str, Any] | None = (brand.get("typography") or {}).get("ban") if brand else None
     ds_ref = f"[{ds_internal}]"
 
     # --- Scatter spec ------------------------------------------------------
@@ -956,9 +954,7 @@ def _build_worksheet(
             # (mark-labels-show/cull) is added whenever kpi_ban_active — see
             # _kpi_tile_pane_style_rules's docstring. No-op when
             # design_theme has no kpi_tile block.
-            _append_style_rules(
-                pane, _kpi_tile_pane_style_rules(theme_kpi_tile, kpi_ban_active)
-            )
+            _append_style_rules(pane, _kpi_tile_pane_style_rules(theme_kpi_tile, kpi_ban_active))
 
     # --- <rows> / <cols> (after <style> per XSD) ----------------------
     if is_map_filled:
@@ -2670,9 +2666,9 @@ def _build_dashboard(
             # If kpi_tile_titles/chart_titles were not supplied by the caller,
             # fall back: all titles = charts (safe default, no band).
             effective_kpi = kpi_tile_titles if kpi_tile_titles else []
-            effective_charts = chart_titles if chart_titles else [
-                t for t in titles if t not in set(effective_kpi)
-            ]
+            effective_charts = (
+                chart_titles if chart_titles else [t for t in titles if t not in set(effective_kpi)]
+            )
 
             # KPI band (param='horz', one zone per KPI tile).
             if effective_kpi:
@@ -3062,6 +3058,265 @@ def _finalize_xml(workbook: ET.Element) -> str:
     return f"<?xml version='1.0' encoding='utf-8' ?>\n{xml_body}"
 
 
+# ---------------------------------------------------------------------------
+# Dashboard actions (Design Excellence, Slice D7 — verified XML only)
+#
+# Mirrors two mined action shapes from ``design/corpus/recipes/actions.yaml``
+# (see ``_build_actions``'s docstring for the full derivation + citations):
+#   - a ``tsc:tsl-filter`` <action> per chart worksheet (cross-filtering)
+#   - a ``tsc:brush`` <action> per chart worksheet with a color field (highlight)
+# Emitted as a single workbook-level <actions> element, positioned AFTER
+# <datasources> and BEFORE <worksheets> (XSD ``Workbook-Actions-G``, verified
+# against ``sidecar/tests/schemas/twb_2026.1.0.xsd`` lines ~7218-7224:
+# ...DataSources-G -> DataSourceRelationships-G -> MapSources-G ->
+# SharedViews-G -> Actions-G -> Worksheets-G -> Dashboards-G...).
+# ---------------------------------------------------------------------------
+
+
+def _dashboard_chart_and_kpi_titles(
+    db: dict[str, Any], sheets_by_title: dict[str, dict[str, Any]]
+) -> tuple[list[str], list[str]]:
+    """Return ``(chart_titles, kpi_titles)`` for one dashboard dict, in the
+    dashboard's own title order.
+
+    Mirrors ``_build_dashboard``'s own ``kpi_band_over_charts`` split (see its
+    "Content zone(s)" section): prefer ``layout_grammar.chart_titles``/
+    ``kpi_tile_titles`` when the dashboard actually uses that grammar kind;
+    otherwise classify every dashboard title purely by its own
+    ``sheet["kind"]`` — a sheet with ``kind != "kpi_tile"`` (including
+    ``kind is None``/``"chart"``) counts as a chart, the SAME "not kpi ==
+    chart" fallback ``_build_dashboard`` itself uses for ``effective_charts``.
+
+    Falls back to every sheet's title (in ``sheets_by_title``'s insertion
+    order) when the dashboard dict carries no explicit ``titles`` — the same
+    fallback ``build_twb_xml``/``build_embedded_twb_xml`` apply before calling
+    ``_build_dashboard``.
+    """
+    titles = [str(t) for t in db.get("titles", [])] or list(sheets_by_title)
+    layout_grammar = db.get("layout_grammar") or {}
+    grammar_kind = str(layout_grammar.get("kind", "")) if layout_grammar else ""
+
+    if grammar_kind == "kpi_band_over_charts":
+        kpi_titles = [str(t) for t in (layout_grammar.get("kpi_tile_titles") or [])]
+        if not kpi_titles:
+            kpi_titles = [t for t in titles if sheets_by_title.get(t, {}).get("kind") == "kpi_tile"]
+        chart_titles = [str(t) for t in (layout_grammar.get("chart_titles") or [])]
+        if not chart_titles:
+            chart_titles = [t for t in titles if t not in set(kpi_titles)]
+        return chart_titles, kpi_titles
+
+    kpi_titles = [t for t in titles if sheets_by_title.get(t, {}).get("kind") == "kpi_tile"]
+    chart_titles = [t for t in titles if t not in set(kpi_titles)]
+    return chart_titles, kpi_titles
+
+
+def _sheet_color_field_caption(sheet: dict[str, Any] | None) -> str | None:
+    """Return ``sheet["color"]["field"]`` (a plain field caption), or ``None``.
+
+    Mirrors WB-114's ``WB-114.twbx`` "Highlight 1 (generated)"
+    action's ``field-captions`` param: a plain caption string (e.g.
+    ``"Clusters"``), never a bracketed ``[field]`` reference. Returns ``None``
+    when *sheet* has no ``color`` block or an empty ``field`` — the caller
+    skips emitting a highlight action for that sheet ("if present else skip",
+    per the D7 slice scope).
+    """
+    if not sheet:
+        return None
+    color = sheet.get("color")
+    if not color:
+        return None
+    field = color.get("field")
+    return str(field) if field else None
+
+
+def _build_actions(
+    dashboards: list[dict[str, Any]] | None,
+    sheets: list[dict[str, Any]],
+    interactions: dict[str, Any] | None,
+) -> ET.Element | None:
+    """Return the workbook-level ``<actions>`` element, or ``None`` (no-op).
+
+    Returns ``None`` — the byte-identical guard — when *interactions* is
+    falsy, both flags are unset/False, *dashboards* is empty/``None``, or no
+    dashboard actually qualifies for any action (see below). Only *regular*
+    dashboards are considered (never ``stories`` — a storyboard has no chart/
+    KPI zones of its own to source/target an action against).
+
+    Two action families, each mirroring a REAL, mined ``<action>`` from
+    ``design/corpus/recipes/actions.yaml`` — never invented XML (the
+    D0-D7 corpus discipline):
+
+    ``interactions["cross_filter"]`` — ``tsc:tsl-filter``
+    ------------------------------------------------------
+    For every dashboard with >=2 chart sheets (``kind != "kpi_tile"``; KPI
+    tiles are never eligible as either a source or a cross-filter target —
+    clicking a BAN shouldn't filter, and tiles shouldn't react, an explicit
+    D7-scope product decision layered on top of the mined shape below), one
+    ``<action>`` per chart worksheet, in the dashboard's own chart order::
+
+        <action caption='Filter: {ws}' name='[ActionN]'>
+          <activation auto-clear='true' type='on-select'/>
+          <source dashboard='{dashboard}' type='sheet' worksheet='{ws}'/>
+          <command command='tsc:tsl-filter'>
+            <param name='exclude' value='{sorted(kpi_titles + [ws])}'/>
+            <param name='special-fields' value='all'/>
+            <param name='target' value='{dashboard}'/>
+          </command>
+        </action>
+
+    This shape — ``<source dashboard=... type='sheet' worksheet=...>``,
+    ``command='tsc:tsl-filter'``, params ``exclude``/``special-fields='all'``/
+    ``target={dashboard name}``, ``activation auto-clear='true'`` — is
+    mirrored VERBATIM from WB-118's
+    ``WB-118.twbx`` (``Superstore Dashboard.twb``
+    ``/workbook/actions/action`` — captions "State FA"/"Cat FA"/"Segment FA"/
+    "Subcat filter"/"Manufacturer FA", every one targeting the shared
+    ``Superstore Dashboard``).
+
+    **Exclude-list semantics — derived from TWO mined exemplars (evidence,
+    not invention):**
+
+    1. WB-118's five ``tsc:tsl-filter`` actions above ALL carry the exact
+       SAME ``exclude`` value — ``'Info button,Last Updated,Metric
+       Select,Min and Max Date,Year Select'`` — REGARDLESS of which chart
+       worksheet is the source. None of those five chart worksheets (Sales |
+       By State/Category/Sub-Category/Manufacturer/Segment) ever appears in
+       ITS OWN exclude list or any peer's — every other chart, AND every KPI
+       BAN sheet (Total Orders KPI, Profit KPI (Line), Sales KPI (BAN) New,
+       etc.), remains an implicit filter TARGET. ``exclude`` names only the
+       non-chart utility/control sheets (a metric selector, a year selector,
+       a "last updated" text zone, an info button) — proving ``target`` +
+       ``exclude`` together express "filter every OTHER chart/KPI on this
+       dashboard", the cross-filter behavior this flag is named for.
+    2. WB-114's ``WB-114.twbx`` Action4 ("Map to Scatter
+       Plot", source worksheet ``Prescriptive Map``, target dashboard
+       ``Super: Prescriptive``) is the SAME shape but its ``exclude`` value
+       — ``'Annotations Button: Inactive,Descriptive Button:
+       Inactive,Insight 1,Insight 1 Indicator,Insight 2,Insight
+       3,Insight Indicator 2,Insight Indicator 3,Prescriptive Button:
+       Active,Prescriptive Map,X-Axis Label'`` — DOES include the source
+       itself (``Prescriptive Map``), while ``Prescriptive Scatter Plot``
+       (the intended cross-filter target, per the caption) is conspicuously
+       absent from it. This is the self-exclusion pattern: a source
+       excluded from its own action's filtering keeps showing full,
+       unfiltered context while everything else reacts.
+    3. This module adopts (2)'s self-exclusion (cleaner, more predictable
+       "click chart A -> every OTHER chart/KPI updates, chart A itself keeps
+       its full context" UX) rather than (1)'s "the source also filters
+       itself" behavior, PLUS the D7-scope KPI-tile exclusion — so
+       ``exclude = sorted({*kpi_titles, source_worksheet})``. Peer chart
+       worksheets are NEVER added to ``exclude`` (matching both exemplars):
+       they remain implicit cross-filter targets via ``target=dashboard``.
+       ``exclude``'s member ordering is ALPHABETICAL, mirroring both (1)'s
+       and WB-114's own five-worksheet ordering (Annotations < Descriptive <
+       Insight... < Prescriptive < X-Axis) — deterministic and reproducible
+       without needing the real workbook's internal zone/z-order (which this
+       builder has no equivalent representation of).
+
+    ``interactions["highlight"]`` — ``tsc:brush``
+    ----------------------------------------------
+    For every chart worksheet (across every dashboard, no >=2 gate — a
+    highlight is self-contained per sheet, see below) carrying a ``color``
+    encoding, one ``<action>``::
+
+        <action caption='Highlight: {ws}' name='[ActionN]'>
+          <activation auto-clear='true' type='on-select'/>
+          <source type='sheet' worksheet='{ws}'/>
+          <command command='tsc:brush'>
+            <param name='field-captions' value='{color field caption}'/>
+            <param name='target' value='{ws}'/>
+          </command>
+        </action>
+
+    Mirrored VERBATIM from WB-114's ``WB-114.twbx`` Action1,
+    caption "Highlight 1 (generated)" — ``tsc:brush`` with ONLY
+    ``field-captions``/``target`` params (no ``exclude``), a ``<source>``
+    with NO ``dashboard`` attribute (unscoped — a sheet-level auto-generated
+    highlight action, not a dashboard cross-filter), and ``target`` set to
+    the WORKSHEET's own name rather than a dashboard. Chart worksheets
+    without a ``color`` block are skipped entirely ("if present else skip",
+    per the D7 slice scope) rather than emitting a meaningless empty
+    ``field-captions``.
+
+    Both this module's chosen ``[ActionN]`` naming (no GUID suffix) and its
+    caption text are a DELIBERATE D7-scope simplification over Tableau
+    Desktop's own GUID-suffixed names (e.g.
+    ``[Action12_A765F0E5A3974254AB2C92AE6117D6DF]``, seen in WB-118's own
+    workbook) — deterministic, reproducible output is required here (this
+    slice's own gate: "deterministic naming/ordering, two builds identical"),
+    and the plain ``[ActionN]`` form is ITSELF real, mined XML: WB-114's
+    ``WB-114.twbx`` uses exactly this GUID-free form
+    throughout (``[Action1]``, ``[Action2]``, … ``[Action10]``). ``name``
+    values are assigned by a single counter spanning the WHOLE ``<actions>``
+    element (every dashboard's cross-filter actions, in chart order, THEN
+    every dashboard's highlight actions, in chart order) — simple and
+    deterministic, not a literal reproduction of either exemplar's
+    (non-sequential, edit-history-dependent) numbering.
+    """
+    if not interactions or not dashboards:
+        return None
+    cross_filter = bool(interactions.get("cross_filter"))
+    highlight = bool(interactions.get("highlight"))
+    if not cross_filter and not highlight:
+        return None
+
+    sheets_by_title: dict[str, dict[str, Any]] = {str(s["title"]): s for s in sheets}
+    action_els: list[ET.Element] = []
+    counter = [1]
+
+    def _next_name() -> str:
+        name = f"[Action{counter[0]}]"
+        counter[0] += 1
+        return name
+
+    dashboard_chart_titles: list[tuple[str, list[str], list[str]]] = []
+    for db in dashboards:
+        db_name = str(db.get("name", "Dashboard 1"))
+        chart_titles, kpi_titles = _dashboard_chart_and_kpi_titles(db, sheets_by_title)
+        dashboard_chart_titles.append((db_name, chart_titles, kpi_titles))
+
+    if cross_filter:
+        for db_name, chart_titles, kpi_titles in dashboard_chart_titles:
+            if len(chart_titles) < 2:
+                continue
+            for ws in chart_titles:
+                exclude = sorted({*kpi_titles, ws})
+                action_el = ET.Element("action", {"caption": f"Filter: {ws}", "name": _next_name()})
+                ET.SubElement(action_el, "activation", {"auto-clear": "true", "type": "on-select"})
+                ET.SubElement(
+                    action_el, "source", {"dashboard": db_name, "type": "sheet", "worksheet": ws}
+                )
+                command_el = ET.SubElement(action_el, "command", {"command": "tsc:tsl-filter"})
+                ET.SubElement(command_el, "param", {"name": "exclude", "value": ",".join(exclude)})
+                ET.SubElement(command_el, "param", {"name": "special-fields", "value": "all"})
+                ET.SubElement(command_el, "param", {"name": "target", "value": db_name})
+                action_els.append(action_el)
+
+    if highlight:
+        for _db_name, chart_titles, _kpi_titles in dashboard_chart_titles:
+            for ws in chart_titles:
+                color_field = _sheet_color_field_caption(sheets_by_title.get(ws))
+                if not color_field:
+                    continue
+                action_el = ET.Element(
+                    "action", {"caption": f"Highlight: {ws}", "name": _next_name()}
+                )
+                ET.SubElement(action_el, "activation", {"auto-clear": "true", "type": "on-select"})
+                ET.SubElement(action_el, "source", {"type": "sheet", "worksheet": ws})
+                command_el = ET.SubElement(action_el, "command", {"command": "tsc:brush"})
+                ET.SubElement(command_el, "param", {"name": "field-captions", "value": color_field})
+                ET.SubElement(command_el, "param", {"name": "target", "value": ws})
+                action_els.append(action_el)
+
+    if not action_els:
+        return None
+
+    actions_el = ET.Element("actions")
+    for action_el in action_els:
+        actions_el.append(action_el)
+    return actions_el
+
+
 def build_twb_xml(
     datasource_name: str,
     datasource_content_url: str,
@@ -3075,12 +3330,14 @@ def build_twb_xml(
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
     design_theme: dict[str, Any] | None = None,
+    interactions: dict[str, Any] | None = None,
 ) -> str:
     """Build a schema-valid TWB XML string.
 
     Workbook child ordering (required by XSD):
-    (``<preferences>`` if branded) → ``<datasources>`` → ``<worksheets>`` →
-    ``<dashboards>`` (if any) → ``<windows>`` → ``<explain-data>`` (required).
+    (``<preferences>`` if branded) → ``<datasources>`` → (``<actions>`` if
+    interactions) → ``<worksheets>`` → ``<dashboards>`` (if any) →
+    ``<windows>`` → ``<explain-data>`` (required).
 
     When ``dashboards`` is ``None`` (default), both calls with no ``dashboards``
     kwarg and with an explicit ``dashboards=None`` produce byte-identical XML
@@ -3088,9 +3345,10 @@ def build_twb_xml(
     version; the worksheet/window structure was re-baselined for schema validity).
     The same determinism guarantee holds for ``brand``: omitting it (or passing
     ``None`` explicitly) never changes the output (Phase E1, Slice B), for
-    ``stories`` (Phase E4): omitting it never changes the output either, and for
+    ``stories`` (Phase E4): omitting it never changes the output either, for
     ``design_theme`` (Design Excellence, Slice D2): omitting it never changes
-    the output either.
+    the output either, and for ``interactions`` (Design Excellence, Slice D7):
+    omitting it (or both flags being ``False``) never changes the output either.
 
     Args:
         brand: Optional brand block (``model_dump()`` snake_case dict — see
@@ -3114,6 +3372,13 @@ def build_twb_xml(
             :func:`_build_dashboard` call — see its docstring for the full
             zone-style mapping. Absent (the default): byte-identical to
             before this slice.
+        interactions: Optional dashboard interaction toggles (Design
+            Excellence, Slice D7; ``model_dump()`` snake_case dict — see
+            ``server.InteractionsModel``). When present, drives
+            :func:`_build_actions` to emit a workbook-level ``<actions>``
+            element (verified mined XML only — see its docstring for the
+            full derivation). Absent (the default), or both flags ``False``:
+            byte-identical to before this slice (no ``<actions>`` element).
     """
     slug = _slug(datasource_name)
     content_key = datasource_content_url or slug
@@ -3188,9 +3453,7 @@ def build_twb_xml(
         if g:
             geo_field = str(g["geo_field"])
             geo_role = str(g.get("geo_role", "state")).lower()
-            sqlproxy_geo_role_map[geo_field] = _GEO_SEMANTIC_ROLE.get(
-                geo_role, "[State].[Name]"
-            )
+            sqlproxy_geo_role_map[geo_field] = _GEO_SEMANTIC_ROLE.get(geo_role, "[State].[Name]")
             # Ensure the geo dimension is declared in the datasource.
             if geo_field not in seen_dims:
                 seen_dims.append(geo_field)
@@ -3219,6 +3482,15 @@ def build_twb_xml(
         if brand_formats is not None:
             measure_attrs["default-format"] = classify_measure_format(field, brand_formats)
         ET.SubElement(datasource, "column", measure_attrs)
+
+    # --- Design Excellence, Slice D7: dashboard actions ----------------------
+    # AFTER <datasources>, BEFORE <worksheets> per the XSD's
+    # Workbook-Actions-G position. No-op (byte-identical guard) when
+    # interactions is absent/falsy or resolves to zero actions — see
+    # _build_actions's docstring for the full mined-XML derivation.
+    actions_el = _build_actions(dashboards, sheets, interactions)
+    if actions_el is not None:
+        workbook.append(actions_el)
 
     # --- Worksheets ---------------------------------------------------------
     # re-baselined for schema-valid output (XSD A2)
@@ -3301,9 +3573,7 @@ def build_twb_xml(
     if dashboards:
         for db_index, db in enumerate(dashboards):
             db_name = str(db.get("name", "Dashboard 1"))
-            db_titles = [str(t) for t in db.get("titles", [])] or [
-                str(s["title"]) for s in sheets
-            ]
+            db_titles = [str(t) for t in db.get("titles", [])] or [str(s["title"]) for s in sheets]
             # Dashboard window: <viewpoints> MUST contain a <viewpoint name="..."/>
             # for EVERY worksheet on the dashboard. An empty <viewpoints/> makes
             # Tableau Cloud reject the dashboard with 400011 ("sheet has no visual
@@ -3354,15 +3624,17 @@ def build_starter_twbx(
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
     design_theme: dict[str, Any] | None = None,
+    interactions: dict[str, Any] | None = None,
 ) -> Path:
     """Build a .twbx (zip containing the generated .twb) for a published datasource.
 
     When ``dashboards`` is ``None`` (default), the two call forms (no kwarg and
     explicit ``None``) produce byte-identical output (determinism guard).
     Pass a non-None list to include a ``<dashboards>`` block and a dashboard
-    window entry. ``brand`` (Phase E1, Slice B), ``stories`` (Phase E4), and
-    ``design_theme`` (Design Excellence, Slice D2) follow the same determinism
-    guarantee — see :func:`build_twb_xml`.
+    window entry. ``brand`` (Phase E1, Slice B), ``stories`` (Phase E4),
+    ``design_theme`` (Design Excellence, Slice D2), and ``interactions``
+    (Design Excellence, Slice D7) follow the same determinism guarantee — see
+    :func:`build_twb_xml`.
     """
     twb_xml = build_twb_xml(
         datasource_name,
@@ -3377,6 +3649,7 @@ def build_starter_twbx(
         brand=brand,
         stories=stories,
         design_theme=design_theme,
+        interactions=interactions,
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -3559,6 +3832,7 @@ def build_embedded_twb_xml(
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
     design_theme: dict[str, Any] | None = None,
+    interactions: dict[str, Any] | None = None,
 ) -> str:
     """Build a TWB XML string that embeds a .hyper extract via a federated connection.
 
@@ -3591,6 +3865,11 @@ def build_embedded_twb_xml(
                           Excellence, Slice D2) — see :func:`build_twb_xml`
                           for the full behaviour. Absent (the default):
                           byte-identical to before this slice.
+        interactions:     Optional dashboard interaction toggles (Design
+                          Excellence, Slice D7) — see :func:`build_twb_xml`
+                          for the full behaviour. Absent (the default), or
+                          both flags False: byte-identical to before this
+                          slice.
 
     Returns:
         A UTF-8 TWB XML string with an XML declaration header.
@@ -3636,6 +3915,12 @@ def build_embedded_twb_xml(
         formats=brand.get("formats") if brand else None,
     )
     datasources_el.append(ds_el)
+
+    # --- Design Excellence, Slice D7: dashboard actions ----------------------
+    # See build_twb_xml's twin comment for the full XSD-ordering rationale.
+    actions_el = _build_actions(dashboards, sheets, interactions)
+    if actions_el is not None:
+        workbook.append(actions_el)
 
     # --- Worksheets ---------------------------------------------------------
     worksheets_el = ET.SubElement(workbook, "worksheets")
@@ -3704,9 +3989,7 @@ def build_embedded_twb_xml(
     if dashboards:
         for db_index, db in enumerate(dashboards):
             db_name = str(db.get("name", "Dashboard 1"))
-            db_titles = [str(t) for t in db.get("titles", [])] or [
-                str(s["title"]) for s in sheets
-            ]
+            db_titles = [str(t) for t in db.get("titles", [])] or [str(s["title"]) for s in sheets]
             # <viewpoints> MUST contain a <viewpoint name="..."/> for EVERY
             # worksheet on the dashboard — an empty <viewpoints/> makes Tableau
             # Cloud reject the dashboard with 400011 ("sheet has no visual
@@ -3748,6 +4031,7 @@ def build_embedded_twbx(
     brand: dict[str, Any] | None = None,
     stories: list[dict[str, Any]] | None = None,
     design_theme: dict[str, Any] | None = None,
+    interactions: dict[str, Any] | None = None,
 ) -> Path:
     """Build a self-contained .twbx that embeds the .hyper extract.
 
@@ -3779,6 +4063,10 @@ def build_embedded_twbx(
                           Excellence, Slice D2) — see :func:`build_twb_xml`.
                           Absent (the default): byte-identical to before this
                           slice.
+        interactions:     Optional dashboard interaction toggles (Design
+                          Excellence, Slice D7) — see :func:`build_twb_xml`.
+                          Absent (the default), or both flags False:
+                          byte-identical to before this slice.
 
     Returns:
         The resolved ``out_path``.
@@ -3807,6 +4095,7 @@ def build_embedded_twbx(
         brand=brand,
         stories=stories,
         design_theme=design_theme,
+        interactions=interactions,
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -319,6 +319,11 @@ export function registerBuildFromPlan(server: McpServer, ctx: ToolContext): void
         // built on top of it.
         ...(plan.designTheme ? { designTheme: plan.designTheme } : {}),
         ...(stories ? { stories } : {}),
+        // Design Excellence, Slice D7: forward the plan's interaction
+        // toggles (auto-set by design_dashboard when a theme was selected
+        // AND the plan has >=2 chart sheets) — same forwarding discipline as
+        // designTheme/stories above.
+        ...(plan.interactions ? { interactions: plan.interactions } : {}),
       });
 
       // Publish to Tableau Cloud

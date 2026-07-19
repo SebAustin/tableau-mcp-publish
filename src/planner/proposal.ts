@@ -468,6 +468,14 @@ export function buildProposal(plan: DashboardPlan): DashboardProposal {
     summary += ` Styled with the "${plan.designTheme.name}" design theme.`;
   }
 
+  // Design Excellence, Slice D7: mention cross-filtering when enabled (see
+  // designDashboard.ts's auto-enable rule). Same placement/rationale as the
+  // designTheme mention above — appended after tone trimming so it survives
+  // concise summaries too.
+  if (plan.interactions?.crossFilter) {
+    summary += " Cross-filtering enabled.";
+  }
+
   const artifactNote = detectPersonaArtifactQuestion(plan);
   const combinedOpenQuestions = [
     ...(detectOpenQuestions(plan) ?? []),

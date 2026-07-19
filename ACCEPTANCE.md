@@ -468,3 +468,53 @@ No live capability is claimed beyond the ✅ rows; the two ⏳ rows are code-com
 
 1. The E3 phase-close record above states the gate at its point-in-time count (521 TS / 859 total); the branch-final count is 525 / 863. Historical snapshot retained as-is.
 2. Webhook HTTPS fail-closed is enforced by exact-prefix check; an explicit uppercase-scheme/whitespace unit test would be a nicety.
+
+---
+
+## Design Excellence (D0–D8) — corpus-driven themes, chrome, BANs, palettes, actions
+
+**Date:** 2026-07-19 · **Branch:** `feat/design-excellence` (stacked on `feat/exec-dashboards`) · **Verdict: SOLID (solution-verifier, rubric 100/100; gate independently re-run: 1,142/1,142)**
+
+### What shipped
+
+| Slice | Deliverable | Commit(s) |
+|---|---|---|
+| D0 | Design-knowledge corpus: XXE-safe miner, 5 recipe files (234 zone styles / 597 chrome rules / 57 actions / 12 palettes / 82 text zones) with sha256+xpath provenance from 3 downloaded exemplars + 7 references; 4 themes, every literal recipe-cited | `5e4f2ff` |
+| D1 | designTheme + styleRules wire block (zod/TS/Pydantic, additive) | `099d0a7` |
+| D2 | Zone-style box model: canvas background, chart cards, gutters | `7af84f0` |
+| D3 | Chrome rules: gridline/zeroline off, transparent axis ticks, mark labels on bar/line, datalabel styling; `kind=None` wire fix | `513aeeb` |
+| D4 | KPI BAN template (bisect-proven): worksheet-local calc columns carrying compact `c"$"#,##0,.0K` / arrow `*▲ #,##;▼ #,##` formats, customized-label caption+CDATA runs, mark-labels-on, title suppression, ban-size clamp ≤26, `sizing-mode='fixed'` | `756eeec`→`84242f2` |
+| D5 | Header band (multi-run, mined height) + `selectTheme` deterministic corpus retrieval + proposal naming + `buildFromPlan` forwarding fix | `14051b5` |
+| D6 | Brand sequential/diverging palettes in preferences + map ramp via 8×-attested custom-interpolated embedded palette | `17d1ebe`, `41e1ea4` |
+| D7 | Cross-filter + highlight actions from mined `tsc:tsl-filter`/`tsc:brush` shapes, theme-gated auto-enable, KPI tiles excluded | `bd25c5a` |
+| D8 | Security delta (DX-01..DX-04, 0 crit/0 high/0 med), docs, this record | `6499f72`, `67ee337` |
+
+### Live proofs (dev site, workbook 2527341 "Superstore Design Probe" + 2523370 story)
+
+| Probe | Verified live | Result |
+|---|---|---|
+| #1 (D2) | Navy canvas + chart cards render | ✅ |
+| #2 (D3+D4, 6 rounds) | Chrome off, bar labels on, navy KPI tiles w/ white content; BAN via customized-label proven standalone (bisect V11/V12) | ✅ with recorded constraint |
+| #3 (D5) | White bold header title on navy band | ✅ |
+| #4 (D6+D7) | Actions publish+render cleanly; map ramp in brand blues (after switching to the embedded-palette form the first probe showed Cloud ignores the named ref) | ✅ |
+| Final rebuild | Themed dashboard + themed story republished | ✅ |
+
+### The 24-variant render bisect (recorded in design/corpus/SCHEMA.md §Discovered render constraints)
+
+Five Cloud render constraints were discovered live and encoded for posterity — the load-bearing one:
+**multi-zone dashboard REST *image* renders degrade KPI-tile text to `###` regardless of any XML**
+(V23 control: the pre-expansion baseline does it too — platform characteristic, not a regression;
+interactive browser rendering is user-verified at the beauty gate). Also: customized-labels require
+`mark-labels-show`; compact formats only apply via calculated columns; raw-field local
+default-format is ignored; label values overflowing the mark cell render `###`.
+
+### Gate & audits
+
+- `make ci` exit 0 — **610 TS + 532 Python = 1,142 tests** (from 863 pre-branch; +279).
+- Security delta: **0 CRITICAL · 0 HIGH · 0 MEDIUM** (DX-01 LOW accepted, 3 INFO).
+- Byte-identical no-theme guards on both builder entry points; XSD gate on every new construct.
+
+### Pending
+
+- **Beauty gate (user)**: side-by-side verdict vs the 4 exemplars + interactive KPI BAN check in browser.
+- Prior branch's user-blocked items unchanged (Pulse UI fixture; Snowflake creds).

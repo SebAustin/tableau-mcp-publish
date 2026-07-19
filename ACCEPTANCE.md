@@ -518,3 +518,16 @@ default-format is ignored; label values overflowing the mark cell render `###`.
 
 - **Beauty gate (user)**: side-by-side verdict vs the 4 exemplars + interactive KPI BAN check in browser.
 - Prior branch's user-blocked items unchanged (Pulse UI fixture; Snowflake creds).
+
+### Beauty-gate fix round (2026-07-19, post-verdict)
+
+The user's beauty-gate report ("can't see the numbers") reopened D4: KPI values were invisible in the
+**interactive** view too. A control experiment (publishing the untouched WB-118 exemplar to this site —
+its BANs rendered) proved the earlier "platform limitation" conclusion in SCHEMA.md constraint #5 **wrong**:
+the defect was ours. Root cause: KPI tiles require a **three-level** `is-fixed`/`fixed-size` cascade —
+band container (`fixed-size='140'` + `layout-strategy-id='distribute-evenly'`) → per-tile wrapper (`210`)
+→ leaf worksheet zone (`150`). Fixed, +13 tests (gate now **610 TS + 545 Python = 1,155**), SCHEMA.md
+corrected. Final live render shows all four BANs (SALES $2,297.4K · PROFIT $286.3K · QUANTITY 37.9K ·
+DISCOUNT 1,561) on workbook 2527341; themed story republished. Known residual: the delta line is absent
+because the CSV's "Sales Difference" column is 100% NULL (data issue, not render) — planner-side
+NULL-aware delta selection noted as follow-up.

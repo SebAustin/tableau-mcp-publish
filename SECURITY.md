@@ -167,3 +167,51 @@ before merge.
 
 > Not applicable: no blockchain / smart-contract / web3 component, so the `smart-contract-audit`
 > skill was not used.
+
+## Design-excellence expansion surface (D0–D7) — added surface
+
+Delta audit over `feat/design-excellence` (`5e4f2ff..41e1ea4`): design corpus miner, Tableau
+Public reference downloads, runtime theme loading, themed XML emission (zone styles, chrome,
+KPI BAN customized-labels via CDATA sentinels, palettes, actions).
+
+### New surface
+- `sidecar/design_miner.py` — offline dev-only CLI parsing untrusted downloaded `.twb`/`.twbx`.
+- `design/references/` download workflow (public.tableau.com over HTTPS, fixed URL template).
+- `src/design/loadThemes.ts` — runtime YAML read of `design/corpus/themes/*.yaml` (zod-validated).
+- Theme/brand values and worksheet titles flowing into emitted workbook XML.
+- Dashboard `<actions>` built from worksheet titles (D7).
+
+### STRIDE (expansion surface)
+- **Tampering/Info disclosure (miner inputs):** `.twbx` members validated against zip-slip
+  (`_is_unsafe_member`: leading `/`\\, `..` segments) BEFORE any read; extraction is
+  **in-memory only** — nothing is ever written to disk (`read_twb_bytes`). XXE/billion-laughs
+  blocked (`resolve_entities=False, no_network=True, load_dtd=False`).
+- **DoS (miner):** `huge_tree=True` removes lxml depth/size ceilings and there is no zip size
+  cap — a crafted archive can exhaust memory. Accepted: offline, dev-extras-only tool run
+  manually against operator-chosen files; never reachable from the MCP server (DX-01, LOW).
+- **Injection (theme → XML):** theme colors/names and worksheet titles are emitted via
+  ElementTree, which escapes attribute and text content; no path builds XML by string
+  concatenation. The KPI CDATA sentinel content is restricted to slugged field refs
+  (`_slug` → `[A-Za-z0-9_]`), so `]]>` breakout is impossible; a column literally named with
+  the sentinel string could only truncate its own label cosmetically (DX-02, INFO).
+- **Spoofing/Repudiation (downloads):** fixed `https://public.tableau.com/workbooks/<name>.twb`
+  template, no user-controlled URL interpolation beyond the workbook slug; artifacts recorded
+  with sha256 in `design/references/README.md` and corpus provenance.
+- **Info disclosure (fail-soft):** theme-load failures write a one-line message to stderr
+  (server log), never into MCP tool output; message contains at most a local path (DX-03, INFO).
+
+### Findings & remediation status
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| DX-01 | LOW | No size cap on miner zip/XML inputs (`huge_tree=True`); memory exhaustion possible from crafted archives | Accepted — offline dev-only CLI; document-only |
+| DX-02 | INFO | CDATA sentinel collision via a column named with the literal marker string truncates that label cosmetically; no structural injection possible (slug-restricted content, ET escaping elsewhere) | Accepted |
+| DX-03 | INFO | Fail-soft stderr messages may include local corpus paths | Accepted — stderr only, local server |
+| DX-04 | INFO | Theme hex colors are not format-validated (any string becomes an ET-escaped attribute); malformed values degrade rendering only | Accepted — corpus is repo-reviewed; zod/Pydantic accept strings by design |
+
+### Recommended fixes for HIGH/CRITICAL
+None — no CRITICAL/HIGH on the design-excellence surface. 0 CRITICAL · 0 HIGH · 0 MEDIUM ·
+1 LOW · 3 INFO.
+
+> Process note: during the D4 render bisect, the builder agent was granted one-time bounded
+> publish authority (12 publishes, two named probe workbooks only, creds via env, sign-out
+> enforced); usage was fully reported (11+1 of 12) and is recorded in the session handoff.

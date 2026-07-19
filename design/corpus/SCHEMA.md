@@ -307,9 +307,64 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
    this constraint. D4 is closed with this constraint recorded as a known, documented Tableau Cloud
    platform limitation rather than a remaining `twb_builder.py` defect.
 
+   **BEAUTY-GATE hotfix round — REVISED, root cause FOUND.** A user reported "I can't see the
+   numbers" after opening a themed dashboard *interactively* in a browser — the invisibility
+   reproduced live on Tableau Cloud, not just in static image renders, reopening this constraint.
+   The **decisive experiment never previously run**: publishing the UNTOUCHED WB-118 exemplar
+   workbook (`design/references/WB-118.twbx`) as-is to our OWN Tableau
+   Cloud dev site. Its real "Superstore Dashboard" (mixing BAN tiles with charts) rendered every
+   number PERFECTLY on our site — conclusively ruling out "pre-existing Tableau Cloud
+   dashboard-rendering characteristic... not achievable through `twb_builder.py` XML changes alone"
+   as the conclusion. The failure was always in OUR dashboard's zone XML specifically; the prior
+   round's V13–V23 ladder simply hadn't tried the right variable yet (it never tried removing the
+   `layout-basic` wrapper, and only ever tested a LEAF zone's `is-fixed`/`fixed-size` in isolation,
+   never a full CASCADE through every ancestor level).
+
+   An exhaustive live diff of the exemplar's real KPI-row zone tree against ours, plus a second
+   bisect ladder (V24–V25, then three more full-pipeline probe rounds against the real exec-audience
+   4-tile pipeline), found the true shape requires cascading `is-fixed='true'`/`fixed-size='<N>'`
+   through **three** nesting levels, not one:
+   1. The **KPI band CONTAINER** itself (the `param='horz'` flow holding all the tiles) —
+      `is-fixed='true' fixed-size='140'`, PLUS `layout-strategy-id='distribute-evenly'` (an
+      XSD-valid `ZoneLayoutType-ST` enum value — `basic`/`free-form`/`flow`/`distribute-evenly`/
+      `trivial` — mined verbatim from the exemplar's own KPI row, zone id 9, and never previously
+      emitted by this builder at all).
+   2. An intermediate **wrapper** flow around each tile — `is-fixed='true' fixed-size='210'`.
+   3. The tile's own **leaf** worksheet zone — `is-fixed='true' fixed-size='150'`.
+
+   A single-tile isolated test (V25) with only levels 2–3 rendered correctly — but that test's
+   wrapper was a DIRECT child of the dashboard's outer `vert` flow; the real pipeline nests an
+   EXTRA dedicated KPI-band container (level 1) between the outer flow and each tile's wrapper,
+   and a live probe of the real 4-tile exec pipeline with only levels 2–3 applied still rendered
+   every value as a static `"####"` placeholder — byte-for-byte IDENTICAL regardless of BAN font
+   size (10px/17px/36px tested) or workbook identity (ruling out both a font-fit and a render-cache
+   explanation). Only adding level 1 (the band container's own cascade + `distribute-evenly`) fixed
+   it: a live render of the full exec pipeline (4 KPI tiles, `executive_dark` theme, real brand
+   typography, real 9994-row Superstore data) showed all four values clearly — `"$2,297.4K"` /
+   `"$286.3K"` / `"37.9K"` / `"1,561"`. Also mirrors the exemplar's own pattern of leaving exactly
+   ONE tile in a multi-tile row unwrapped (non-fixed), as its flow's flexible anchor — wrapping
+   *every* tile (no flexible sibling at all) was independently tested and also failed.
+
+   One known, deferred, SEPARATE issue: the BAN delta line (the secondary "vs. prior period" value)
+   still does not render in the real exec pipeline. Root-caused this round to the underlying
+   dataset, not the zone mechanism: the "Sales Difference" field the planner selects as
+   `delta_measure` for this specific CSV is 100% `NULL` across all 9994 rows (verified locally), so
+   `SUM([Sales Difference])` is a `NULL` aggregate — Tableau shows nothing for that one run's arrow
+   -formatted CDATA placeholder rather than a rendering failure. This is an upstream field-selection
+   heuristic concern (the planner should not select an all-NULL field as a delta measure), not a
+   `twb_builder.py` XML-mechanism defect, and is out of scope for this constraint.
+
+   `sidecar/twb_builder.py`'s `_kpi_wrapped_indices`, `_append_worksheet_zones`'s
+   `wrap_fixed_size`/`wrapper_id_start` parameters, and `_build_dashboard`'s KPI-band container zone
+   attributes now encode all three cascade levels. See
+   `sidecar/tests/test_twb_kpi_styling_beauty_gate.py`'s module docstring for the full round-by-round
+   probe narrative (rounds 1–6).
+
 See `sidecar/twb_builder.py`'s `_kpi_tile_customized_label`/`_append_kpi_ban_calc_column`/
 `_kpi_tile_pane_style_rules`/`_build_dashboard` docstrings for the encoding of these constraints into
 the builder, and `sidecar/tests/test_twb_kpi_styling_customized_label.py`'s module docstring for the
 full bisect-ladder narrative (V0 control graft → V1–V5 individual-attribute isolation → V7 raw-vs-
 calculated field format → V9/V10 mark-labels-show necessary-but-not-sufficient → V11/V12 proof →
-V13–V23 multi-zone-dashboard isolation → `sizing-mode='fixed'` follow-up, refuted).
+V13–V23 multi-zone-dashboard isolation → `sizing-mode='fixed'` follow-up, refuted → BEAUTY-GATE
+hotfix round, V24–V25 + three-level cascade, root cause found and fixed — see
+`test_twb_kpi_styling_beauty_gate.py`).

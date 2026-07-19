@@ -1382,12 +1382,58 @@ def _chart_card_zone_style_formats(
     return formats
 
 
+# Design Excellence, Slice D4 BEAUTY-GATE hotfix (live-probe #5): mined
+# verbatim from WB-118's real, published "Superstore Dashboard" (the
+# SAME WB-118.twbx exemplar the whole D4 BAN
+# mechanism is grafted from) — its KPI band's fixed-size WRAPPER flow
+# (e.g. `<zone fixed-size='210' ... is-fixed='true' param='horz'
+# type-v2='layout-flow' ...>` wrapping `<zone fixed-size='150' ...
+# is-fixed='true' name='Sales KPI (BAN) New' .../>`) is the exact,
+# live-probe-CONFIRMED shape (see design/corpus/SCHEMA.md constraint #5's
+# resolution). The precise unit semantics of `fixed-size` are not fully
+# understood (it is NOT the same 0-100000 percentage scale as `h`/`w`) —
+# these two literal values are used because they are PROVEN, not derived.
+_KPI_TILE_FIXED_SIZE_WRAPPER = "210"
+_KPI_TILE_FIXED_SIZE_LEAF = "150"
+
+
+def _kpi_wrapped_indices(n: int) -> set[int]:
+    """Which of *n* KPI-tile positions get the ``wrap_fixed_size`` cascade.
+
+    Design Excellence, Slice D4 BEAUTY-GATE hotfix, live-probe #5 round 2:
+    a real multi-tile KPI band (4 tiles, the exec-audience default) still
+    rendered every tile's value as a static ``####`` placeholder — BYTE-
+    IDENTICAL across three different BAN font sizes and even across a
+    brand-new workbook identity (ruling out both a font-fit issue and a
+    render-cache issue) — after wrapping ALL FOUR tiles in the cascade.
+    Re-examining the mined exemplar's OWN "4 KPI quadrants" row
+    (``WB-118.twbx``, zone id 9) showed it does
+    NOT mark every quadrant ``is-fixed``: 3 of its 4 quadrant wrappers
+    carry ``is-fixed='true' fixed-size='...'``, but the 3rd one (id 74,
+    "Total Orders") has NEITHER attribute — it is the flow's one FLEXIBLE
+    sibling. A ``param='horz'`` flow with every child pixel-fixed appears
+    to leave Tableau's layout resolver with no free dimension to reconcile
+    against the container's own actual rendered width, producing a
+    degenerate/placeholder render; at least one flexible sibling is
+    required to anchor the remainder.
+
+    Mirrors that: when ``n > 1``, every title EXCEPT THE LAST is wrapped
+    (title ``n-1`` stays a plain, unwrapped, non-fixed zone — matching
+    V25's proof that a SINGLE (n=1) tile must still be wrapped in full).
+    """
+    if n <= 1:
+        return set(range(n))
+    return set(range(n - 1))
+
+
 def _append_worksheet_zones(
     parent: ET.Element,
     titles: list[str],
     id_start: int,
     zone_style_formats: dict[str, str] | None = None,
     show_title: bool = True,
+    wrap_fixed_size: bool = False,
+    wrapper_id_start: int | None = None,
 ) -> None:
     """Append equal-sized horizontal worksheet zones to *parent*.
 
@@ -1418,19 +1464,91 @@ def _append_worksheet_zones(
                               ``True`` (the attribute is omitted entirely,
                               Tableau's own default): unchanged from before
                               this param existed.
+        wrap_fixed_size:      Design Excellence, Slice D4 BEAUTY-GATE hotfix
+                              (live-probe #5). When ``True``, EVERY zone is
+                              wrapped in an intermediate ``is-fixed='true'
+                              fixed-size='210'`` ``<zone type-v2='layout-flow'
+                              param='horz'>``, with the worksheet zone itself
+                              ALSO carrying ``is-fixed='true'
+                              fixed-size='150'`` — mined verbatim from
+                              WB-118's real KPI band. A user reported "I
+                              can't see the numbers" in the INTERACTIVE
+                              browser view (not just static image exports);
+                              the untouched exemplar workbook rendered its
+                              BANs PERFECTLY on the SAME Tableau Cloud site,
+                              proving the failure was OUR dashboard zone
+                              composition, not a renderer/site limitation.
+                              An exhaustive zone-tree diff plus a live-probe
+                              bisect ladder (V13–V25) isolated THIS
+                              is-fixed/fixed-size CASCADE (both the wrapper
+                              AND the leaf, not either alone — V20 tested
+                              leaf-only and it did not help) as the fix.
+                              Default ``False``: unchanged from before this
+                              param existed — callers must opt in explicitly
+                              (currently only the KPI band in
+                              ``kpi_band_over_charts``; chart zones already
+                              render correctly without it and are left
+                              unchanged).
+        wrapper_id_start:     First id to allocate for the ``wrap_fixed_size``
+                              wrapper zones, one per WRAPPED tile (see
+                              ``_kpi_wrapped_indices`` below — NOT
+                              necessarily one per title), sequential.
+                              REQUIRED when ``wrap_fixed_size=True`` — callers
+                              must source these from the SAME id counter used
+                              for every other zone in the dashboard (e.g. the
+                              caller's ``_next_id()`` closure) so the wrapper
+                              ids can never collide with header/footer text
+                              zones, sub-flow containers, or worksheet zone
+                              ids. Ignored when ``wrap_fixed_size=False``.
+
+    Raises:
+        ValueError: if ``wrap_fixed_size=True`` and ``wrapper_id_start`` is
+            not supplied.
     """
     n = len(titles)
     if n == 0:
         return
+    if wrap_fixed_size and wrapper_id_start is None:
+        raise ValueError("wrapper_id_start is required when wrap_fixed_size=True")
     GRID = 100000
     unit_w = GRID // n
+    wrapped_indices = _kpi_wrapped_indices(n) if wrap_fixed_size else set()
+    next_wrapper_id = wrapper_id_start if wrapper_id_start is not None else 0
     for i, title in enumerate(titles):
         w = unit_w if i < n - 1 else GRID - (n - 1) * unit_w
-        zone_attrs: dict[str, str] = {"h": "100000", "id": str(id_start + i), "name": title}
+        wrap_this = i in wrapped_indices
+        target_parent = parent
+        zone_attrs: dict[str, str] = {}
+        if wrap_this:
+            zone_attrs["fixed-size"] = _KPI_TILE_FIXED_SIZE_LEAF
+        zone_attrs["h"] = "100000"
+        zone_attrs["id"] = str(id_start + i)
+        if wrap_this:
+            zone_attrs["is-fixed"] = "true"
+        zone_attrs["name"] = title
         if not show_title:
             zone_attrs["show-title"] = "false"
-        zone_attrs.update({"w": str(w), "x": str(i * unit_w), "y": "0"})
-        ws_zone = ET.SubElement(parent, "zone", zone_attrs)
+        if wrap_this:
+            # The leaf now fills its OWN wrapper entirely (w=100000 of the
+            # wrapper's local space) — the wrapper carries the tile's real
+            # x/w allocation instead (mirrors the mined nesting exactly).
+            wrapper_attrs = {
+                "fixed-size": _KPI_TILE_FIXED_SIZE_WRAPPER,
+                "h": "100000",
+                "id": str(next_wrapper_id),
+                "is-fixed": "true",
+                "param": "horz",
+                "type-v2": "layout-flow",
+                "w": str(w),
+                "x": str(i * unit_w),
+                "y": "0",
+            }
+            next_wrapper_id += 1
+            target_parent = ET.SubElement(parent, "zone", wrapper_attrs)
+            zone_attrs.update({"w": "100000", "x": "0", "y": "0"})
+        else:
+            zone_attrs.update({"w": str(w), "x": str(i * unit_w), "y": "0"})
+        ws_zone = ET.SubElement(target_parent, "zone", zone_attrs)
         ET.SubElement(
             ws_zone,
             "layout-cache",
@@ -2692,8 +2810,25 @@ def _build_dashboard(
                     outer_flow,
                     "zone",
                     {
+                        # BEAUTY-GATE hotfix (live-probe #5, round 6): the
+                        # BAND CONTAINER itself — not just each tile's
+                        # wrapper/leaf — is ALSO is-fixed/fixed-size AND
+                        # carries layout-strategy-id='distribute-evenly' in
+                        # the mined exemplar (its own KPI row, zone id 9:
+                        # `fixed-size='96' is-fixed='true'
+                        # layout-strategy-id='distribute-evenly'
+                        # param='horz'`). Every prior round only cascaded
+                        # the WRAPPER+LEAF (2 levels); a live-probe render
+                        # of the real multi-tile pipeline still showed every
+                        # tile's value as an unreadable '####' placeholder
+                        # with that 2-level cascade alone — this extends it
+                        # to the BAND container (3rd level), matching the
+                        # exemplar's own nesting depth exactly.
+                        "fixed-size": "140",
                         "h": "20000",
                         "id": str(_next_id()),
+                        "is-fixed": "true",
+                        "layout-strategy-id": "distribute-evenly",
                         "param": "horz",
                         "type-v2": "layout-flow",
                         "w": "100000",
@@ -2714,12 +2849,25 @@ def _build_dashboard(
                 # (show-title='false', mirroring WB-118's own mined KPI
                 # tile zone attribute — see _append_worksheet_zones's
                 # docstring).
+                # BEAUTY-GATE hotfix (live-probe #5, round 2): cascade
+                # is-fixed/fixed-size around every KPI tile EXCEPT THE LAST
+                # (see _append_worksheet_zones's wrap_fixed_size docstring
+                # and _kpi_wrapped_indices) so its value actually renders.
+                # Wrapper ids are allocated from the SAME counter as every
+                # other zone in this dashboard (guarantees no id collisions)
+                # — exactly one id per WRAPPED tile, not per title.
+                kpi_wrap_count = len(_kpi_wrapped_indices(len(effective_kpi)))
+                kpi_wrapper_id_start = _next_id() if kpi_wrap_count else None
+                for _ in range(kpi_wrap_count - 1):
+                    _next_id()
                 _append_worksheet_zones(
                     kpi_flow,
                     effective_kpi,
                     id_start=3,
                     zone_style_formats=kpi_zone_style_formats,
                     show_title=not bool(theme_kpi_tile),
+                    wrap_fixed_size=True,
+                    wrapper_id_start=kpi_wrapper_id_start,
                 )
                 _append_zone_style(kpi_flow, kpi_band_background_formats)
 

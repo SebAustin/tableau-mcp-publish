@@ -332,7 +332,18 @@ def test_kpi_band_layout_has_two_flow_children() -> None:
 
 
 def test_kpi_band_tiles_in_horz_flow() -> None:
-    """KPI tile worksheets must reside in a param='horz' flow (the KPI band)."""
+    """KPI tile worksheets must reside in a param='horz' flow (the KPI band).
+
+    Design Excellence, Slice D4 BEAUTY-GATE hotfix (live-probe #5): each KPI
+    tile zone is now nested one level deeper, inside its own cascaded
+    is-fixed/fixed-size wrapper zone (see
+    twb_builder._append_worksheet_zones's wrap_fixed_size docstring) —
+    still a DESCENDANT of the band's horz flow, just not a direct child
+    anymore. The search below is therefore recursive (".//zone") instead of
+    a direct-child lookup, preserving this test's original intent: the KPI
+    tiles must all live inside the SAME horz band, wherever exactly they
+    are nested within it.
+    """
     xml = twb_builder.build_twb_xml(
         "DS",
         "ds",
@@ -346,8 +357,8 @@ def test_kpi_band_tiles_in_horz_flow() -> None:
     horz_flows = root.findall(".//dashboards//zone[@type-v2='layout-flow'][@param='horz']")
     found_band = False
     for flow in horz_flows:
-        child_names = {z.get("name") for z in flow.findall("zone") if z.get("name")}
-        if kpi_tile_titles.issubset(child_names):
+        descendant_names = {z.get("name") for z in flow.findall(".//zone") if z.get("name")}
+        if kpi_tile_titles.issubset(descendant_names):
             found_band = True
     assert found_band, (
         f"KPI tile titles {kpi_tile_titles} must all reside in a single "

@@ -77,7 +77,9 @@ const XML_PREFIX = "<?xml";
 // ---------------------------------------------------------------------------
 
 const FeedItemSchema = z.object({
-  workbookRepoUrl: z.string().min(1),
+  // TC-01: repoUrl becomes a filesystem path segment — a hostile feed value with
+  // "../" or path separators would escape OUT_DIR at write time. Slug-only.
+  workbookRepoUrl: z.string().regex(/^[A-Za-z0-9._-]+$/),
   title: z.string().default(""),
   authorProfileName: z.string().default(""),
   authorDisplayName: z.string().default(""),

@@ -531,3 +531,21 @@ corrected. Final live render shows all four BANs (SALES $2,297.4K · PROFIT $286
 DISCOUNT 1,561) on workbook 2527341; themed story republished. Known residual: the delta line is absent
 because the CSV's "Sales Difference" column is 100% NULL (data issue, not render) — planner-side
 NULL-aware delta selection noted as follow-up.
+
+---
+
+## Top-100 Corpus (T0–T4) — reverse-engineering Tableau Public's best into design norms
+
+**Date:** 2026-07-20 · **Branch:** `feat/design-excellence` · **Verdict: SOLID (solution-verifier, 100/100; gate independently re-run 636 TS + 594 Py = 1,230)**
+
+Trigger: beauty-gate round 3 — "title too big, story irrelevant, download the top 100 and reverse engineer them."
+
+| Slice | Deliverable | Commit |
+|---|---|---|
+| T0 | Resumable VOTD fetcher (magic-byte validation, caps, politeness) → **100/100 top workbooks** + provenance manifest (31 download-disabled + 3 too-large recorded from 300 candidates) | `f75f46b` |
+| T1 | Miner v2 (dashboard/story extractors) + `design_stats.py` → stratified norms with n<15 confidence guards, GAPS.md routing; **110-workbook corpus** | `0b3525f` |
+| T2 | Title fix from evidence: fontsize exonerated (20 ≤ mined median 22, n=95); real drivers fixed — auto-shorten ("Sales & Profit Performance") + header at mined 7% ratio; **CI gates parse the committed stats** | `6aba1fa` |
+| T3 | Story overhaul: **0/110 mined story usage** → strict opt-in gating (explicit ask / persona pref), takeaway caption templates v2, client-edit path documented as THE quality mechanism | `6aba1fa` |
+| T4 | Rebuilt dashboard + story live (fresh renders verified); security delta TC-01..TC-05 (0 crit/0 high/1 med → **TC-01 fixed in-branch**: slug-validated repoUrl at both path boundaries); verifier SOLID 100/100 | this commit |
+
+Live: workbook 2527341 (short title + full BAN row + brand-blue map) and story 2523370 (v2 captions) republished. Awaiting user beauty verdict round 4.

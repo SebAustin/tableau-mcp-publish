@@ -215,3 +215,59 @@ None — no CRITICAL/HIGH on the design-excellence surface. 0 CRITICAL · 0 HIGH
 > Process note: during the D4 render bisect, the builder agent was granted one-time bounded
 > publish authority (12 publishes, two named probe workbooks only, creds via env, sign-out
 > enforced); usage was fully reported (11+1 of 12) and is recorded in the session handoff.
+
+## Top-100 corpus expansion surface (T0–T3) — added surface
+
+Delta audit over `feat/design-excellence` (`f75f46b..6aba1fa`): the top-100 Tableau Public
+corpus acquisition + mining pipeline. Read-only review; STRIDE-lite. All three input/output
+files are **dev-only** — none is imported by `server.py`, `twb_builder.py`, or any MCP runtime
+path. Prior E0–E4 (VB-*) and D0–D7 (DX-*) sections stand at 0 CRITICAL / 0 HIGH.
+
+### New surface
+- `scripts/fetch-top100.ts` — mass download from the unauthenticated public "Viz of the Day"
+  BFF feed + `public.tableau.com/workbooks/<slug>.twb` endpoint (undici, no auth/cookies).
+- `sidecar/design_dashboard_miner.py` — dashboard/story mining of untrusted `.twb`/`.twbx`,
+  reusing `design_miner.safe_parser` (XXE-safe) + `read_twb_bytes` (zip-slip-guarded, in-memory).
+- `sidecar/design_stats.py` — corpus aggregation to committed `design/corpus/stats/*.yaml`;
+  reads `manifest.yaml` (`repoUrl` → on-disk path) and appends notable constructs to recipes.
+- Committed artifacts: `design/references/top100/manifest.yaml` (provenance incl. public author
+  attribution), `design/corpus/stats/*.yaml`, `design/corpus/GAPS.md`.
+- Planner `src/planner/plan.ts` — title auto-shorten + v2 story-caption derivation.
+
+### STRIDE (expansion surface)
+- **Spoofing/Repudiation (downloads):** fixed HTTPS host `public.tableau.com`; no auth/cookies;
+  download path segment is `encodeURIComponent(repoUrl)` so `/`, `?`, `#` cannot inject a host or
+  extra path — SSRF via host injection is not possible. Body validated by magic bytes (PK zip /
+  `<?xml`), never `content-type`. Each artifact recorded with sha256 in the committed manifest;
+  stats output carries no wall-clock, so re-runs are byte-reproducible and auditable.
+- **Tampering (feed → filesystem path):** the one real gap. `workbookRepoUrl` from the untrusted
+  feed is interpolated verbatim into `resolve(OUT_DIR, `${repoUrl}.${ext}`)` → `writeFileSync`
+  (write) and `top100_dir / f"{repo_url}.twbx"` → read+parse, with **no charset/containment
+  check**. A `../`/absolute value would escape the target dir (TC-01). Zip-slip on the parse side
+  IS guarded (`_is_unsafe_member`), and XXE is off (`resolve_entities/load_dtd=False`,
+  `no_network=True`).
+- **Info disclosure:** committed files limited to public "Viz of the Day" attribution (TC-03) +
+  aggregated stats/citations (`source`/`sha256`/`xpath` only — TC-04). Raw `.twb`/`.twbx` inputs
+  are gitignored (`*.twb`, `*.twbx`) and never committed. No secrets found on the new surface.
+- **DoS:** fetcher enforces per-file 25MB (aborted mid-stream, nothing saved), 1.5GB run cap,
+  60s header+body timeouts, 1.1s politeness between every request. Miner reuses `huge_tree=True`
+  with no independent size cap (TC-02), bounded in practice by the fetcher's 25MB cap.
+- **Elevation:** no `eval`/`exec`/`subprocess`/`os.system`/`pickle` in the new sidecar modules
+  (verified); no credentials; YAML read via `yaml.safe_load` (Python) and the `yaml` package's
+  non-executing `parse` (TS) throughout; deps pinned exact (`undici@7.28.0`, `yaml@2.9.0`,
+  `zod@3.25.76`, `tsx@4.19.2`, dev-only).
+
+### Findings & remediation status
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| TC-01 | MEDIUM | Feed-controlled `workbookRepoUrl` reaches filesystem paths with no charset/containment guard — write sink `scripts/fetch-top100.ts` (`resolve(OUT_DIR, …)`→`writeFileSync`) allows traversal outside `OUT_DIR`; read sink `design_stats.py top100_paths` selects an out-of-tree file to read+parse. Mitigations: dev-only, never in the MCP runtime; HTTPS to Tableau's own BFF (MITM needs a cert break); output extension forced to `.twbx`/`.twb` and body must pass PK/`<?xml` magic; 25MB/1.5GB caps; read side is in-memory + XXE-safe + zip-slip-guarded; all 134 currently-committed `repoUrl`s are safe `[A-Za-z0-9._-]` slugs. | OPEN — recommend fix before next corpus regeneration; does not block runtime ship. Not fixed here (task scope: read-only + this SECURITY.md append). Fix: validate `workbookRepoUrl` against `^[A-Za-z0-9._-]+$` at the feed-parse boundary and assert the resolved write path stays under `OUT_DIR`; apply the same guard when reading `repoUrl` from the manifest. |
+| TC-02 | LOW | `huge_tree=True` + no independent zip/XML size cap on the T1 dashboard/story miner (via reused `read_twb_bytes`/`safe_parser`); a crafted/oversized workbook can exhaust memory. Same root as DX-01, extended to the new miner. | Accepted — offline dev-only tool run against operator-chosen files; bounded by the fetcher's 25MB per-file cap; never reachable from the MCP server. |
+| TC-03 | INFO | Committed `manifest.yaml` embeds third-party author display names + public profile slugs (`author`/`profileName`), titles, view counts. | Accepted — public attribution from the public VOTD feed (no emails/private PII); it is the intended provenance record. Feed strings are `yaml.stringify`-quoted on write and re-read via non-executing parsers. |
+| TC-04 | INFO | Committed `design/corpus/stats/*.yaml` derive from untrusted workbooks. | Accepted — content is aggregated numbers + `source`/`sha256`/`xpath` citations only (no author PII, no raw workbook content); consumers use `yaml.safe_load` / `yaml` `parse`; raw inputs gitignored. No injection path into tests. |
+| TC-05 | INFO | Planner title auto-shorten (`shortenDashboardTitle`/`truncateAtWordBoundary`) + v2 story captions produce question-derived strings flowing into `dashboardTitle`/`dashboardSubtitle`/`storyArc[].caption`. | Accepted — these reach the existing `xml.etree.ElementTree` `.text` sinks in `twb_builder.py` (auto-escapes `< > &`); no new raw-XML/string-concat sink (auto-shorten only splits one existing string across the existing title+subtitle fields). Escaping verified. |
+
+### Recommended fixes for HIGH/CRITICAL
+None — no CRITICAL/HIGH on the T0–T3 surface. 0 CRITICAL · 0 HIGH · 1 MEDIUM · 1 LOW · 3 INFO.
+The single MEDIUM (TC-01) is dev-tooling defense-in-depth for the offline corpus-acquisition
+script; it is not part of the shipped MCP-server attack surface. Recommend adding the `repoUrl`
+charset+containment guard before the next corpus regeneration.

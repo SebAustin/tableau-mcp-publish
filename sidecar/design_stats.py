@@ -69,6 +69,7 @@ silently no-opped).
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -126,6 +127,11 @@ def top100_paths(top100_dir: Path, manifest_path: Path) -> tuple[list[Path], int
     missing = 0
     for item in downloaded:
         repo_url = str(item.get("repoUrl", ""))
+        # TC-01: repoUrl flows into a filesystem path — reject anything that
+        # is not a plain slug so a tampered manifest cannot traverse dirs.
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", repo_url):
+            missing += 1
+            continue
         twbx_path = top100_dir / f"{repo_url}.twbx"
         twb_path = top100_dir / f"{repo_url}.twb"
         if twbx_path.exists():

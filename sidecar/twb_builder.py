@@ -1170,17 +1170,28 @@ def _build_text_zone(
     return zone
 
 
-# Design Excellence, Slice D5: themed header-band zone height (0-100000 grid).
-# Mirrors the mined header zone's OWN ``h`` attribute at the exact xpath cited
-# by executive_dark.yaml's header provenance entry
-# (design/corpus/recipes/text_zones.yaml ->
+# Design Excellence, Slice D5 (superseded by Slice T2 below): themed
+# header-band zone height (0-100000 grid).
+#
+# D5 ORIGINAL VALUE (9722) mirrored one exemplar dashboard's OWN ``h``
+# attribute verbatim (design/corpus/recipes/text_zones.yaml ->
 # /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1], source
 # WB-117.twbx: ``<zone forceUpdate='true'
-# h='9722' id='556' type-v2='text' ...>``). Nearly double the non-themed
-# title zone's ``h=6000`` — long question-derived titles were observed
-# truncating at 6000 (single-line height); 9722 gives a themed header room
-# for a 2-line title without inventing an un-mined value.
-_HEADER_ZONE_H = 9722
+# h='9722' id='556' type-v2='text' ...>``). Beauty-gate round 2 flagged the
+# resulting themed header as "too big" — nearly double the non-themed title
+# zone's ``h=6000``, occupying ~9.7% of a dashboard-sized canvas.
+#
+# T2 (PLAN.md's Top-100 Corpus plan) FIX: replaced the single-exemplar value
+# with the T1-mined STRATIFIED MEDIAN title-zone height RATIO for
+# dashboard-sized canvases (design/corpus/stats/dashboard_norms.yaml ->
+# strata."900-1400".title_height_ratio: median 0.0696, n=107,
+# confidence "ok"). ``0.0696 * 100000 = 6960`` (rounded to a whole number on
+# the 0-100000 grid) — a real, stratified, n>=15 mined value rather than one
+# exemplar's own height, and the actual fix for the "title too big" defect
+# (the driver was the header ZONE HEIGHT + long question-derived title TEXT
+# LENGTH, not the title run's fontsize — see `shortenDashboardTitle` in
+# `src/planner/plan.ts` for the length half of this fix).
+_HEADER_ZONE_H = 6960
 
 
 def _build_header_zone(

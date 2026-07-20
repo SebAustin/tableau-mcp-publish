@@ -15,7 +15,9 @@ D5-1  No-theme / no-header byte-identical guards (separate-zone path unchanged)
 D5-2  Header present + title + subtitle -> ONE zone, 3 runs
 D5-3  Header present + title only (no subtitle) -> ONE zone, 1 run
 D5-4  Header zone-style background-color from header.background, LAST child
-D5-5  Header zone height mirrors the mined h=9722 (vs. non-themed h=6000)
+D5-5  Header zone height mirrors the mined title_height_ratio median, h=6960
+      (Slice T2 fix — superseded the D5-original single-exemplar h=9722;
+      vs. non-themed h=6000)
 D5-6  Brand typography still drives font family/size; header overrides fontcolor
 D5-7  XSD validity (build_twb_xml + build_embedded_twb_xml)
 """
@@ -266,17 +268,22 @@ def test_header_zone_no_zone_style_when_background_unset() -> None:
 
 
 # ---------------------------------------------------------------------------
-# D5-5  Header zone height mirrors the mined h=9722
+# D5-5  Header zone height mirrors the mined title_height_ratio (Slice T2)
 # ---------------------------------------------------------------------------
 
 
-def test_header_zone_height_is_9722_vs_non_themed_6000() -> None:
+def test_header_zone_height_is_6960_vs_non_themed_6000() -> None:
+    """Slice T2 (PLAN.md's Top-100 Corpus plan) beauty-gate fix: the themed
+    header zone height is the T1-mined 900-1400-stratum title_height_ratio
+    median (0.0696 * 100000 = 6960,
+    design/corpus/stats/dashboard_norms.yaml), not the D5-original single
+    exemplar's own h=9722."""
     xml_themed = twb_builder.build_twb_xml(
         "DS", "ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_TITLE_SUBTITLE,
         design_theme=THEME_WITH_HEADER,
     )
     themed_zone = _header_zone(ET.fromstring(xml_themed))
-    assert themed_zone.get("h") == "9722"
+    assert themed_zone.get("h") == "6960"
 
     xml_plain = twb_builder.build_twb_xml(
         "DS", "ds", "site", SHEETS_BASIC, dashboards=DASHBOARD_TITLE_SUBTITLE

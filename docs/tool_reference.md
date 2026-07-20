@@ -323,6 +323,42 @@ always creates a new datasource).
 
 > *"Publish the confirmed proposal — build and publish that dashboard now."*
 
+### Worked example — rewriting story captions before confirming
+
+`design_dashboard`'s deterministic `storyArc` captions (`docs/feature-prompt-authoring/
+BI_DESIGN.md` §9.2) are a template FLOOR, not the intended final copy — the calling agent is
+expected to rewrite them with real narrative before calling `build_from_plan`. `capturedSheet`
+values must stay untouched (they must remain one of `plan.sheets[].title`); only `caption` text
+changes:
+
+```jsonc
+// 1. design_dashboard (businessQuestion: "Tell the story of how sales and profit
+//    are performing across categories and states") returns proposal.plan.storyArc:
+[
+  { "caption": "The headline: sales and profit … — start with Sales at a glance.", "capturedSheet": "Sales" },
+  { "caption": "Profit: watch this lever alongside Sales.", "capturedSheet": "Profit" },
+  { "caption": "Category drives the mix — where Sales concentrates.", "capturedSheet": "Sales by Category" },
+  { "caption": "The geography: where Sales shows up on the map.", "capturedSheet": "Sales by State" }
+]
+
+// 2. The agent rewrites `caption` only, using data/context it has and the
+//    planner never sees — capturedSheet values are unchanged:
+[
+  { "caption": "Q4 finished strong: Sales are up 14% YoY, led by the West.", "capturedSheet": "Sales" },
+  { "caption": "Profit held pace with Sales — margin discipline is intact this quarter.", "capturedSheet": "Profit" },
+  { "caption": "Technology is the standout category — nearly a third of total Sales.", "capturedSheet": "Sales by Category" },
+  { "caption": "California and Texas anchor the map; the Midwest is the clearest whitespace.", "capturedSheet": "Sales by State" }
+]
+
+// 3. build_from_plan(plan) with the rewritten plan — assertStoryArcCapturedSheetsExist
+//    still passes (capturedSheet is untouched) and the storyboard builds from the
+//    new captions.
+```
+
+Dropping or reordering points is also fine — every remaining `capturedSheet` just has to name
+an existing `plan.sheets[].title`. Inventing a `capturedSheet` that doesn't exist throws before
+any sidecar/REST call (the guardrail above).
+
 ---
 
 ### `create_starter_workbook`

@@ -15,6 +15,13 @@
  * - When the resolved persona prefers "story" artifacts OR the business
  *   question uses story/narrative/presentation language, emit a deterministic
  *   storyArc over the finalized sheet list (see buildStoryArc below).
+ *
+ * Slice T2/T3 (PLAN.md's Top-100 Corpus plan) additions:
+ * - Auto-shorten a long question-derived dashboardTitle to a
+ *   "{Measure} Performance" headline, promoting the full question to
+ *   dashboardSubtitle (see TITLE_AUTO_SHORTEN_THRESHOLD below).
+ * - storyArc captions use takeaway-style template v2 (see the Caption
+ *   template v2 block below) instead of v1's bare-label captions.
  */
 
 import { classifyFields, usableFields } from "./fields.js";
@@ -122,6 +129,92 @@ function deriveDashboardSubtitle(audience: Audience): string {
     case "mixed":
       return "Summary Dashboard";
   }
+}
+
+// ---------------------------------------------------------------------------
+// T2 auto-shorten (PLAN.md's Top-100 Corpus plan) — beauty-gate round 2
+// "title too big" closure.
+//
+// `design/corpus/stats/dashboard_norms.yaml` (T1 corpus mining, 110
+// workbooks) shows the pre-existing themed-header title fontsize (20pt) is
+// already AT/UNDER the mined 900-1400-stratum median (22pt, n=95,
+// confidence "ok") — fontsize was never the defect. The real driver was
+// LENGTH: a long question-derived title (e.g. "How Are Sales And Profit
+// Performing Across Categories And States?") overflows the header zone.
+// dashboard_norms.yaml mined title fontsize and title-zone height ratio but
+// NEVER a title character-length bucket, so there is no mined p75 to defer
+// to for the shortening threshold below.
+// ---------------------------------------------------------------------------
+
+/**
+ * 40 chars: a documented judgment call (see ASSUMPTIONS.md's
+ * "Design-Excellence Top-100 Corpus" section), NOT a mined statistic — there
+ * is no title-length bucket in `dashboard_norms.yaml` to defer to. Chosen to
+ * keep a shortened title comfortably on one line at the mined 900-1400-
+ * stratum title fontsize (median 22pt). `tests/planner-titleShorten.test.ts`
+ * re-parses the committed stats file at test time, so a future corpus
+ * refresh that DOES add a title-length bucket is caught as a test failure
+ * (norm drift) instead of this constant silently going stale.
+ */
+export const TITLE_AUTO_SHORTEN_THRESHOLD = 40;
+
+/** Truncate `text` to at most `maxLen` chars, backing off to the previous word boundary. */
+function truncateAtWordBoundary(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const slice = text.slice(0, maxLen);
+  const lastSpace = slice.lastIndexOf(" ");
+  return (lastSpace > 0 ? slice.slice(0, lastSpace) : slice).trim();
+}
+
+/**
+ * Distinct measure field names referenced by the plan's own (post-clamp)
+ * sheets, in first-occurrence order. For exec plans the KPI-tile sheets
+ * come first and are already ranked by `rankMeasures` inside
+ * `buildExecKpiBandPlan`, so this preserves that relevance order; for other
+ * audiences it's simply shelf order. Used by `shortenDashboardTitle` to
+ * recognize "key measure nouns" without re-deriving field classification.
+ */
+function planMeasureNames(sheets: readonly SheetSpec[]): string[] {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const sheet of sheets) {
+    for (const measure of sheet.measures) {
+      if (!seen.has(measure)) {
+        seen.add(measure);
+        ordered.push(measure);
+      }
+    }
+  }
+  return ordered;
+}
+
+/**
+ * Shorten a long, question-derived dashboard title to a "{Measure(s)}
+ * Performance"-style headline, e.g. "How Are Sales And Profit Performing
+ * Across Categories And States?" -> "Sales & Profit Performance".
+ *
+ * Algorithm: extract the plan's own measure names that are actually
+ * mentioned in the business question (`isMentioned` — the same
+ * word-boundary, case-insensitive matcher `rankMeasures`/`rankDims` use), in
+ * their existing plan order, and join up to 2 of them with " & ", then
+ * append " Performance". Falls back to `fallbackTitle` truncated to
+ * `TITLE_AUTO_SHORTEN_THRESHOLD` chars at a word boundary when no plan
+ * measure is mentioned (e.g. a placeholder plan with no real fields, or a
+ * question that never names a measure).
+ *
+ * Pure and deterministic — same inputs, same output.
+ */
+export function shortenDashboardTitle(
+  businessQuestion: string,
+  fallbackTitle: string,
+  measureNames: readonly string[],
+): string {
+  const mentioned = measureNames.filter((name) => isMentioned(name, businessQuestion));
+  if (mentioned.length > 0) {
+    const label = mentioned.slice(0, 2).map(toLabel).join(" & ");
+    return `${label} Performance`;
+  }
+  return truncateAtWordBoundary(fallbackTitle, TITLE_AUTO_SHORTEN_THRESHOLD);
 }
 
 // ---------------------------------------------------------------------------
@@ -411,6 +504,15 @@ function toLabel(name: string): string {
 
 // ---------------------------------------------------------------------------
 // Phase E4 — deterministic story arc (Pillar E, BI_DESIGN §9)
+//
+// Slice T3 (PLAN.md's Top-100 Corpus plan) gating note: `design/corpus/
+// stats/story_norms.yaml` (T1 corpus mining, 110 workbooks incl. the
+// top-100 VOTD set) found ZERO storyboards in the entire corpus —
+// `usage_rate: { count: 0, n: 0, confidence: "low" }`. Per the plan's own
+// n<15 confidence guard (`design/corpus/GAPS.md` §1), a low-confidence
+// bucket is NEVER auto-applied — there is no mined evidence to inform a
+// usage-rate-based default, so `wantsStoryArc` gates ONLY on an explicit
+// signal (question language or persona preference) and nothing looser.
 // ---------------------------------------------------------------------------
 
 /** Question language that signals the user wants a narrative artifact. */
@@ -420,6 +522,10 @@ const STORY_LANGUAGE_RE = /\b(story|narrative|presentation)\b/i;
  * True when a story arc should be emitted: either the resolved persona
  * explicitly prefers "story" artifacts (brand.yaml `preferredArtifact`), or
  * the business question itself asks for a story/narrative/presentation.
+ * These are the ONLY two triggers (see the mined-evidence note above) —
+ * do not add a looser one (e.g. audience-based or sheet-count-based) without
+ * first re-running the T1 corpus miner and clearing the n>=15 confidence
+ * floor for `story_norms.yaml`'s `usage_rate`.
  */
 export function wantsStoryArc(
   personaPreferredArtifact: PersonaPreferredArtifact | undefined,
@@ -429,59 +535,174 @@ export function wantsStoryArc(
   return STORY_LANGUAGE_RE.test(questionText);
 }
 
+// ---------------------------------------------------------------------------
+// Caption template v2 (Slice T3): takeaway-style, persona-toned,
+// question-echoing captions.
+//
+// Beauty-gate round 2 flagged v1's bare-label captions ("Profit.") as
+// "irrelevant — adds no narrative value". `story_norms.yaml`'s 0/110 finding
+// (above) means there is no mined caption-STYLE norm to draw on either, so
+// v2 is a deterministic-template floor, not a data-driven one — see
+// `docs/feature-prompt-authoring/BI_DESIGN.md`'s story section for the full
+// rationale and the intended quality path: the CALLING LLM rewrites
+// `plan.storyArc[].caption` with real data-aware narrative between
+// `design_dashboard`'s proposal and the `build_from_plan` confirm call
+// (`assertStoryArcCapturedSheetsExist` in `src/tools/buildFromPlan.ts`
+// re-validates `capturedSheet` references either way — the client can
+// reorder/drop/rewrite captions freely, just not invent a sheet).
+// ---------------------------------------------------------------------------
+
 /**
- * Persona-toned caption for one non-headline story point, derived from the
- * sheet's own shape (mirrors the encodingSummary style `buildProposal` uses
- * for `views[]`, without importing across the planner/proposal boundary).
- *
- * - tone "concise": the sheet's own title (already human-readable — no
- *   narrative wrapper needed).
- * - default / "detailed": a short narrative sentence.
+ * Lowercased, leading-interrogative-stripped echo of the business question,
+ * for mid-sentence use in a takeaway caption: "How is sales trending?" ->
+ * "sales trending". Empty string when there is no question text to echo
+ * (e.g. `directed` mode with no narrative-bearing directions).
  */
-function deriveChartCaption(sheet: SheetSpec, tone: PersonaTone | undefined): string {
-  if (tone === "concise") return sheet.title;
-  if (sheet.markType === "map_filled" && sheet.geo) {
-    return `Where it shows up: ${toLabel(sheet.geo.geoField)}.`;
-  }
-  if (sheet.markType === "scatter" && sheet.scatter) {
-    return `${toLabel(sheet.scatter.x)} vs ${toLabel(sheet.scatter.y)} — is there a relationship?`;
-  }
-  const measure = sheet.measures[0];
-  const dim = sheet.cols[0] ?? sheet.rows[0];
-  if (measure && dim) return `${toLabel(measure)} by ${toLabel(dim)}.`;
-  if (measure) return `${toLabel(measure)}.`;
-  return `${sheet.title}.`;
+function questionEcho(questionText: string): string {
+  const trimmed = questionText.trim().replace(/[?!.]+$/, "");
+  if (!trimmed) return "";
+  const withoutLead = trimmed.replace(
+    /^(how|what|why|when|where|which)\s+(is|are|was|were|does|do|did)\s+/i,
+    "",
+  );
+  return withoutLead.charAt(0).toLowerCase() + withoutLead.slice(1);
 }
 
-/** Headline caption for the story's opening point. */
-function deriveHeadlineCaption(dashboardTitle: string, tone: PersonaTone | undefined): string {
-  return tone === "concise"
-    ? dashboardTitle
-    : `${dashboardTitle}: the headline numbers at a glance.`;
+/**
+ * Headline caption for the story's opening point (captures the KPI band's
+ * leading tile for exec plans, or the plan's first sheet otherwise).
+ * "concise" tone: the bare dashboard title. Otherwise: a takeaway sentence
+ * that echoes the business question and names the primary measure —
+ * falling back to the dashboard title when there's no question to echo.
+ */
+function deriveHeadlineCaption(
+  dashboardTitle: string,
+  questionText: string,
+  tone: PersonaTone | undefined,
+  primaryMeasure: string | undefined,
+): string {
+  if (tone === "concise") return dashboardTitle;
+  const echo = questionEcho(questionText);
+  const lead = echo ? `The headline: ${echo}` : `The headline: ${dashboardTitle}`;
+  return primaryMeasure
+    ? `${lead} — start with ${toLabel(primaryMeasure)} at a glance.`
+    : `${lead} — the numbers at a glance.`;
+}
+
+/** Per-KPI point: names the tile's own measure alongside the headline's primary measure. */
+function deriveKpiCaption(sheet: SheetSpec, primaryMeasure: string | undefined): string {
+  const measure = sheet.kpi?.primaryMeasure ?? sheet.measures[0] ?? sheet.title;
+  const measureLabel = toLabel(measure);
+  if (!primaryMeasure || primaryMeasure === measure) {
+    return `${measureLabel}: a lever worth watching.`;
+  }
+  return `${measureLabel}: watch this lever alongside ${toLabel(primaryMeasure)}.`;
+}
+
+/** Drivers point (bar): names the breakdown dimension as the story's "why". */
+function deriveDriversCaption(sheet: SheetSpec): string {
+  const dim = sheet.cols[0] ?? sheet.rows[0];
+  const measure = sheet.measures[0];
+  if (dim && measure) {
+    return `${toLabel(dim)} drives the mix — where ${toLabel(measure)} concentrates.`;
+  }
+  return `${sheet.title}: where the mix concentrates.`;
+}
+
+/** Geography point (map_filled): names where the measure shows up. */
+function deriveGeographyCaption(sheet: SheetSpec): string {
+  const measure = sheet.measures[0] ?? sheet.geo?.colorMeasure;
+  return measure
+    ? `The geography: where ${toLabel(measure)} shows up on the map.`
+    : `The geography: where it shows up on the map.`;
+}
+
+/** Trend point (line): frames the chart as a direction-of-travel question. */
+function deriveTrendCaption(sheet: SheetSpec): string {
+  const measure = sheet.measures[0];
+  const dim = sheet.cols[0] ?? sheet.rows[0];
+  if (!measure) return `${sheet.title}: is the trend moving the right way?`;
+  return dim
+    ? `${toLabel(measure)} over ${toLabel(dim)} — is the trend moving the right way?`
+    : `${toLabel(measure)} over time — is the trend moving the right way?`;
+}
+
+/** Relationship point (scatter): frames the pairing as an open question. */
+function deriveScatterCaption(sheet: SheetSpec): string {
+  if (!sheet.scatter) return `${sheet.title}.`;
+  return (
+    `${toLabel(sheet.scatter.x)} vs ${toLabel(sheet.scatter.y)} — ` +
+    "is there a relationship worth flagging?"
+  );
+}
+
+/** Generic fallback for any sheet kind/markType not covered above. */
+function deriveGenericCaption(sheet: SheetSpec): string {
+  const measure = sheet.measures[0];
+  const dim = sheet.cols[0] ?? sheet.rows[0];
+  if (measure && dim) return `${toLabel(measure)}: a closer look by ${toLabel(dim)}.`;
+  if (measure) return `${toLabel(measure)}: a closer look.`;
+  return `${sheet.title}: a closer look.`;
+}
+
+/**
+ * Persona-toned caption for one non-headline story point, routed by the
+ * sheet's own kind/markType — kpi_tile -> per-KPI, bar -> drivers,
+ * map_filled -> geography, scatter -> relationship, line -> trend, anything
+ * else -> a generic takeaway. "concise" tone always uses the sheet's own
+ * title (already human-readable — no narrative wrapper needed).
+ */
+function deriveChartCaption(
+  sheet: SheetSpec,
+  tone: PersonaTone | undefined,
+  primaryMeasure: string | undefined,
+): string {
+  if (tone === "concise") return sheet.title;
+  if (sheet.kind === "kpi_tile") return deriveKpiCaption(sheet, primaryMeasure);
+  if (sheet.markType === "bar") return deriveDriversCaption(sheet);
+  if (sheet.markType === "map_filled") return deriveGeographyCaption(sheet);
+  if (sheet.markType === "scatter") return deriveScatterCaption(sheet);
+  if (sheet.markType === "line") return deriveTrendCaption(sheet);
+  return deriveGenericCaption(sheet);
 }
 
 /**
  * Build a deterministic exec-style story arc over the plan's own sheets:
  * a headline point (the plan's leading sheet — the top KPI tile for exec
- * plans) followed by one point per remaining sheet, in plan order.
+ * plans) followed by one point per remaining sheet, in plan order, each
+ * captioned by its own kind (KPI tile / bar / map / scatter / line — see
+ * `deriveChartCaption`) so a drivers point always captures a bar and a
+ * geography point always captures a map, never the wrong sheet kind.
  *
  * Every `capturedSheet` is guaranteed to equal an existing sheet title in
  * `sheets` — `build_from_plan` re-validates this before calling the sidecar,
  * and the builder validates it a third time against the actual workbook
  * (fail loud, never silent) as the final backstop.
+ *
+ * `questionText` (optional, defaults to "") drives the headline's
+ * question-echo — omit it only when there's no original question to echo
+ * (the headline caption falls back to `dashboardTitle` in that case).
  */
 export function buildStoryArc(
   sheets: readonly SheetSpec[],
   dashboardTitle: string,
   tone: PersonaTone | undefined,
+  questionText = "",
 ): StoryArcPoint[] {
   if (sheets.length === 0) return [];
   const [headline, ...rest] = sheets;
+  const primaryMeasure = headline!.kpi?.primaryMeasure ?? headline!.measures[0];
   const points: StoryArcPoint[] = [
-    { caption: deriveHeadlineCaption(dashboardTitle, tone), capturedSheet: headline!.title },
+    {
+      caption: deriveHeadlineCaption(dashboardTitle, questionText, tone, primaryMeasure),
+      capturedSheet: headline!.title,
+    },
   ];
   for (const sheet of rest) {
-    points.push({ caption: deriveChartCaption(sheet, tone), capturedSheet: sheet.title });
+    points.push({
+      caption: deriveChartCaption(sheet, tone, primaryMeasure),
+      capturedSheet: sheet.title,
+    });
   }
   return points;
 }
@@ -515,9 +736,10 @@ export interface PlanInput {
   brandName?: string;
   /**
    * Phase E1 (Slice C): the resolved persona's `preferredArtifact` (from
-   * brand.yaml), for provenance. `buildProposal` surfaces an honest
-   * openQuestion when this is "story" or "pulse" (those artifact types are
-   * not yet buildable — Phase E4 / E3 respectively).
+   * brand.yaml), for provenance. "story" drives `wantsStoryArc`/
+   * `buildStoryArc` below (Phase E4, shipped); `buildProposal` still
+   * surfaces an honest openQuestion for "pulse" (Phase E3 — no dashboard
+   * build path consumes it yet).
    */
   personaPreferredArtifact?: PersonaPreferredArtifact;
   /**
@@ -646,8 +868,20 @@ export function generatePlan(input: PlanInput): DashboardPlan {
   // Phase-1: Dashboard title + subtitle + layoutGrammar
   // ---------------------------------------------------------------------------
 
-  const dashboardTitle = deriveDashboardTitle(questionText || datasourceName, audience);
-  const dashboardSubtitle = deriveDashboardSubtitle(audience);
+  const derivedTitle = deriveDashboardTitle(questionText || datasourceName, audience);
+  const audienceSubtitle = deriveDashboardSubtitle(audience);
+
+  // T2 auto-shorten (see the block above `TITLE_AUTO_SHORTEN_THRESHOLD`): a
+  // long question-derived title becomes a short "{Measure} Performance"
+  // headline, and the full original question takes over as the subtitle —
+  // replacing the generic per-audience default, which is never something a
+  // caller "set" (there is no explicit-subtitle input on `PlanInput` today).
+  const shouldShortenTitle =
+    derivedTitle.length > TITLE_AUTO_SHORTEN_THRESHOLD && questionText.trim().length > 0;
+  const dashboardTitle = shouldShortenTitle
+    ? shortenDashboardTitle(questionText, derivedTitle, planMeasureNames(sheets))
+    : derivedTitle;
+  const dashboardSubtitle = shouldShortenTitle ? questionText.trim() : audienceSubtitle;
 
   // layoutGrammar: use the exec-specific one if we built it, otherwise derive
   // from the dashboardLayout for other audiences.
@@ -679,7 +913,7 @@ export function generatePlan(input: PlanInput): DashboardPlan {
 
   const emitStoryArc = wantsStoryArc(input.personaPreferredArtifact, questionText);
   const storyArc = emitStoryArc
-    ? buildStoryArc(sheets, dashboardTitle, input.personaTone)
+    ? buildStoryArc(sheets, dashboardTitle, input.personaTone, questionText)
     : undefined;
   const storyName = emitStoryArc ? dashboardTitle : undefined;
 

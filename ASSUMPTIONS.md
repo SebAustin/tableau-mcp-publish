@@ -194,3 +194,56 @@ and "Deviation 2" notes for the full before/after counts and reasoning.
 back (e.g. to reproduce one worksheet's exact formatting instead of a general chrome
 preset), re-run the miner with a `--no-dedup` style flag — not implemented in D0, since
 no consumer needs it yet (YAGNI); add it when a real slice requires it.
+
+---
+
+## Design-Excellence Top-100 Corpus — Additional Assumptions (added 2026-07-20)
+
+### D-04 — Dashboard-title character-length threshold is a documented judgment call, not a mined stat
+
+**Assumed:** `TITLE_AUTO_SHORTEN_THRESHOLD = 40` (`src/planner/plan.ts`) — a long,
+question-derived `dashboardTitle` (> 40 chars) is auto-shortened to a "{Measure(s)}
+Performance" headline, and the full original question is promoted to `dashboardSubtitle`.
+
+**Why:** Beauty-gate round 2 verdict was "title too big". `sidecar/design_stats.py`'s T1
+corpus mining (`design/corpus/stats/dashboard_norms.yaml`, 110 workbooks) mined title
+**fontsize** (900-1400-stratum median 22pt) and title-zone **height ratio** (median
+0.0696) — the pre-existing themed-header defaults (20pt fontsize) were already at/under
+the fontsize norm, so fontsize was never the actual defect. The miner never extracted a
+title **character-length** bucket (no such extractor exists in `design_dashboard_miner.py`
+today), so there is no mined p75 to defer to for the shortening threshold itself. 40 chars
+is chosen to keep a shortened title comfortably on one line at the mined fontsize/canvas
+combination — a defensible judgment call, explicitly documented as such (not disguised as
+a mined number) per this file's whole purpose.
+
+**How to override:** if a future corpus-mining pass adds a title-length extractor to
+`design_dashboard_miner.py`/`design_stats.py` and a `title_length` bucket appears in
+`dashboard_norms.yaml` with `confidence: "ok"`, replace the hardcoded `40` with that
+bucket's `p75` — `tests/planner-titleShorten.test.ts`'s "mined-stats CI gate" describe
+block already parses the stats file at test time and will start failing (by design) the
+moment such a bucket appears, as a signal to make this change.
+
+### D-05 — Story-arc gating stays "explicit ask only"; no usage-rate-based default
+
+**Assumed:** `wantsStoryArc()` (`src/planner/plan.ts`) emits a `storyArc` if and only if
+(a) the business question uses story/narrative/presentation language, or (b) the resolved
+persona's `preferredArtifact === "story"`. No other trigger (audience, sheet count, etc.)
+exists.
+
+**Why:** `design/corpus/stats/story_norms.yaml` (T1 corpus mining, 110 workbooks — the 3
+pre-existing exemplars + the top-100 VOTD corpus + 7 extra references) found **zero
+storyboards in the entire mined corpus** (`usage_rate: { count: 0, n: 0, confidence:
+"low" }`). Per the plan's own n<15 confidence guard, documented in `design/corpus/
+GAPS.md` §1, a low-confidence bucket must never be auto-applied — there is no mined
+evidence to support any usage-rate-informed default (e.g. "propose a story for N% of exec
+questions"). Explicit-signal-only gating is therefore the only defensible choice, not a
+stopgap.
+
+**How to override:** if a future corpus refresh specifically targets Tableau Public's
+dedicated Stories gallery (rather than VOTD, which evidently skews toward single-view
+vizzes) and `story_norms.yaml`'s `usage_rate` clears `n >= 15` with `confidence: "ok"`,
+revisit this gate against the new mined rate.
+`tests/planner-storyArc.test.ts`'s "mined-evidence CI gate" describe block parses
+`story_norms.yaml` at test time and asserts `usage_rate.confidence === "low"` as its own
+premise — that assertion starts failing the moment the corpus changes, as the signal to
+revisit.

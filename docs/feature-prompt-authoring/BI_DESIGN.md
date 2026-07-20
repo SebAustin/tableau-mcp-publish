@@ -774,7 +774,7 @@ four:
 |---|---|---|
 | `chartDeny: string[]` | `AudienceConstraintOverrides.chartDeny` → `applyAudienceClamps` STEP 1.5 (`src/planner/audience.ts`) | Any sheet whose `markType` (case-insensitive) appears in the list is replaced with `"bar"` (clearing `geo`/`scatter`), with a rationale note naming the `chartDeny` rule. Runs independently of, and before, the audience-level `allowedMarkTypes` drop (STEP 2) — this is a *persona* veto, not an *audience* capability check. |
 | `kpiEmphasis: "high" \| "medium" \| "low"` | `AudienceConstraintOverrides.kpiEmphasis` → `applyAudienceClamps` STEP 3.5 | Caps the number of `kpi_tile` sheets in the KPI band: `high` = 4 (the historical default, unchanged), `medium` = 3, `low` = 2 (`KPI_EMPHASIS_MAX_TILES`). Extra tiles are dropped from the tail (lowest-ranked measures — `rankMeasures` already ordered the band by relevance) with a rationale note on the last surviving tile. |
-| `preferredArtifact: "dashboard" \| "story" \| "pulse"` | `DashboardPlan.personaPreferredArtifact` → `buildProposal` (`src/planner/proposal.ts`) | `"dashboard"` (or unset) is a no-op — this tool already produces a dashboard. `"story"` or `"pulse"` appends an honest `openQuestions` entry naming the phase where that capability lands (Phase E4 for stories, Phase E3 for Pulse) — the server never silently ignores the preference or pretends to honor it with a dashboard substitute. |
+| `preferredArtifact: "dashboard" \| "story" \| "pulse"` | `DashboardPlan.personaPreferredArtifact` → `buildProposal` (`src/planner/proposal.ts`) | `"dashboard"` (or unset) is a no-op — this tool already produces a dashboard. `"story"` is fully shipped (Phase E4, see §9.2 below): it drives `generatePlan()` to emit a deterministic `storyArc`/`storyOutline`, no stub note. `"pulse"` still appends an honest `openQuestions` entry naming the phase where that capability lands (Phase E3) — the server never silently ignores the preference or pretends to honor it with a dashboard substitute. |
 | `tone: "concise" \| "detailed"` | `DashboardPlan.personaTone` → `buildProposal` | `"concise"` trims `DashboardProposal.summary` to its first sentence plus the layout-summary line (the persona-tailored provenance mention is folded into that same first sentence rather than dropped, so a concise CEO proposal still names the persona). `"detailed"` (or unset) keeps the full multi-sentence summary — unchanged, backward-compatible default. |
 
 Both the planner (`src/planner/*`) and `sidecar/twb_builder.py` remain decoupled from
@@ -782,6 +782,95 @@ Both the planner (`src/planner/*`) and `sidecar/twb_builder.py` remain decoupled
 place that reads the brand file and resolves a persona's overrides; everything downstream
 receives plain, already-resolved values — the "planner stays pure" invariant from Phase E1
 Slice A holds through Slice C.
+
+### 9.2 Story arcs — deterministic template floor + the client-edit quality path
+
+Beauty-gate round 2 (PLAN.md's Top-100 Corpus plan) flagged the Phase E4 v1 story captions
+as **"irrelevant — mechanical captions like 'Profit.' add no narrative value."** Slice T3
+addressed this with two changes, both grounded in the T1 corpus-mining evidence rather than
+invented rules:
+
+**Mined finding — gating.** `design/corpus/stats/story_norms.yaml` (T1, 110 mined
+workbooks: the 3 pre-existing exemplars + the top-100 VOTD corpus + 7 extra references)
+found **zero storyboards in the entire corpus** — `usage_rate: { count: 0, n: 0, confidence:
+"low" }`. Per the plan's own n<15 confidence guard (`design/corpus/GAPS.md` §1), a
+low-confidence bucket is never auto-applied to a default. There is therefore no mined
+evidence to support a usage-rate-based "propose a story N% of the time" default — the only
+defensible gating is **explicit ask only**: `wantsStoryArc()` (`src/planner/plan.ts`) emits
+a `storyArc` if and only if (a) the business question itself uses story/narrative/
+presentation language, or (b) the resolved persona's `preferredArtifact === "story"`. No
+audience, sheet-count, or other heuristic trigger exists. A future corpus refresh targeting
+Tableau Public's dedicated Stories gallery (VOTD skews toward single-view vizzes) could
+eventually clear the confidence floor and justify revisiting this — not attempted here
+(GAPS.md).
+
+**No mined finding — caption style, hence the template-floor + client-edit design.**
+`story_norms.yaml`'s `caption_length`/`nav_type_distribution` buckets are equally
+zero-evidence, so there is no mined caption-STYLE norm to encode either. Slice T3's caption
+template v2 (`buildStoryArc()` in `src/planner/plan.ts`) is a **deterministic floor**, not a
+data-driven one: takeaway-style, persona-toned, question-echoing sentences routed by the
+captured sheet's own kind — a KPI tile gets a "watch this lever" caption, a bar gets a
+"drives the mix" drivers caption, a map gets a "the geography" caption, and so on — instead
+of v1's bare `"{measure}."` label. This closes the "adds no narrative value" defect
+mechanically, but a template can never know the ACTUAL story behind a given dataset (why
+sales dipped in Q3, which category is the real driver). That's why the architecture treats
+the **client-edit path as the primary, intended quality mechanism**, not the template:
+
+1. `design_dashboard` returns a `DashboardProposal` whose `storyOutline` mirrors
+   `plan.storyArc[].caption` (template-v2 captions, deterministic).
+2. **The calling LLM — which has the full conversational and data context the deterministic
+   planner never sees — rewrites `plan.storyArc[].caption`** with real, data-aware
+   narrative before confirming. It may also reorder points or drop ones that don't earn
+   their place; it must not invent a `capturedSheet` that isn't one of `plan.sheets[].title`.
+3. `build_from_plan` re-validates every `storyArc[].capturedSheet` reference against the
+   plan's own sheets (`assertStoryArcCapturedSheetsExist`, `src/tools/buildFromPlan.ts`) —
+   fail-loud, before any sidecar/REST call — then builds the `<dashboard type='storyboard'>`
+   from whatever captions survive the rewrite. This validation is the ONLY story-quality
+   mechanism that was already shipped pre-T3 (do not rebuild it); T3 only changed what the
+   template emits by default and documented this rewrite step as the intended path.
+
+**Worked example.** A `design_dashboard` call for an exec audience with
+`businessQuestion: "Tell the story of how sales and profit are performing across
+categories and states"` returns (abbreviated):
+
+```json
+{
+  "kind": "proposal",
+  "storyOutline": [
+    "The headline: sales and profit are performing across categories and states — start with Sales at a glance.",
+    "Profit: watch this lever alongside Sales.",
+    "Category drives the mix — where Sales concentrates.",
+    "The geography: where Sales shows up on the map."
+  ],
+  "plan": {
+    "kind": "plan",
+    "storyName": "Sales & Profit Performance",
+    "storyArc": [
+      { "caption": "The headline: …", "capturedSheet": "Sales" },
+      { "caption": "Profit: watch this lever …", "capturedSheet": "Profit" },
+      { "caption": "Category drives the mix …", "capturedSheet": "Sales by Category" },
+      { "caption": "The geography: …", "capturedSheet": "Sales by State" }
+    ]
+  }
+}
+```
+
+The agent presents this to the user, then — before calling `build_from_plan` — rewrites the
+captions with the real context it has (e.g. from the conversation or the underlying data):
+
+```json
+"storyArc": [
+  { "caption": "Q4 finished strong: Sales are up 14% YoY, led by the West.", "capturedSheet": "Sales" },
+  { "caption": "Profit held pace with Sales — margin discipline is intact this quarter.", "capturedSheet": "Profit" },
+  { "caption": "Technology is the standout category — nearly a third of total Sales.", "capturedSheet": "Sales by Category" },
+  { "caption": "California and Texas anchor the map; the Midwest is the clearest whitespace.", "capturedSheet": "Sales by State" }
+]
+```
+
+Every `capturedSheet` value is untouched — only `caption` text changed — so
+`assertStoryArcCapturedSheetsExist` still passes and the story builds against the same
+underlying sheets. See `docs/tool_reference.md`'s `build_from_plan` entry for the same
+worked example framed as a tool-call sequence.
 
 ---
 

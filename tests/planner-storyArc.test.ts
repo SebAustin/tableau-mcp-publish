@@ -16,11 +16,22 @@
  * - buildProposal(): storyOutline mirrors plan.storyArc captions and is
  *   rendered into the summary text.
  * - Determinism: identical inputs produce byte-identical plans/proposals.
+ * - Slice T3 mined-evidence CI gate: parses the COMMITTED
+ *   design/corpus/stats/story_norms.yaml at test time and asserts the
+ *   gating stays "explicit ask only" for as long as usage_rate stays
+ *   low-confidence — a future corpus refresh that clears the n>=15 floor
+ *   must update this test deliberately, not silently.
  *
- * All tests are purely deterministic — no LLM calls, no network, no
- * filesystem I/O.
+ * All tests are purely deterministic and offline — no LLM calls, no
+ * network. The one exception is the mined-evidence gate test just above,
+ * which reads the committed (version-controlled) stats YAML from disk —
+ * still fully deterministic, just not memory-only.
  */
 
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 import { describe, it, expect } from "vitest";
 import { generatePlan, wantsStoryArc, buildStoryArc } from "../src/planner/plan.js";
 import { buildProposal } from "../src/planner/proposal.js";
@@ -31,6 +42,10 @@ import {
   type SheetSpec,
 } from "../src/planner/schema.js";
 import type { FieldHint } from "../src/planner/fields.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "..");
+const STORY_NORMS_PATH = join(REPO_ROOT, "design", "corpus", "stats", "story_norms.yaml");
 
 // ---------------------------------------------------------------------------
 // §1 — Schema
@@ -176,6 +191,43 @@ describe("wantsStoryArc — determines when a story arc is warranted", () => {
 });
 
 // ---------------------------------------------------------------------------
+// §2b — CI gate (c): story gating stays "explicit ask only" while the mined
+// usage-rate stays low-confidence (Slice T2/T3, PLAN.md's Top-100 Corpus
+// plan). This parses the COMMITTED design/corpus/stats/story_norms.yaml at
+// test time so norm drift (a future corpus refresh clearing the n>=15
+// confidence floor) fails CI here instead of the gating silently going
+// stale relative to the evidence it claims to follow.
+// ---------------------------------------------------------------------------
+
+describe("wantsStoryArc — mined-evidence CI gate (story_norms.yaml)", () => {
+  const storyNorms = parseYaml(readFileSync(STORY_NORMS_PATH, "utf-8")) as {
+    usage_rate: { confidence: string; count: number; n: number };
+  };
+
+  it("story_norms.yaml's usage_rate is still low-confidence (0 storyboards mined)", () => {
+    // This is the premise the "explicit ask/persona-preference only" gating
+    // decision rests on (design/corpus/GAPS.md §1). If this ever flips to
+    // "ok", `wantsStoryArc`'s gating (and this test's own expectations
+    // below) must be revisited against the new mined usage rate.
+    expect(storyNorms.usage_rate.confidence).toBe("low");
+    expect(storyNorms.usage_rate.count).toBe(0);
+  });
+
+  it("an ordinary exec dashboard question yields NO storyArc while usage_rate is low-confidence", () => {
+    if (storyNorms.usage_rate.confidence !== "low") return; // see the test above
+    expect(wantsStoryArc(undefined, "How is sales performing by category?")).toBe(false);
+  });
+
+  it('an explicit "as a story" request still yields a storyArc regardless of usage_rate confidence', () => {
+    expect(wantsStoryArc(undefined, "Show this as a story for the board")).toBe(true);
+  });
+
+  it('a persona preferring "story" still yields a storyArc regardless of usage_rate confidence', () => {
+    expect(wantsStoryArc("story", "How is sales performing by category?")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // §3 — buildStoryArc
 // ---------------------------------------------------------------------------
 
@@ -215,6 +267,24 @@ const SCATTER_SHEET: SheetSpec = {
   scatter: { x: "Sales", y: "Profit" },
 };
 
+const LINE_SHEET: SheetSpec = {
+  title: "Sales over Time",
+  markType: "line",
+  cols: ["Order Date"],
+  rows: [],
+  measures: ["Sales"],
+};
+
+const KPI_SHEET_2: SheetSpec = {
+  title: "Profit",
+  markType: "text",
+  kind: "kpi_tile",
+  cols: [],
+  rows: [],
+  measures: ["Profit"],
+  kpi: { primaryMeasure: "Profit" },
+};
+
 describe("buildStoryArc — deterministic headline + chart points", () => {
   it("returns an empty array for an empty sheet list", () => {
     expect(buildStoryArc([], "Title", undefined)).toEqual([]);
@@ -247,21 +317,75 @@ describe("buildStoryArc — deterministic headline + chart points", () => {
     expect(points[1]?.caption).toBe("Sales by Category");
   });
 
-  it('default/"detailed" tone produces a narrative sentence, not the bare title', () => {
+  it('default/"detailed" tone produces a takeaway sentence, not the bare title (v2 template)', () => {
     const points = buildStoryArc([KPI_SHEET, BAR_SHEET], "Executive Overview", undefined);
     expect(points[0]?.caption).not.toBe("Executive Overview");
+    // No question text supplied -> headline falls back to embedding dashboardTitle.
     expect(points[0]?.caption).toContain("Executive Overview");
+    expect(points[0]?.caption).toContain("Sales"); // primary measure named
     expect(points[1]?.caption).not.toBe("Sales by Category");
   });
 
-  it("derives a geo-flavored caption for a map_filled sheet (detailed tone)", () => {
+  it("headline caption echoes the business question over the bare dashboardTitle when supplied", () => {
+    const points = buildStoryArc(
+      [KPI_SHEET, BAR_SHEET],
+      "Sales & Profit Performance",
+      undefined,
+      "How is sales performing across categories?",
+    );
+    expect(points[0]?.caption).toContain("sales performing across categories");
+    expect(points[0]?.caption).not.toContain("Sales & Profit Performance");
+    expect(points[0]?.caption).toContain("Sales"); // primary measure still named
+  });
+
+  it("bare-label regression guard: no caption is ever a lone measure name + period (the pre-v2 defect)", () => {
+    const points = buildStoryArc([KPI_SHEET, BAR_SHEET, MAP_SHEET, SCATTER_SHEET], "Title", "detailed");
+    for (const point of points) {
+      expect(point.caption).not.toMatch(/^[A-Z][a-z]+\.$/);
+    }
+  });
+
+  it("per-KPI point (non-headline kpi_tile) names its own measure alongside the headline's primary measure", () => {
+    const points = buildStoryArc([KPI_SHEET, KPI_SHEET_2], "Executive Overview", "detailed");
+    expect(points[1]?.capturedSheet).toBe("Profit");
+    expect(points[1]?.caption).toContain("Profit");
+    expect(points[1]?.caption).toContain("Sales"); // alongside the headline's primary measure
+    expect(points[1]?.caption.toLowerCase()).toContain("lever");
+  });
+
+  it("derives a drivers-flavored caption for a bar sheet, naming the breakdown dimension (detailed tone)", () => {
+    const points = buildStoryArc([KPI_SHEET, BAR_SHEET], "Executive Overview", "detailed");
+    expect(points[1]?.caption).toContain("Category");
+    expect(points[1]?.caption.toLowerCase()).toContain("drives the mix");
+  });
+
+  it("derives a geography-flavored caption for a map_filled sheet, naming the measure (detailed tone)", () => {
     const points = buildStoryArc([KPI_SHEET, MAP_SHEET], "Executive Overview", "detailed");
-    expect(points[1]?.caption.toLowerCase()).toContain("state");
+    expect(points[1]?.caption.toLowerCase()).toContain("geography");
+    expect(points[1]?.caption.toLowerCase()).toContain("map");
+    expect(points[1]?.caption).toContain("Sales");
   });
 
   it("derives a vs-flavored caption for a scatter sheet (detailed tone)", () => {
     const points = buildStoryArc([KPI_SHEET, SCATTER_SHEET], "Executive Overview", "detailed");
     expect(points[1]?.caption).toContain("vs");
+  });
+
+  it("derives a trend-flavored caption for a line sheet (detailed tone)", () => {
+    const points = buildStoryArc([KPI_SHEET, LINE_SHEET], "Executive Overview", "detailed");
+    expect(points[1]?.caption.toLowerCase()).toContain("trend");
+    expect(points[1]?.caption).toContain("Sales");
+  });
+
+  it("sheet-kind routing: each point's caption style matches its OWN sheet's kind, not positional order", () => {
+    const sheets = [KPI_SHEET, KPI_SHEET_2, BAR_SHEET, MAP_SHEET, SCATTER_SHEET, LINE_SHEET];
+    const points = buildStoryArc(sheets, "Executive Overview", "detailed");
+    expect(points.map((p) => p.capturedSheet)).toEqual(sheets.map((s) => s.title));
+    expect(points[1]?.caption.toLowerCase()).toContain("lever"); // Profit KPI tile
+    expect(points[2]?.caption.toLowerCase()).toContain("drives the mix"); // bar
+    expect(points[3]?.caption.toLowerCase()).toContain("map"); // map_filled
+    expect(points[4]?.caption).toContain("vs"); // scatter
+    expect(points[5]?.caption.toLowerCase()).toContain("trend"); // line
   });
 
   it("is pure/deterministic: identical inputs produce byte-identical output", () => {

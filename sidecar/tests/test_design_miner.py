@@ -24,6 +24,13 @@ Every construct in the fixture is copied verbatim from a real mined exemplar
 - custom palette: same source's ordered-sequential navy palette.
 - text zone: same source's "Superstore |" header run (bold, #ffffff, 20pt,
   Tableau Semibold).
+
+Slice T1's dashboard-level / story-level mining (``design_dashboard_miner.mine_dashboards()`` /
+``mine_stories()``) is covered in the sibling test file ``test_design_dashboard_miner.py``,
+against this same fixture's "Fixture Dashboard" (canvas size, KPI-band-like row,
+filter/paramctrl zones, device layouts) and "Fixture Story" (storyboard, 2 story-points)
+dashboards -- both added to the fixture verbatim from the real shapes documented in
+``design/corpus/SCHEMA.md`` and ``sidecar/twb_builder.py``'s ``_build_story`` docstring.
 """
 
 from __future__ import annotations
@@ -68,7 +75,9 @@ def test_zone_style_round_trips_with_provenance() -> None:
     assert entry["formats"]["margin"] == "0"
     assert entry["source"] == "design_miner_fixture.twb"
     assert entry["sha256"] == _fixture_sha256()
-    assert entry["xpath"] == "/workbook/dashboards/dashboard/zones/zone[1]/zone-style"
+    # dashboard[1] (not bare "dashboard") since the fixture now has a 2nd <dashboard> sibling
+    # (the T1 storyboard fixture, added for test_design_stats.py's mine_stories() coverage).
+    assert entry["xpath"] == "/workbook/dashboards/dashboard[1]/zones/zone[1]/zone-style"
 
 
 def test_chrome_rules_capture_both_workbook_and_worksheet_scope() -> None:

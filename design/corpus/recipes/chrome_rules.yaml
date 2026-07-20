@@ -1,5 +1,250 @@
 - element: cell
   formats:
+  - attr: text-format
+    value: p0%
+  scope: worksheet
+  sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+  source: WB-001.twbx
+  xpath: /workbook/worksheets/worksheet[14]/table/style/style-rule[1]
+- element: cell
+  formats:
+  - attr: vertical-align
+    value: center
+  - attr: text-align
+    value: center
+  scope: worksheet
+  sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+  source: WB-001.twbx
+  xpath: /workbook/worksheets/worksheet[54]/table/panes/pane[3]/style/style-rule[1]
+- element: axis
+  formats:
+  - attr: display
+    scope: cols
+    value: 'false'
+  - attr: stroke-size
+    value: '0'
+  - attr: line-visibility
+    value: 'off'
+  - attr: tick-color
+    value: '#00000000'
+  scope: worksheet
+  sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+  source: WB-001.twbx
+  xpath: /workbook/worksheets/worksheet[6]/table/style/style-rule[1]
+- element: cell
+  formats:
+  - attr: text-format
+    value: n#,##0;-#,##0
+  scope: worksheet
+  sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+  source: WB-001.twbx
+  xpath: /workbook/worksheets/worksheet[6]/table/style/style-rule[2]
+- element: gridline
+  formats:
+  - attr: stroke-size
+    scope: rows
+    value: '0'
+  - attr: line-visibility
+    scope: rows
+    value: 'off'
+  - attr: stroke-size
+    scope: cols
+    value: '0'
+  - attr: line-visibility
+    scope: cols
+    value: 'off'
+  scope: worksheet
+  sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+  source: WB-001.twbx
+  xpath: /workbook/worksheets/worksheet[6]/table/style/style-rule[9]
+- element: gridline
+  formats:
+  - attr: stroke-size
+    value: '0'
+  scope: worksheet
+  sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+  source: WB-004.twbx
+  xpath: /workbook/worksheets/worksheet[2]/table/style/style-rule[6]
+- element: axis
+  formats:
+  - attr: line-visibility
+    value: 'off'
+  scope: workbook
+  sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+  source: WB-005.twbx
+  xpath: /workbook/style/style-rule[1]
+- element: cell
+  formats:
+  - attr: text-format
+    value: n#,##0.00;-#,##0.00
+  scope: worksheet
+  sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+  source: WB-005.twbx
+  xpath: /workbook/worksheets/worksheet[17]/table/style/style-rule[2]
+- element: cell
+  formats:
+  - attr: text-format
+    value: p0.0%
+  scope: worksheet
+  sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+  source: WB-005.twbx
+  xpath: /workbook/worksheets/worksheet[1]/table/style/style-rule[2]
+- element: datalabel
+  formats:
+  - attr: color-mode
+    value: auto
+  - attr: font-size
+    value: '8'
+  scope: worksheet
+  sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+  source: WB-005.twbx
+  xpath: /workbook/worksheets/worksheet[21]/table/panes/pane[7]/style/style-rule[2]
+- element: pane
+  formats:
+  - attr: band-color
+    scope: rows
+    value: '#00000000'
+  scope: worksheet
+  sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+  source: WB-009.twbx
+  xpath: /workbook/worksheets/worksheet[3]/table/style/style-rule[2]
+- element: table-div
+  formats:
+  - attr: stroke-size
+    scope: cols
+    value: '0'
+  - attr: line-visibility
+    scope: cols
+    value: 'off'
+  scope: worksheet
+  sha256: 5765a0b78bc551ece57496225ecab81bea5c468dcb4ac2d18dc966bc47f3d6ca
+  source: WB-017.twbx
+  xpath: /workbook/worksheets/worksheet[3]/table/style/style-rule[9]
+- element: axis
+  formats:
+  - attr: display
+    scope: rows
+    value: 'false'
+  - attr: display
+    scope: cols
+    value: 'false'
+  - attr: stroke-size
+    value: '0'
+  - attr: line-visibility
+    value: 'off'
+  - attr: tick-color
+    value: '#00000000'
+  scope: worksheet
+  sha256: 48f3609102d4123f637c3a5a0933c9c6d3f517ff1457b352dc7cbdee90a77755
+  source: WB-018.twbx
+  xpath: /workbook/worksheets/worksheet[9]/table/style/style-rule[1]
+- element: header
+  formats:
+  - attr: band-color
+    scope: rows
+    value: '#00000000'
+  scope: worksheet
+  sha256: 9cf7e176cc3166a9bb8e1a82b231402daf3b727a7d83f22dc9912c89b63d56b8
+  source: WB-021.twbx
+  xpath: /workbook/worksheets/worksheet[5]/table/style/style-rule[2]
+- element: cell
+  formats:
+  - attr: text-align
+    value: center
+  - attr: vertical-align
+    value: bottom
+  scope: worksheet
+  sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+  source: WB-023.twbx
+  xpath: /workbook/worksheets/worksheet[2]/table/panes/pane[1]/style/style-rule[1]
+- element: axis
+  formats:
+  - attr: display
+    scope: rows
+    value: 'false'
+  - attr: display
+    scope: rows
+    value: 'false'
+  scope: worksheet
+  sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+  source: WB-023.twbx
+  xpath: /workbook/worksheets/worksheet[30]/table/style/style-rule[1]
+- element: cell
+  formats:
+  - attr: text-align
+    value: center
+  - attr: vertical-align
+    value: top
+  scope: worksheet
+  sha256: 25f1f97643d6ed69bb447860e78c3432e40a9007072134f2c40ef03a28248789
+  source: WB-027.twbx
+  xpath: /workbook/worksheets/worksheet[43]/table/panes/pane/style/style-rule[1]
+- element: cell
+  formats:
+  - attr: vertical-align
+    value: center
+  scope: worksheet
+  sha256: 1622e18f758a184aa54805055c4e81d7c38894fb6b420b5e25cd5499b5852020
+  source: WB-028.twbx
+  xpath: /workbook/worksheets/worksheet[4]/table/panes/pane/style/style-rule[1]
+- element: zeroline
+  formats:
+  - attr: stroke-size
+    scope: cols
+    value: '0'
+  - attr: line-visibility
+    scope: cols
+    value: 'off'
+  - attr: stroke-size
+    scope: rows
+    value: '0'
+  - attr: line-visibility
+    scope: rows
+    value: 'off'
+  scope: worksheet
+  sha256: a0df65b2ab80fdf69d99c5c513a361edff26197861599a2857a71b1bf4ea0141
+  source: WB-029.twbx
+  xpath: /workbook/worksheets/worksheet[12]/table/style/style-rule[10]
+- element: zeroline
+  formats:
+  - attr: stroke-size
+    scope: rows
+    value: '0'
+  - attr: line-visibility
+    scope: rows
+    value: 'off'
+  - attr: stroke-size
+    scope: cols
+    value: '0'
+  - attr: line-visibility
+    scope: cols
+    value: 'off'
+  scope: worksheet
+  sha256: a0df65b2ab80fdf69d99c5c513a361edff26197861599a2857a71b1bf4ea0141
+  source: WB-029.twbx
+  xpath: /workbook/worksheets/worksheet[14]/table/style/style-rule[10]
+- element: cell
+  formats:
+  - attr: vertical-align
+    value: bottom
+  scope: worksheet
+  sha256: d2febd4a6bf694675df65407e7ce92a26ccc6f98fa863c395645e52e7736f9e0
+  source: WB-033.twbx
+  xpath: /workbook/worksheets/worksheet[7]/table/panes/pane[2]/style/style-rule[1]
+- element: zeroline
+  formats:
+  - attr: stroke-size
+    scope: cols
+    value: '0'
+  - attr: line-visibility
+    scope: cols
+    value: 'off'
+  scope: worksheet
+  sha256: 17b195a35c343cbd9e7275953adbabf2522f3589d0588dc70a1687faa597ba87
+  source: WB-039.twbx
+  xpath: /workbook/worksheets/worksheet[5]/table/style/style-rule[6]
+- element: cell
+  formats:
   - attr: width
     value: '183'
   - attr: text-align

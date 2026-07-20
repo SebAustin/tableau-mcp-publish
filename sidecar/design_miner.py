@@ -20,6 +20,19 @@ from the parsed document). The miner copies attribute values **verbatim**: it
 never invents, renames, or normalizes a value beyond a whitespace strip. This
 mirrors the "never invent XML" discipline used throughout ``twb_builder.py``.
 
+Slice T1 sibling module — ``design_dashboard_miner.py``
+---------------------------------------------------------
+Dashboard-level and story-level mining (``mine_dashboards()`` / ``mine_stories()`` — canvas
+size, title-zone shape, KPI-band-like rows, filter/paramctrl zone counts, device layouts, story
+usage/caption/nav shape) lives in the sibling module ``design_dashboard_miner.py``, which reuses
+this module's ``safe_parser``/``read_twb_bytes``/``_zone_style_formats`` rather than
+reimplementing them (split out purely for file-size cohesion — see that module's docstring).
+Unlike the five recipe collections above, those records are **not** written to
+``design/corpus/recipes/`` — they are in-memory inputs consumed directly by
+``design_stats.py``'s corpus-wide aggregation into ``design/corpus/stats/*.yaml`` (committing
+the raw per-workbook records for a ~100-workbook corpus would be repo bloat with no review
+value; only the aggregated, provenance-cited stats are committed).
+
 Security posture
 -----------------
 - **XXE-safe parsing**: the same hardened ``lxml.etree.XMLParser`` flags used
@@ -527,16 +540,26 @@ def mine_workbooks(paths: list[Path]) -> dict[str, list[dict[str, Any]]]:
     }
 
 
-def dump_recipe_yaml(entries: list[dict[str, Any]]) -> str:
-    """Deterministically serialize one recipe's entries: sorted keys, stable dump."""
+def dump_yaml(data: Any) -> str:
+    """Deterministically serialize any YAML-safe structure: sorted keys, stable dump.
+
+    Shared by ``dump_recipe_yaml`` (a list of recipe entries) and ``design_stats.py`` (nested
+    stats dicts) -- one dumping convention for every deterministic YAML artifact this corpus
+    produces.
+    """
     result: str = yaml.safe_dump(
-        entries,
+        data,
         sort_keys=True,
         default_flow_style=False,
         allow_unicode=True,
         width=100,
     )
     return result
+
+
+def dump_recipe_yaml(entries: list[dict[str, Any]]) -> str:
+    """Deterministically serialize one recipe's entries: sorted keys, stable dump."""
+    return dump_yaml(entries)
 
 
 def write_recipes(recipes: dict[str, list[dict[str, Any]]], out_dir: Path) -> None:

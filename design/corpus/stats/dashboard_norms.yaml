@@ -1,0 +1,479 @@
+corpus_size: 110
+kpi_band:
+  child_count:
+    confidence: low
+    median: 4.0
+    n: 3
+    p25: 3.5
+    p75: 5.0
+  citations:
+  - sha256: 27e9bc7a73768895d1a67b392291851e92182fd7c8644c6a5f7a8e780808db13
+    source: WB-040.twbx
+    xpath: /workbook/dashboards/dashboard
+  - sha256: e3b75d94dec188cd7ec25f18ebc00f7258df4657a066c2ca7a0c3600dfce89fd
+    source: WB-059.twbx
+    xpath: /workbook/dashboards/dashboard
+  - sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
+    source: WB-118.twbx
+    xpath: /workbook/dashboards/dashboard[2]
+  confidence: low
+  height_ratio:
+    confidence: low
+    median: 0.1511
+    n: 3
+    p25: 0.1129
+    p75: 0.155
+  n: 3
+n_dashboards: 201
+sources:
+  extra_refs_skipped_missing: []
+  extra_refs_used:
+  - WB-015
+  - WB-058
+  - WB-062
+  - WB-063
+  - WB-093
+  - WB-095
+  - WB-133
+  root_refs:
+  - WB-114.twbx
+  - WB-117.twbx
+  - WB-118.twbx
+  top100_manifest_downloaded: 100
+  top100_missing_on_disk: 0
+strata:
+  900-1400:
+    canvas_height_px:
+      citations:
+      - sha256: 107a00f61e6b7d3426520206faae44c037073a5d7aaf9dc0e2fe58c339ac11a4
+        source: WB-002.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: af4299cffc8c1e17f2c8b8b06022e28d64e6abce253ae84310e504656e8f31f3
+        source: WB-006.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 950.0
+      n: 141
+      p25: 800.0
+      p75: 1500.0
+    canvas_width_px:
+      citations:
+      - sha256: 107a00f61e6b7d3426520206faae44c037073a5d7aaf9dc0e2fe58c339ac11a4
+        source: WB-002.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: af4299cffc8c1e17f2c8b8b06022e28d64e6abce253ae84310e504656e8f31f3
+        source: WB-006.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 1280.0
+      n: 141
+      p25: 1200.0
+      p75: 1366.0
+    confidence: ok
+    device_layout_usage_rate:
+      confidence: ok
+      count: 33
+      n: 141
+      rate: 0.234
+      total: 141
+    filter_zone_usage_rate:
+      confidence: ok
+      count: 24
+      n: 141
+      rate: 0.1702
+      total: 141
+    margin_px:
+      citations:
+      - sha256: 107a00f61e6b7d3426520206faae44c037073a5d7aaf9dc0e2fe58c339ac11a4
+        source: WB-002.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: af4299cffc8c1e17f2c8b8b06022e28d64e6abce253ae84310e504656e8f31f3
+        source: WB-006.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 4.0
+      n: 4492
+      p25: 4.0
+      p75: 4.0
+    mark_label_usage_rate:
+      confidence: ok
+      count: 123
+      n: 141
+      rate: 0.8723
+      total: 141
+    n: 141
+    padding_px:
+      citations:
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+        source: WB-016.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 5765a0b78bc551ece57496225ecab81bea5c468dcb4ac2d18dc966bc47f3d6ca
+        source: WB-017.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 0.0
+      n: 1546
+      p25: 0.0
+      p75: 10.0
+    paramctrl_zone_usage_rate:
+      confidence: ok
+      count: 33
+      n: 141
+      rate: 0.234
+      total: 141
+    sizing_mode_distribution:
+      fixed: 140
+    title_fontsize:
+      citations:
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: af4299cffc8c1e17f2c8b8b06022e28d64e6abce253ae84310e504656e8f31f3
+        source: WB-006.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+        source: WB-016.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 22.0
+      n: 95
+      p25: 18.0
+      p75: 24.0
+    title_height_ratio:
+      citations:
+      - sha256: fb8b09f931e2c93e27d3aebbfd78a422d0c8cdefbe5474ae01923dee56f42c49
+        source: WB-004.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: af4299cffc8c1e17f2c8b8b06022e28d64e6abce253ae84310e504656e8f31f3
+        source: WB-006.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e9a6488928abdfd94b5f36c0929e24f19fcbe627c82c3c28f025f775dcdf6107
+        source: WB-009.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+        source: WB-012.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 3f0c86162271716972dc95461bd7a3ea48b97e777e6e88fba2270b8a3dde6ea0
+        source: WB-016.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 0.0696
+      n: 107
+      p25: 0.0362
+      p75: 0.0961
+  <900:
+    canvas_height_px:
+      citations:
+      - sha256: 0f20c062a0ad277a7e501dc5cbc7527177b90b6b142104f8ee0905a97fed3ad6
+        source: WB-126.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: d96a0da5a327e5d953f789765933943280c34c28e439bd48fc20747836779c4c
+        source: WB-143.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 1e3f13a71db528d6e85683307ea55ea48fd0160312a67dec9e3a9063414cb462
+        source: WB-007.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: low
+      median: 800.0
+      n: 3
+      p25: 742.5
+      p75: 1400.0
+    canvas_width_px:
+      citations:
+      - sha256: 0f20c062a0ad277a7e501dc5cbc7527177b90b6b142104f8ee0905a97fed3ad6
+        source: WB-126.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: d96a0da5a327e5d953f789765933943280c34c28e439bd48fc20747836779c4c
+        source: WB-143.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 1e3f13a71db528d6e85683307ea55ea48fd0160312a67dec9e3a9063414cb462
+        source: WB-007.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: low
+      median: 600.0
+      n: 3
+      p25: 487.5
+      p75: 720.0
+    confidence: low
+    device_layout_usage_rate:
+      confidence: low
+      count: 1
+      n: 3
+      rate: 0.3333
+      total: 3
+    filter_zone_usage_rate:
+      confidence: low
+      count: 0
+      n: 3
+      rate: 0.0
+      total: 3
+    margin_px:
+      citations:
+      - sha256: 0f20c062a0ad277a7e501dc5cbc7527177b90b6b142104f8ee0905a97fed3ad6
+        source: WB-126.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: d96a0da5a327e5d953f789765933943280c34c28e439bd48fc20747836779c4c
+        source: WB-143.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 1e3f13a71db528d6e85683307ea55ea48fd0160312a67dec9e3a9063414cb462
+        source: WB-007.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 0.0
+      n: 210
+      p25: 0.0
+      p75: 4.0
+    mark_label_usage_rate:
+      confidence: low
+      count: 3
+      n: 3
+      rate: 1.0
+      total: 3
+    n: 3
+    padding_px:
+      citations:
+      - sha256: 0f20c062a0ad277a7e501dc5cbc7527177b90b6b142104f8ee0905a97fed3ad6
+        source: WB-126.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 1e3f13a71db528d6e85683307ea55ea48fd0160312a67dec9e3a9063414cb462
+        source: WB-007.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 16.0
+      n: 43
+      p25: 8.0
+      p75: 16.0
+    paramctrl_zone_usage_rate:
+      confidence: low
+      count: 2
+      n: 3
+      rate: 0.6667
+      total: 3
+    sizing_mode_distribution:
+      fixed: 3
+    title_fontsize:
+      citations:
+      - sha256: d96a0da5a327e5d953f789765933943280c34c28e439bd48fc20747836779c4c
+        source: WB-143.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: low
+      median: 12.0
+      n: 1
+      p25: 12.0
+      p75: 12.0
+    title_height_ratio:
+      citations:
+      - sha256: d96a0da5a327e5d953f789765933943280c34c28e439bd48fc20747836779c4c
+        source: WB-143.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: 1e3f13a71db528d6e85683307ea55ea48fd0160312a67dec9e3a9063414cb462
+        source: WB-007.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: low
+      median: 0.0906
+      n: 2
+      p25: 0.0859
+      p75: 0.0953
+  '>1400':
+    canvas_height_px:
+      citations:
+      - sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+        source: WB-001.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+        source: WB-023.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 925.0
+      n: 57
+      p25: 850.0
+      p75: 1250.0
+    canvas_width_px:
+      citations:
+      - sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+        source: WB-001.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+        source: WB-023.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 1600.0
+      n: 57
+      p25: 1500.0
+      p75: 1600.0
+    confidence: ok
+    device_layout_usage_rate:
+      confidence: ok
+      count: 25
+      n: 57
+      rate: 0.4386
+      total: 57
+    filter_zone_usage_rate:
+      confidence: ok
+      count: 14
+      n: 57
+      rate: 0.2456
+      total: 57
+    margin_px:
+      citations:
+      - sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+        source: WB-001.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+        source: WB-023.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 4.0
+      n: 2472
+      p25: 0.0
+      p75: 4.0
+    mark_label_usage_rate:
+      confidence: ok
+      count: 47
+      n: 57
+      rate: 0.8246
+      total: 57
+    n: 57
+    padding_px:
+      citations:
+      - sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+        source: WB-001.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+        source: WB-023.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 0.0
+      n: 780
+      p25: 0.0
+      p75: 10.0
+    paramctrl_zone_usage_rate:
+      confidence: ok
+      count: 18
+      n: 57
+      rate: 0.3158
+      total: 57
+    sizing_mode_distribution:
+      fixed: 57
+    title_fontsize:
+      citations:
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[7]
+      - sha256: 6323da1c0120f0341b6709c30be6d7391c8068ff682e87d907300af53fb1ca43
+        source: WB-035.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 17b195a35c343cbd9e7275953adbabf2522f3589d0588dc70a1687faa597ba87
+        source: WB-039.twbx
+        xpath: /workbook/dashboards/dashboard
+      confidence: ok
+      median: 14.5
+      n: 32
+      p25: 10.0
+      p75: 24.0
+    title_height_ratio:
+      citations:
+      - sha256: d50998dd21b57215c17cfa652e250b698774dab4b2b8dbfeadca73576fcffd2f
+        source: WB-001.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: e5845ea342d0d3ecc35e193033c4970f988cf44a0179f008d1fd4b51a0090045
+        source: WB-003.twbx
+        xpath: /workbook/dashboards/dashboard
+      - sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+        source: WB-005.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      - sha256: 75f81a3c0efb6d8115a719bb4242915321b2c47ee70dd8171db3d8b31762fa63
+        source: WB-014.twbx
+        xpath: /workbook/dashboards/dashboard[7]
+      - sha256: 6aaa6c646b6d8d9c5fe2ca83762a849f7b09d1a604409c25063481b4d2002fea
+        source: WB-023.twbx
+        xpath: /workbook/dashboards/dashboard[1]
+      confidence: ok
+      median: 0.0479
+      n: 41
+      p25: 0.0283
+      p75: 0.0822

@@ -1,11 +1,16 @@
 <?xml version='1.0' encoding='utf-8' ?>
 
-<!-- Hand-made fixture for sidecar/tests/test_design_miner.py. Every construct
-     below is copied verbatim (attribute-for-attribute) from a real mined
-     exemplar in design/corpus/recipes/*.yaml — see that test file for the
-     exact provenance of each snippet. This file is NOT a full/renderable
-     .twb (it is never XSD-validated); it exists only to exercise
-     sidecar/design_miner.py's five extractors end-to-end. -->
+<!-- Hand-made fixture for sidecar/tests/test_design_miner.py and
+     test_design_stats.py. Every construct below is copied verbatim
+     (attribute-for-attribute) from a real mined exemplar in
+     design/corpus/recipes/*.yaml or from a shape documented in
+     design/corpus/SCHEMA.md / sidecar/twb_builder.py — see the test files
+     for the exact provenance of each snippet. This file is NOT a
+     full/renderable .twb (it is never XSD-validated); it exists only to
+     exercise sidecar/design_miner.py's extractors end-to-end (D0's five
+     recipe extractors, plus T1's dashboard-level and story-level
+     extractors: canvas size, KPI-band-like row, filter/paramctrl zones,
+     device layouts, and a storyboard with 2 story-points). -->
 <workbook locale='en_US' source-build='2024.1.0 (20241.24.0328.1309)' version='18.1' xml:base='https://localhost:8080' xmlns:user='http://www.tableausoftware.com/xml/user'>
   <style>
     <style-rule element="title">
@@ -57,6 +62,7 @@
   </actions>
   <dashboards>
     <dashboard name='Fixture Dashboard'>
+      <size maxheight='1000' maxwidth='1200' minheight='1000' minwidth='1200' sizing-mode='fixed'/>
       <zones>
         <zone h='100000' id='1' type-v2='empty' w='6250' x='0' y='0'>
           <zone-style>
@@ -71,6 +77,45 @@
           <formatted-text>
             <run bold='true' fontcolor='#ffffff' fontname='Tableau Semibold' fontsize='20'>Fixture Title</run>
           </formatted-text>
+        </zone>
+        <!-- KPI-band-like row: horz layout-flow, distribute-evenly, 3 is-fixed children
+             (mirrors the real mined shape documented in design/corpus/SCHEMA.md's
+             render-constraint #5 — see sidecar/design_miner.py's _kpi_band_rows). -->
+        <zone fixed-size='200' h='20000' id='10' is-fixed='true' layout-strategy-id='distribute-evenly' param='horz' type-v2='layout-flow' w='23438' x='6250' y='30000'>
+          <zone fixed-size='60' h='20000' is-fixed='true' name='Fixture Sheet' w='7813' x='6250' y='30000'/>
+          <zone fixed-size='60' h='20000' is-fixed='true' name='KPI B' w='7813' x='14063' y='30000'/>
+          <zone fixed-size='60' h='20000' is-fixed='true' name='KPI C' w='7813' x='21875' y='30000'/>
+        </zone>
+        <zone h='5000' id='11' type-v2='filter' w='10000' x='0' y='90000'/>
+        <zone h='5000' id='12' type-v2='paramctrl' w='10000' x='10000' y='90000'/>
+      </zones>
+      <!-- Device layout presence only — deliberately no zone-style/formatted-text inside,
+           so the existing single-entry zone_styles/text_zones assertions stay valid. -->
+      <devicelayouts>
+        <devicelayout auto-generated='true' name='Phone'>
+          <size maxheight='1450' minheight='1450' sizing-mode='vscroll'/>
+          <zones>
+            <zone h='100000' id='20' type-v2='layout-basic' w='100000' x='0' y='0'/>
+          </zones>
+        </devicelayout>
+      </devicelayouts>
+    </dashboard>
+    <!-- Storyboard: verbatim shape from twb_builder.py's _build_story docstring. -->
+    <dashboard name='Fixture Story' type='storyboard'>
+      <zones>
+        <zone h='100000' id='1' type-v2='layout-basic' w='100000' x='0' y='0'>
+          <zone h='100000' id='2' param='vert' type-v2='layout-flow' w='100000' x='0' y='0'>
+            <zone h='7500' id='3' type='title' w='100000' x='0' y='0'/>
+            <zone h='8000' id='4' is-fixed='true' paired-zone-id='5' type='flipboard-nav' w='100000' x='0' y='7500'/>
+            <zone h='84500' id='5' paired-zone-id='4' type='flipboard' w='100000' x='0' y='15500'>
+              <flipboard active-id='1' nav-type='caption' show-nav-arrows='true'>
+                <story-points>
+                  <story-point caption='Fixture Point One' captured-sheet='Fixture Sheet' id='1'/>
+                  <story-point caption='Fixture Point Two' captured-sheet='Fixture Sheet' id='2'/>
+                </story-points>
+              </flipboard>
+            </zone>
+          </zone>
         </zone>
       </zones>
     </dashboard>

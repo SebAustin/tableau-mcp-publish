@@ -7,6 +7,7 @@ deterministic** alternative to an embeddings/vector-store "RAG". It has two laye
 design/corpus/
   recipes/    mined raw constructs — produced by sidecar/design_miner.py, never hand-edited
   themes/     hand-curated theme presets — every literal traceable back to a recipes/ entry
+  stats/      corpus-wide statistical norms — produced by sidecar/design_stats.py (Slice T1)
 ```
 
 ## Provenance rule (non-negotiable)
@@ -25,12 +26,18 @@ construct. **Nothing in this corpus is invented.** Concretely:
 3. Every `themes/*.yaml`'s `provenance` list documents, per literal/construct, which of the
    10-workbook allowlist it came from, that source's sha256, and a short description of the exact
    construct (often including the recipe's `xpath`, for direct auditability).
-4. The **10-workbook allowlist** is fixed for this D0 slice: the 3 downloaded `.twbx` exemplars
+4. The **10-workbook allowlist was fixed for the D0 slice**: the 3 downloaded `.twbx` exemplars
    (`WB-117.twbx`, `WB-118.twbx`,
    `WB-114.twbx` — see `design/references/README.md`) plus the 7 pre-existing
    reference `.twb` files (`WB-015`, `WB-093`, `WB-095`, `WB-133`,
-   `WB-058`, `WB-062`, `WB-063`). `tests/designCorpus.test.ts` asserts every
-   `source`/`source_file` value in the corpus is drawn from this allowlist.
+   `WB-058`, `WB-062`, `WB-063`). **Slice T1 legitimately extends this
+   allowlist** with 14 top-100-corpus sources (see "Notable-construct append" under `stats/`
+   below) — `tests/designCorpus.test.ts`'s `WORKBOOK_ALLOWLIST` is the union of the D0 set and
+   this T1 addition, and asserts every `source`/`source_file` value in the corpus is drawn from
+   it. The 100-workbook top-100 corpus itself (`design/references/top100/`) is **not** added to
+   this allowlist wholesale — only the specific sources the notable-construct append actually
+   cited, keeping the provenance-checked allowlist a precise, auditable record rather than a
+   rubber stamp.
 
 ## `recipes/*.yaml` — mined raw constructs
 
@@ -171,6 +178,132 @@ otherwise `subtitle` if any run has `fontsize >= 11` or is bold; otherwise `body
 known-imperfect (e.g. a small attribution/footer run that happens to be the first text zone in
 document order is tagged `title`) — it is a best-effort classification hint for future slices, not
 a guarantee. 82 entries were mined.
+
+## `stats/*.yaml` — mined-corpus statistical norms (Slice T1)
+
+Produced by `python sidecar/design_stats.py --refs-dir ... --top100-dir ... [--extra-refs ...]
+--out design/corpus` (see "Regenerating" below for the exact command). Unlike `recipes/*.yaml`
+(individual mined constructs), `stats/*.yaml` holds **aggregated statistics** — distributions and
+usage rates — over the full corpus: the 3 root exemplars, the `design/references/top100/`
+top-100 corpus (every `manifest.yaml` item with `status: downloaded`), and any extra reference
+workbooks passed via `--extra-refs`. **Never hand-edited**, exactly like `recipes/*.yaml`.
+
+### Confidence guard (plan mandate — non-negotiable)
+
+Every aggregated bucket carries `n` and `confidence`: `"ok"` when `n >= 15`, else `"low"`. A
+`confidence: low` bucket is a signal for a human or a future slice's explicit judgment call —
+**it is never auto-applied to themes or the builder.** A high-frequency real-world construct
+whose bucket is `confidence: low` (e.g. KPI-band-like rows, or anything story-related) belongs
+in a future slice's manual-judgment note, not a silent default.
+
+### `dashboard_norms.yaml`
+
+Top-level: `corpus_size` (workbook file count), `sources` (root/top100/extra-refs breakdown, for
+reproducibility — see "No wall-clock timestamp" below), `n_dashboards`, `strata`, `kpi_band`.
+
+`strata` has exactly 3 keys — `"<900"`, `"900-1400"`, `">1400"` (canvas width in px, the
+plan-mandated buckets) — each holding `{n, confidence, title_fontsize, title_height_ratio,
+canvas_width_px, canvas_height_px, margin_px, padding_px, sizing_mode_distribution,
+filter_zone_usage_rate, paramctrl_zone_usage_rate, device_layout_usage_rate,
+mark_label_usage_rate}`. Every distribution sub-object (`title_fontsize`, `title_height_ratio`,
+`canvas_width_px`, `canvas_height_px`, `margin_px`, `padding_px`) is `{n, confidence, median,
+p25, p75, citations}` — `citations` is up to 5 provenance entries (`{source, sha256, xpath}`),
+one per distinct source workbook, deterministically sorted. Every usage-rate sub-object
+(`filter_zone_usage_rate`, `paramctrl_zone_usage_rate`, `device_layout_usage_rate`,
+`mark_label_usage_rate`) is `{n, confidence, count, total, rate}`.
+
+`title_fontsize`/`title_height_ratio` are computed only over dashboards that have a text zone in
+the **top 15%** of the canvas (`y < 15000` on the 0–100000 zone grid — see
+`sidecar/design_miner.py`'s `TITLE_ZONE_TOP_BAND_Y_MAX`); a dashboard with no such zone
+contributes to the stratum's `n` (canvas size, sizing-mode, usage rates) but not to these two
+title buckets specifically — its own `title_fontsize`/`title_height_ratio` sub-`n` is smaller
+than the stratum `n`, by design.
+
+`margin_px`/`padding_px` are the raw (non-deduplicated) pixel values from every `<zone-style>`
+nested anywhere under each stratum's dashboards — deliberately **not** reusing
+`recipes/zone_styles.yaml`'s content-deduplicated entries, since a per-occurrence distribution
+(not a set of distinct values) is what a "median margin" needs.
+
+`kpi_band` (`{n, confidence, height_ratio, child_count, citations}`) is **corpus-wide, not
+stratified by canvas width** — a deliberate deviation from the literal per-stratum reading: the
+real corpus yields very few KPI-band-like rows in total (a horz `layout-flow` with
+`layout-strategy-id='distribute-evenly'` and >= 3 `is-fixed='true'` children — see
+`design/corpus/SCHEMA.md`'s render-constraint #5), too few to meaningfully sub-divide by stratum
+on top of the existing `confidence: low` guard this small a sample already triggers.
+
+### `story_norms.yaml`
+
+Top-level: `corpus_size`, `sources`, `n_workbooks`, `usage_rate`, `points_per_story`,
+`caption_length`, `nav_type_distribution`, `citations`.
+
+`usage_rate` (`{n, confidence, count, total, rate}`) deliberately gates `n`/`confidence` on the
+**numerator** (`count` — workbooks that actually have a story) rather than the (much larger)
+`total` corpus denominator: a rate estimated from zero or a handful of positive examples is
+exactly as unreliable to extrapolate from as any other n<15 bucket, regardless of how large the
+denominator is. `points_per_story`/`caption_length` are flattened across every story point in
+every storyboard found (so a workbook with 2 stories of 3 points each contributes 6 caption
+lengths, not 2). This is a deliberate interpretation, documented here per this corpus's existing
+"flag every deviation" discipline (see the D0 dedup-policy deviations above for precedent).
+
+**The real corpus found ZERO storyboards** across all 110 mined workbooks (`n_workbooks: 110`,
+`usage_rate: {count: 0, rate: 0.0, confidence: low}`, every distribution `n: 0`) — this is the
+plan's own predicted "expected low-n case" for story-related buckets, now confirmed with a real
+number rather than an assumption. T2/T3 must treat every story norm as `confidence: low` until a
+future corpus refresh finds real storyboard examples (VOTD galleries evidently skew toward
+single-view dashboards/vizzes, not multi-point stories).
+
+### Notable-construct append (Slice T1 — `design/corpus/recipes/*.yaml` mutation)
+
+`design_stats.py`'s `append_notable_constructs` step mines the FULL input corpus for
+`zone_styles`/`chrome_rules`/`palettes` — the three **content-deduplicated** recipe types (see
+the dedup-policy note above) — and appends any construct that is (a) not already present in the
+committed `recipes/*.yaml` and (b) independently observed in at least 8 distinct source files (a
+deliberate frequency floor: roughly 8.5% of the 110-file T1 corpus, comfortably above one-off
+noise while low enough to surface genuinely-common real-world constructs). Capped at 200 new
+entries per file (not hit in practice — see below), deterministically sorted, and re-appending
+against an already-updated corpus is a no-op (verified: running `design_stats.py` twice produces
+byte-identical `recipes/*.yaml`, not a growing file).
+
+`actions.yaml`/`text_zones.yaml` are **intentionally excluded** from this step — both are
+already NOT content-deduplicated by design (every action/text-zone is individually meaningful),
+so a "how many files repeat this exact content" frequency floor does not apply to them the same
+way; appending every top-100 action/text-zone verbatim would be exactly the "repo bloat" the
+plan explicitly warns against.
+
+**T1 run result** (110-workbook corpus: 3 root exemplars + 100 top-100 + 7 extra refs):
+`zone_styles.yaml` gained 3 entries (234 → 237: a `filter`-zone box-model, a `layout-basic`
+box-model, and a `color`-zone box-model — all previously-unseen `type-v2` zone kinds in the D0
+corpus), `chrome_rules.yaml` gained 22 entries (597 → 619: number/percent `text-format` cell
+rules, axis/gridline chrome-hiding rules, and a `datalabel font-size: 8` rule — real, common
+"clean dashboard" chrome the D0 10-workbook corpus happened not to contain). `palettes.yaml`
+gained **0** entries — no custom color-palette construct in the full corpus cleared the
+frequency bar, so it is untouched (stayed at its original 12 entries; the "skip entirely,
+document" branch of the plan mandate). This added exactly the 14 new `WORKBOOK_ALLOWLIST`
+sources documented in `tests/designCorpus.test.ts`.
+
+### No wall-clock timestamp (determinism)
+
+Neither stats file embeds a "generated at" timestamp — unlike a typical aggregation header,
+this is a deliberate omission so that `aggregate the same corpus twice -> byte-identical output`
+holds (verified in `sidecar/tests/test_design_stats.py`), mirroring `design_miner.py`'s own
+zero-wall-clock-fields precedent. The `sources` block (which root/top100/extra-refs files
+contributed) is the reproducibility record instead.
+
+### Regenerating
+
+```bash
+cd sidecar
+uv run python design_stats.py \
+  --refs-dir ../design/references \
+  --top100-dir ../design/references/top100 \
+  --extra-refs <path-to>/WB-058 <path-to>/WB-133 <path-to>/WB-095 \
+    <path-to>/WB-062 <path-to>/WB-063 <path-to>/WB-015 <path-to>/WB-093 \
+  --out ../design/corpus
+```
+
+`--extra-refs` is optional — omit it (or pass only the paths that are actually present) to
+aggregate over just the root exemplars + top-100 corpus. Pass `--skip-notable-constructs` to
+regenerate only `stats/*.yaml` without touching `recipes/*.yaml`.
 
 ## `themes/*.yaml` — hand-curated presets
 

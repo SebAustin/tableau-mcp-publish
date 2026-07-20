@@ -1,5 +1,6 @@
 /**
- * Tests for the design-excellence corpus (D0 — ADR-0013).
+ * Tests for the design-excellence corpus (D0 — ADR-0013; extended by Slice T1's
+ * top-100-corpus notable-construct append).
  *
  * Validates the *committed* corpus under `design/corpus/` — not code, data —
  * so this file reads real files from disk rather than constructing fixtures.
@@ -9,7 +10,10 @@
  *     (see `design/corpus/SCHEMA.md`).
  *  2. Every `themes/*.yaml` file zod-validates against the theme schema.
  *  3. Every recipe entry's `source`/`source_file` and every theme's
- *     provenance `source` is drawn from the fixed 10-workbook allowlist.
+ *     provenance `source` is drawn from the allowlist (the D0 10-workbook
+ *     set + the T1 top-100-corpus sources actually cited by
+ *     `sidecar/design_stats.py`'s notable-construct append — see
+ *     `T1_NOTABLE_CONSTRUCT_ALLOWLIST` below).
  *  4. "theme-cites-recipe": every hex color literal in every theme file is
  *     present somewhere in the mined recipes (the corpus's "never invent a
  *     value" discipline, machine-enforced).
@@ -36,12 +40,15 @@ const RECIPES_DIR = join(CORPUS_DIR, "recipes");
 const THEMES_DIR = join(CORPUS_DIR, "themes");
 
 // ---------------------------------------------------------------------------
-// The fixed 10-workbook allowlist (design/references/README.md +
-// design/corpus/SCHEMA.md). Every `source`/`source_file` in the corpus must
-// be drawn from this set.
+// The D0 10-workbook allowlist (design/references/README.md +
+// design/corpus/SCHEMA.md), extended in Slice T1 with the top-100-corpus
+// source workbooks `sidecar/design_stats.py`'s `append_notable_constructs`
+// step actually cited (see design/corpus/SCHEMA.md's "notable-construct
+// append" section). Every `source`/`source_file` in the corpus must be drawn
+// from this set.
 // ---------------------------------------------------------------------------
 
-const WORKBOOK_ALLOWLIST = new Set([
+const D0_WORKBOOK_ALLOWLIST = [
   "WB-117.twbx",
   "WB-118.twbx",
   "WB-114.twbx",
@@ -52,7 +59,30 @@ const WORKBOOK_ALLOWLIST = new Set([
   "WB-058",
   "WB-062",
   "WB-063",
-]);
+];
+
+// Slice T1: 14 top-100-corpus sources cited by `append_notable_constructs`'s
+// zone_styles.yaml (+3 entries) / chrome_rules.yaml (+22 entries) append —
+// every one independently observed as a NEW, high-frequency (>=8 distinct
+// source files) construct not already in the D0 corpus.
+const T1_NOTABLE_CONSTRUCT_ALLOWLIST = [
+  "WB-001.twbx",
+  "WB-004.twbx",
+  "WB-005.twbx",
+  "WB-009.twbx",
+  "WB-012.twbx",
+  "WB-017.twbx",
+  "WB-018.twbx",
+  "WB-021.twbx",
+  "WB-023.twbx",
+  "WB-027.twbx",
+  "WB-028.twbx",
+  "WB-029.twbx",
+  "WB-033.twbx",
+  "WB-039.twbx",
+];
+
+const WORKBOOK_ALLOWLIST = new Set([...D0_WORKBOOK_ALLOWLIST, ...T1_NOTABLE_CONSTRUCT_ALLOWLIST]);
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const XPATH_RE = /^\/workbook\//;

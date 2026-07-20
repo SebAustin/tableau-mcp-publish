@@ -1,19 +1,18 @@
-generatedAt: 2026-07-20T14:46:33.699Z
+generatedAt: 2026-07-20T15:27:15.010Z
 feedDepthSeen: 312
 candidatesSeen: 300
-successes: 84
-failures: 216
-shortfall: 16
+successes: 100
+failures: 34
+shortfall: 0
 reasonHistogram:
-  download-disabled: 26
-  too-large: 2
-  error: 188
+  download-disabled: 31
+  too-large: 3
 items:
   - repoUrl: WB-115
     title: Superstore 2026
     author: author-redacted
     profileName: author-redacted
-    viewCount: 870
+    viewCount: 926
     favorites: 7
     curatedAt: 2026-07-20T06:32:25.000Z
     status: downloaded
@@ -24,7 +23,7 @@ items:
     title: The Updated Visual Vocabulary
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6604
+    viewCount: 6654
     favorites: 91
     curatedAt: 2026-07-17T08:00:00.000Z
     status: downloaded
@@ -35,7 +34,7 @@ items:
     title: Random Forest - The Logic of Majority Voting
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1437
+    viewCount: 1444
     favorites: 23
     curatedAt: 2026-07-16T08:00:00.000Z
     status: downloaded
@@ -46,7 +45,7 @@ items:
     title: Revenue Performance Dashboard | SaaS Revenue Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2256
+    viewCount: 2266
     favorites: 6
     curatedAt: 2026-07-15T17:38:22.000Z
     status: downloaded
@@ -57,7 +56,7 @@ items:
     title: "#MOM Women+ Conductors on Broadway"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1002
+    viewCount: 1006
     favorites: 16
     curatedAt: 2026-07-14T08:00:00.000Z
     status: downloaded
@@ -68,7 +67,7 @@ items:
     title: Sales Agent Performance
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6070
+    viewCount: 6080
     favorites: 41
     curatedAt: 2026-07-13T15:17:34.000Z
     status: downloaded
@@ -79,7 +78,7 @@ items:
     title: Visualising Gravity
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3541
+    viewCount: 3544
     favorites: 53
     curatedAt: 2026-07-10T08:32:25.000Z
     status: downloaded
@@ -99,7 +98,7 @@ items:
     title: Case Overview - Service Desk
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2827
+    viewCount: 2835
     favorites: 20
     curatedAt: 2026-07-08T06:32:26.000Z
     status: downloaded
@@ -110,7 +109,7 @@ items:
     title: UFO Sighting Patterns
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1594
+    viewCount: 1599
     favorites: 19
     curatedAt: 2026-07-07T08:32:25.000Z
     status: downloaded
@@ -121,7 +120,7 @@ items:
     title: SLA Service Performance Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2368
+    viewCount: 2370
     favorites: 30
     curatedAt: 2026-07-06T06:32:25.000Z
     status: download-disabled
@@ -130,7 +129,7 @@ items:
     title: Lambert-projected Maps
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1424
+    viewCount: 1428
     favorites: 14
     curatedAt: 2026-07-03T08:32:25.000Z
     status: too-large
@@ -139,7 +138,7 @@ items:
     title: California Quakes - July 2019
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1331
+    viewCount: 1332
     favorites: 13
     curatedAt: 2026-07-02T08:32:25.000Z
     status: downloaded
@@ -150,7 +149,7 @@ items:
     title: "#RWFD - Emergency Room Visits"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3733
+    viewCount: 3747
     favorites: 26
     curatedAt: 2026-07-01T06:32:25.000Z
     status: downloaded
@@ -161,7 +160,7 @@ items:
     title: Kaleidoscope Art Generator
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1480
+    viewCount: 1485
     favorites: 24
     curatedAt: 2026-06-30T08:32:25.000Z
     status: downloaded
@@ -172,7 +171,7 @@ items:
     title: Visualizing Variance - Performance Against an Objective
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1302
+    viewCount: 1303
     favorites: 17
     curatedAt: 2026-06-29T13:07:35.000Z
     status: downloaded
@@ -183,7 +182,7 @@ items:
     title: Build a Heatmap - B2VB2026 W10
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1614
+    viewCount: 1617
     favorites: 18
     curatedAt: 2026-06-26T08:34:14.000Z
     status: downloaded
@@ -194,7 +193,7 @@ items:
     title: Match Mark Color
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1643
+    viewCount: 1644
     favorites: 27
     curatedAt: 2026-06-25T08:32:25.000Z
     status: downloaded
@@ -205,7 +204,7 @@ items:
     title: User Funnel &amp; Conversion Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1535
+    viewCount: 1538
     favorites: 11
     curatedAt: 2026-06-24T17:36:22.000Z
     status: downloaded
@@ -216,7 +215,7 @@ items:
     title: Noise Solution 2
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1355
+    viewCount: 1358
     favorites: 12
     curatedAt: 2026-06-23T05:32:25.000Z
     status: downloaded
@@ -227,7 +226,7 @@ items:
     title: Threshold Analysis Two Ways
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1358
+    viewCount: 1362
     favorites: 20
     curatedAt: 2026-06-22T12:42:38.000Z
     status: downloaded
@@ -238,7 +237,7 @@ items:
     title: How Good Are England At Penalty Shootouts?
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2192
+    viewCount: 2193
     favorites: 31
     curatedAt: 2026-06-19T12:32:24.000Z
     status: downloaded
@@ -249,7 +248,7 @@ items:
     title: Formula 1 Constructors | Radial Bump Chart
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3527
+    viewCount: 3530
     favorites: 47
     curatedAt: 2026-06-18T15:44:52.000Z
     status: downloaded
@@ -260,7 +259,7 @@ items:
     title: Retail Store
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5264
+    viewCount: 5268
     favorites: 58
     curatedAt: 2026-06-17T18:21:31.000Z
     status: download-disabled
@@ -269,7 +268,7 @@ items:
     title: Adult LGBTQ+ Population in the US
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3144
+    viewCount: 3147
     favorites: 21
     curatedAt: 2026-06-16T18:31:29.000Z
     status: downloaded
@@ -280,7 +279,7 @@ items:
     title: Visualize Quota Attainment for Executives in Multiple Ways
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4044
+    viewCount: 4047
     favorites: 39
     curatedAt: 2026-06-15T15:30:29.000Z
     status: downloaded
@@ -291,7 +290,7 @@ items:
     title: The Nobel Laureate Circle
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3847
+    viewCount: 3851
     favorites: 37
     curatedAt: 2026-06-12T12:32:25.000Z
     status: downloaded
@@ -302,7 +301,7 @@ items:
     title: "Raising the Bar: 10 Creative Ways to Visualize Your Data"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2721
+    viewCount: 2722
     favorites: 42
     curatedAt: 2026-06-11T12:32:25.000Z
     status: downloaded
@@ -313,7 +312,7 @@ items:
     title: Financial Consumer Complaints Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 7767
+    viewCount: 7772
     favorites: 64
     curatedAt: 2026-06-10T06:32:25.000Z
     status: download-disabled
@@ -322,7 +321,7 @@ items:
     title: Crunchyroll Top 50 Titles - B2VB 2026 Week 5
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2244
+    viewCount: 2245
     favorites: 9
     curatedAt: 2026-06-09T12:32:26.000Z
     status: downloaded
@@ -333,7 +332,7 @@ items:
     title: New York Travel Guide
     author: author-redacted
     profileName: author-redacted
-    viewCount: 7110
+    viewCount: 7111
     favorites: 22
     curatedAt: 2026-06-08T06:32:25.000Z
     status: downloaded
@@ -344,7 +343,7 @@ items:
     title: Industry KPI Catalogue Vol. 1 (Victory &amp; Kenny)
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5304
+    viewCount: 5305
     favorites: 34
     curatedAt: 2026-06-05T12:32:25.000Z
     status: downloaded
@@ -355,7 +354,7 @@ items:
     title: "Fuel Prices in the UK | #MOM2026 WEEK20"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3344
+    viewCount: 3345
     favorites: 35
     curatedAt: 2026-06-04T12:32:24.000Z
     status: downloaded
@@ -375,7 +374,7 @@ items:
     title: Stuttering Awareness · A Personal Data Story
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2804
+    viewCount: 2807
     favorites: 24
     curatedAt: 2026-06-02T12:32:26.000Z
     status: downloaded
@@ -386,7 +385,7 @@ items:
     title: Tableau Resume
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2660
+    viewCount: 2664
     favorites: 14
     curatedAt: 2026-06-01T06:32:25.000Z
     status: downloaded
@@ -397,7 +396,7 @@ items:
     title: "Make the Insight Clear - #B2VB Week 7 "
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1894
+    viewCount: 1897
     favorites: 9
     curatedAt: 2026-05-29T12:32:24.000Z
     status: downloaded
@@ -408,7 +407,7 @@ items:
     title: "#VizSpace | 煌めきの幾何学 Facets of Time"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2391
+    viewCount: 2392
     favorites: 11
     curatedAt: 2026-05-28T12:32:24.000Z
     status: downloaded
@@ -419,7 +418,7 @@ items:
     title: Executive Performance Overview
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3814
+    viewCount: 3817
     favorites: 47
     curatedAt: 2026-05-27T06:32:25.000Z
     status: download-disabled
@@ -428,7 +427,7 @@ items:
     title: AI Impact on the Workforce
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2310
+    viewCount: 2314
     favorites: 36
     curatedAt: 2026-05-26T12:32:24.000Z
     status: download-disabled
@@ -437,7 +436,7 @@ items:
     title: ADHD | Inside the Beautiful ADHD Mind
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4129
+    viewCount: 4132
     favorites: 52
     curatedAt: 2026-05-22T12:32:25.000Z
     status: downloaded
@@ -448,7 +447,7 @@ items:
     title: The Daily Log Steps &amp; Scale
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2132
+    viewCount: 2136
     favorites: 26
     curatedAt: 2026-05-21T12:32:25.000Z
     status: downloaded
@@ -459,7 +458,7 @@ items:
     title: Dynamic KPI Color with Dark-Light Mode
     author: author-redacted
     profileName: author-redacted
-    viewCount: 19734
+    viewCount: 19740
     favorites: 207
     curatedAt: 2026-05-20T06:32:25.000Z
     status: downloaded
@@ -470,7 +469,7 @@ items:
     title: Amsterdam Centrum
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2088
+    viewCount: 2089
     favorites: 27
     curatedAt: 2026-05-19T12:32:25.000Z
     status: downloaded
@@ -481,7 +480,7 @@ items:
     title: Make It with Map Layers
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6408
+    viewCount: 6411
     favorites: 74
     curatedAt: 2026-05-18T06:32:24.000Z
     status: downloaded
@@ -492,7 +491,7 @@ items:
     title: Cryptocurrency Analysis Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 7252
+    viewCount: 7260
     favorites: 51
     curatedAt: 2026-05-15T12:32:25.000Z
     status: downloaded
@@ -530,7 +529,7 @@ items:
     title: Administrative Sales Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 14399
+    viewCount: 14402
     favorites: 100
     curatedAt: 2026-05-11T06:32:25.000Z
     status: downloaded
@@ -541,7 +540,7 @@ items:
     title: Call Center Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 16859
+    viewCount: 16862
     favorites: 58
     curatedAt: 2026-05-07T14:00:00.000Z
     status: downloaded
@@ -552,7 +551,7 @@ items:
     title: Social Media Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6153
+    viewCount: 6159
     favorites: 38
     curatedAt: 2026-05-06T06:32:25.000Z
     status: downloaded
@@ -563,7 +562,7 @@ items:
     title: "43 Million Steps and Counting: Prepping for the TC26 Step Tracker"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11020
+    viewCount: 11021
     favorites: 15
     curatedAt: 2026-05-01T12:32:25.000Z
     status: downloaded
@@ -574,7 +573,7 @@ items:
     title: Network Readiness Index 2025 - Create Your Index
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1148
+    viewCount: 1149
     favorites: 12
     curatedAt: 2026-04-30T12:32:25.000Z
     status: download-disabled
@@ -583,7 +582,7 @@ items:
     title: Beginner&#039;s Repository III - Horizontal vs. Vertical KPI Layout
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5570
+    viewCount: 5571
     favorites: 44
     curatedAt: 2026-04-29T06:32:25.000Z
     status: downloaded
@@ -594,7 +593,7 @@ items:
     title: Gym Tracker
     author: author-redacted
     profileName: author-redacted
-    viewCount: 19752
+    viewCount: 19765
     favorites: 199
     curatedAt: 2026-04-28T22:30:00.000Z
     status: downloaded
@@ -605,7 +604,7 @@ items:
     title: Call Center Performance
     author: author-redacted
     profileName: author-redacted
-    viewCount: 9826
+    viewCount: 9827
     favorites: 94
     curatedAt: 2026-04-27T06:32:25.000Z
     status: download-disabled
@@ -614,7 +613,7 @@ items:
     title: Milky Way of Hiits
     author: author-redacted
     profileName: "author-redacted"
-    viewCount: 3887
+    viewCount: 3890
     favorites: 48
     curatedAt: 2026-04-24T12:32:25.000Z
     status: downloaded
@@ -625,7 +624,7 @@ items:
     title: "UN SDG 15: Protect &amp; Restore Terrestrial Systems (Remake)"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2516
+    viewCount: 2518
     favorites: 12
     curatedAt: 2026-04-23T12:32:25.000Z
     status: downloaded
@@ -636,7 +635,7 @@ items:
     title: Mobile App Performance
     author: author-redacted
     profileName: author-redacted
-    viewCount: 12287
+    viewCount: 12289
     favorites: 143
     curatedAt: 2026-04-22T06:32:25.000Z
     status: download-disabled
@@ -645,7 +644,7 @@ items:
     title: Can Eating Less Meat Save the Planet?
     author: author-redacted
     profileName: author-redacted
-    viewCount: 1829
+    viewCount: 1830
     favorites: 5
     curatedAt: 2026-04-21T12:32:24.000Z
     status: downloaded
@@ -674,7 +673,7 @@ items:
     title: The Tooth Fairy Poll
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4135
+    viewCount: 4137
     favorites: 14
     curatedAt: 2026-04-16T12:32:25.000Z
     status: downloaded
@@ -685,7 +684,7 @@ items:
     title: Overview Sample Superstore
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6824
+    viewCount: 6825
     favorites: 70
     curatedAt: 2026-04-15T06:32:24.000Z
     status: download-disabled
@@ -694,7 +693,7 @@ items:
     title: The Global Story of Tuna
     author: author-redacted
     profileName: author-redacted
-    viewCount: 15537
+    viewCount: 15539
     favorites: 40
     curatedAt: 2026-04-14T16:00:00.000Z
     status: downloaded
@@ -705,7 +704,7 @@ items:
     title: E-Commerce Sales and RFM Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 10359
+    viewCount: 10360
     favorites: 39
     curatedAt: 2026-04-13T13:09:11.000Z
     status: downloaded
@@ -716,7 +715,7 @@ items:
     title: The Periodic Table of AI Startups
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5454
+    viewCount: 5455
     favorites: 21
     curatedAt: 2026-04-10T12:32:33.000Z
     status: downloaded
@@ -727,7 +726,7 @@ items:
     title: Songs That Strike A Chord
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3072
+    viewCount: 3073
     favorites: 32
     curatedAt: 2026-04-09T12:32:35.000Z
     status: downloaded
@@ -738,7 +737,7 @@ items:
     title: Superstore Regional Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 7953
+    viewCount: 7954
     favorites: 64
     curatedAt: 2026-04-08T14:18:58.000Z
     status: downloaded
@@ -749,7 +748,7 @@ items:
     title: From Empire To Identity
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4227
+    viewCount: 4233
     favorites: 45
     curatedAt: 2026-04-07T12:00:00.000Z
     status: downloaded
@@ -769,7 +768,7 @@ items:
     title: Map Layers Visualization Catalogue
     author: author-redacted
     profileName: author-redacted
-    viewCount: 18376
+    viewCount: 18377
     favorites: 233
     curatedAt: 2026-04-03T12:32:41.000Z
     status: downloaded
@@ -789,7 +788,7 @@ items:
     title: Can You Create KPI Cards with Viz Extensions?
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6687
+    viewCount: 6688
     favorites: 11
     curatedAt: 2026-04-01T12:55:06.000Z
     status: downloaded
@@ -800,7 +799,7 @@ items:
     title: Late-night Snacks
     author: author-redacted
     profileName: author-redacted
-    viewCount: 13477
+    viewCount: 13478
     favorites: 81
     curatedAt: 2026-03-31T12:32:38.000Z
     status: downloaded
@@ -811,7 +810,7 @@ items:
     title: Insurance Operations Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 8844
+    viewCount: 8845
     favorites: 32
     curatedAt: 2026-03-30T06:00:00.000Z
     status: downloaded
@@ -831,7 +830,7 @@ items:
     title: African Languages
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2976
+    viewCount: 2977
     favorites: 25
     curatedAt: 2026-03-26T12:32:34.000Z
     status: downloaded
@@ -842,7 +841,7 @@ items:
     title: Let’s Make a Tableau Pulse-inspired Dashboard!
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3069
+    viewCount: 3070
     favorites: 4
     curatedAt: 2026-03-25T14:52:56.000Z
     status: downloaded
@@ -853,7 +852,7 @@ items:
     title: Only to be Sociable
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4432
+    viewCount: 4433
     favorites: 13
     curatedAt: 2026-03-24T12:32:32.000Z
     status: downloaded
@@ -864,7 +863,7 @@ items:
     title: Customer Behavioral Analytics &amp; Segmentation
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3414
+    viewCount: 3415
     favorites: 19
     curatedAt: 2026-03-23T13:04:30.000Z
     status: downloaded
@@ -875,7 +874,7 @@ items:
     title: Top 3 Job Titles in highest-demand in US | MOM Week 4
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4655
+    viewCount: 4656
     favorites: 31
     curatedAt: 2026-03-20T12:32:26.000Z
     status: downloaded
@@ -886,7 +885,7 @@ items:
     title: Do Schools Build Skills?
     author: author-redacted
     profileName: author-redacted
-    viewCount: 2593
+    viewCount: 2594
     favorites: 21
     curatedAt: 2026-03-19T12:32:40.000Z
     status: downloaded
@@ -897,7 +896,7 @@ items:
     title: Energy Finance Tracker
     author: author-redacted
     profileName: author-redacted
-    viewCount: 12616
+    viewCount: 12617
     favorites: 58
     curatedAt: 2026-03-18T15:08:57.000Z
     status: download-disabled
@@ -906,7 +905,7 @@ items:
     title: Sunday Dinners
     author: author-redacted
     profileName: author-redacted
-    viewCount: 7404
+    viewCount: 7405
     favorites: 52
     curatedAt: 2026-03-17T12:32:44.000Z
     status: downloaded
@@ -917,7 +916,7 @@ items:
     title: Superstore Shipping Metrics
     author: author-redacted
     profileName: author-redacted
-    viewCount: 25469
+    viewCount: 25472
     favorites: 139
     curatedAt: 2026-03-16T11:09:20.000Z
     status: downloaded
@@ -928,7 +927,7 @@ items:
     title: Reading &amp; Tracing Faith Through the WB-018
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11071
+    viewCount: 11072
     favorites: 70
     curatedAt: 2026-03-13T12:32:44.000Z
     status: downloaded
@@ -939,7 +938,7 @@ items:
     title: "The Golden Vortex | #MOM2026 Week 5"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4616
+    viewCount: 4617
     favorites: 31
     curatedAt: 2026-03-12T12:32:35.000Z
     status: downloaded
@@ -950,7 +949,7 @@ items:
     title: Marketing Campaign Performance
     author: author-redacted
     profileName: author-redacted
-    viewCount: 15944
+    viewCount: 15945
     favorites: 104
     curatedAt: 2026-03-11T13:07:45.000Z
     status: downloaded
@@ -961,7 +960,7 @@ items:
     title: The World is Going Bananas
     author: author-redacted
     profileName: author-redacted
-    viewCount: 8033
+    viewCount: 8034
     favorites: 82
     curatedAt: 2026-03-10T12:32:25.000Z
     status: too-large
@@ -970,7 +969,7 @@ items:
     title: Company Finance Health Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 6393
+    viewCount: 6394
     favorites: 55
     curatedAt: 2026-03-09T15:40:55.000Z
     status: downloaded
@@ -981,7 +980,7 @@ items:
     title: Radar Chart with built-in Microscope
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3284
+    viewCount: 3285
     favorites: 39
     curatedAt: 2026-03-06T13:32:28.000Z
     status: downloaded
@@ -1001,7 +1000,7 @@ items:
     title: Employment Hero - Headcount &amp; Performance
     author: author-redacted
     profileName: author-redacted
-    viewCount: 14726
+    viewCount: 14727
     favorites: 100
     curatedAt: 2026-03-04T14:09:04.000Z
     status: download-disabled
@@ -1010,7 +1009,7 @@ items:
     title: Beli Ratings
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3168
+    viewCount: 3169
     favorites: 13
     curatedAt: 2026-03-03T13:32:41.000Z
     status: downloaded
@@ -1030,7 +1029,7 @@ items:
     title: Trusted Viz Extensions Gallery
     author: author-redacted
     profileName: author-redacted
-    viewCount: 9224
+    viewCount: 9225
     favorites: 76
     curatedAt: 2026-02-27T14:40:51.000Z
     status: downloaded
@@ -1050,7 +1049,7 @@ items:
     title: Purchase Order Overview
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5358
+    viewCount: 5359
     favorites: 58
     curatedAt: 2026-02-25T06:32:27.000Z
     status: download-disabled
@@ -1059,7 +1058,7 @@ items:
     title: Packing For Mars
     author: author-redacted
     profileName: author-redacted
-    viewCount: 24368
+    viewCount: 24369
     favorites: 71
     curatedAt: 2026-02-24T13:32:30.000Z
     status: downloaded
@@ -1070,7 +1069,7 @@ items:
     title: Media Entertainment Customer Service Operation Overview
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11492
+    viewCount: 11493
     favorites: 34
     curatedAt: 2026-02-23T13:46:22.000Z
     status: downloaded
@@ -1081,7 +1080,7 @@ items:
     title: "Data Art: Letters"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3233
+    viewCount: 3235
     favorites: 34
     curatedAt: 2026-02-20T16:01:54.000Z
     status: downloaded
@@ -1092,7 +1091,7 @@ items:
     title: EPL Player Injuries
     author: author-redacted
     profileName: author-redacted
-    viewCount: 5468
+    viewCount: 5469
     favorites: 49
     curatedAt: 2026-02-19T13:32:31.000Z
     status: downloaded
@@ -1103,7 +1102,7 @@ items:
     title: Superstore Performance Dashboard
     author: author-redacted
     profileName: author-redacted
-    viewCount: 20583
+    viewCount: 20586
     favorites: 142
     curatedAt: 2026-02-18T17:15:15.000Z
     status: downloaded
@@ -1114,7 +1113,7 @@ items:
     title: Nutrition, Energy Sources, and Ingredients of Dim Sum
     author: author-redacted
     profileName: author-redacted
-    viewCount: 29034
+    viewCount: 29035
     favorites: 154
     curatedAt: 2026-02-17T13:32:33.000Z
     status: downloaded
@@ -1125,7 +1124,7 @@ items:
     title: Jump Plots - No Table Calculations - Opportunity Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4618
+    viewCount: 4619
     favorites: 58
     curatedAt: 2026-02-16T19:46:50.000Z
     status: downloaded
@@ -1136,7 +1135,7 @@ items:
     title: Medical Supplier Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11596
+    viewCount: 11597
     favorites: 30
     curatedAt: 2026-02-13T06:32:43.000Z
     status: downloaded
@@ -1147,7 +1146,7 @@ items:
     title: Three Decades of the Premier League
     author: author-redacted
     profileName: author-redacted
-    viewCount: 3140
+    viewCount: 3142
     favorites: 32
     curatedAt: 2026-02-12T13:32:26.000Z
     status: downloaded
@@ -1167,7 +1166,7 @@ items:
     title: The Confection Connection
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11855
+    viewCount: 11856
     favorites: 43
     curatedAt: 2026-02-10T13:32:35.000Z
     status: downloaded
@@ -1178,7 +1177,7 @@ items:
     title: Social Media Campaign
     author: author-redacted
     profileName: author-redacted
-    viewCount: 11878
+    viewCount: 11880
     favorites: 90
     curatedAt: 2026-02-09T06:32:36.000Z
     status: downloaded
@@ -1192,8 +1191,8 @@ items:
     viewCount: 6909
     favorites: 32
     curatedAt: 2026-02-06T06:57:21.000Z
-    status: error
-    reason: HTTP 429
+    status: download-disabled
+    reason: HTTP 404
   - repoUrl: WB-087
     title: Pantone | Colours of the Year
     author: author-redacted
@@ -1201,26 +1200,32 @@ items:
     viewCount: 5189
     favorites: 66
     curatedAt: 2026-02-05T17:09:06.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 425338
+    sha256: 3214a266738fb3ac8c4980aabb2256a752b8b8c7227a33a35e0b87c1c3c518da
+    savedAs: design/references/top100/WB-087.twbx
   - repoUrl: WB-123
     title: Telecommunications Churn Analysis
     author: author-redacted
     profileName: author-redacted
-    viewCount: 18187
+    viewCount: 18188
     favorites: 88
     curatedAt: 2026-02-04T06:32:37.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 3459768
+    sha256: 968f6ddb127a33b1f3317ed42e64e4aa846fd9e3ab8b2bea9504196285525615
+    savedAs: design/references/top100/WB-123.twbx
   - repoUrl: WB-088
     title: "PLAYJILL: Maestras of Broadway"
     author: author-redacted
     profileName: author-redacted
-    viewCount: 4643
+    viewCount: 4647
     favorites: 33
     curatedAt: 2026-02-03T13:32:37.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 3645189
+    sha256: 70f1da9ad78485a6f7c5586a2dfcc1a8d5a41a1556af56a5d464c446043f6219
+    savedAs: design/references/top100/WB-088.twbx
   - repoUrl: WB-049
     title: Inbox - Mindshift Overdue
     author: author-redacted
@@ -1228,8 +1233,10 @@ items:
     viewCount: 2212
     favorites: 21
     curatedAt: 2026-02-02T06:32:29.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 6942211
+    sha256: ecf117924381031cf00072c6110d93ee06498a81d462efe73859e6a03cb80118
+    savedAs: design/references/top100/WB-049.twbx
   - repoUrl: WB-002
     title: Habit Tracking
     author: author-redacted
@@ -1237,8 +1244,10 @@ items:
     viewCount: 1933
     favorites: 16
     curatedAt: 2026-01-29T13:00:00.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 247141
+    sha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
+    savedAs: design/references/top100/WB-002.twbx
   - repoUrl: WB-101
     title: Roles in Analytics
     author: author-redacted
@@ -1246,8 +1255,10 @@ items:
     viewCount: 7550
     favorites: 30
     curatedAt: 2026-01-28T06:00:00.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 4137326
+    sha256: ff44e1ddafd4d65c23eb84006292daa1ab4965a0f801cfa135c32a72220fb6ee
+    savedAs: design/references/top100/WB-101.twbx
   - repoUrl: WB-075
     title: Multi-View Calendar
     author: author-redacted
@@ -1255,26 +1266,30 @@ items:
     viewCount: 3465
     favorites: 62
     curatedAt: 2026-01-27T13:32:36.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 1037748
+    sha256: d2c09a345bdebbdb89094b62845e786289caf0371821691c7fd0468c4ffa122a
+    savedAs: design/references/top100/WB-075.twbx
   - repoUrl: WB-125
     title: The Cutest Annual Financial Report
     author: author-redacted
     profileName: author-redacted
-    viewCount: 14304
+    viewCount: 14305
     favorites: 140
     curatedAt: 2026-01-26T06:00:00.000Z
-    status: error
-    reason: HTTP 429
+    status: download-disabled
+    reason: HTTP 404
   - repoUrl: WB-116
     title: Superstore Dashboard - Viz Extensions Edition
     author: author-redacted
     profileName: author-redacted
-    viewCount: 22675
+    viewCount: 22676
     favorites: 202
     curatedAt: 2026-01-23T06:32:37.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 688159
+    sha256: fdd970fedb88c2adde8936bf0fe5a0dd0f55aadb068f6eae287ef89930e18392
+    savedAs: design/references/top100/WB-116.twbx
   - repoUrl: WB-057
     title: "Tallest Roller Coasters in the World | #MakeoverMonday 2026 Week 1"
     author: author-redacted
@@ -1282,8 +1297,8 @@ items:
     viewCount: 2819
     favorites: 29
     curatedAt: 2026-01-22T13:32:36.000Z
-    status: error
-    reason: HTTP 429
+    status: download-disabled
+    reason: HTTP 404
   - repoUrl: WB-142
     title: Wind Energy Utilization Dashboard
     author: author-redacted
@@ -1291,8 +1306,10 @@ items:
     viewCount: 12663
     favorites: 105
     curatedAt: 2026-01-21T06:00:00.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 2537703
+    sha256: 4d7d6f37f1fea24e9d390e406ef6babeba1f670545c12f078a8dfba767af774d
+    savedAs: design/references/top100/WB-142.twbx
   - repoUrl: WB-014
     title: Banner Image Templates
     author: author-redacted
@@ -1300,8 +1317,10 @@ items:
     viewCount: 4230
     favorites: 31
     curatedAt: 2026-01-20T13:32:27.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 1059097
+    sha256: 7fa0aa779e63abee55ebb033b53f7e0c6f9c2087d4421053534b3e017a37ee73
+    savedAs: design/references/top100/WB-014.twbx
   - repoUrl: WB-061
     title: "Working with Dates: Gregorian and Fiscal Year Calendars"
     author: author-redacted
@@ -1309,8 +1328,10 @@ items:
     viewCount: 4830
     favorites: 82
     curatedAt: 2026-01-16T06:32:36.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 81391
+    sha256: 714596c41934cb3b42bc5385b518e66d2f5e1689dfd59b427271fb35c13053e7
+    savedAs: design/references/top100/WB-061.twbx
   - repoUrl: WB-121
     title: Superstore Sales Dashboard Wrapped (2025)
     author: author-redacted
@@ -1318,8 +1339,8 @@ items:
     viewCount: 3246
     favorites: 49
     curatedAt: 2026-01-15T13:32:27.000Z
-    status: error
-    reason: HTTP 429
+    status: too-large
+    reason: exceeds 26214400 byte cap
   - repoUrl: WB-035
     title: E-Commerce (Software) Sales Dashboard
     author: author-redacted
@@ -1327,8 +1348,10 @@ items:
     viewCount: 16603
     favorites: 132
     curatedAt: 2026-01-14T21:14:22.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 1934939
+    sha256: 8eabcb6db04614548c3494e3377fc2488392aad450e856eb0c853a92c70f6e76
+    savedAs: design/references/top100/WB-035.twbx
   - repoUrl: WB-100
     title: Space Race
     author: author-redacted
@@ -1336,8 +1359,10 @@ items:
     viewCount: 3981
     favorites: 45
     curatedAt: 2026-01-13T13:32:27.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 10732924
+    sha256: 0d53939e20acf67b94a4f6a9939478e062bcafcc97de27221332f12ff81bad28
+    savedAs: design/references/top100/WB-100.twbx
   - repoUrl: WB-021
     title: Business Insights
     author: author-redacted
@@ -1345,8 +1370,10 @@ items:
     viewCount: 4502
     favorites: 31
     curatedAt: 2026-01-12T06:00:12.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 616204
+    sha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
+    savedAs: design/references/top100/WB-021.twbx
   - repoUrl: WB-099
     title: Rhyme in Pope&#039;s Iliad
     author: author-redacted
@@ -1354,8 +1381,10 @@ items:
     viewCount: 4501
     favorites: 24
     curatedAt: 2026-01-09T13:32:49.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 2185095
+    sha256: b4f7dfdbe60ea792c409a59a5382d867308ccbc965d74df8f86ad129f6f45b31
+    savedAs: design/references/top100/WB-099.twbx
   - repoUrl: WB-089
     title: Portraits of my heartbreaks
     author: author-redacted
@@ -1363,8 +1392,8 @@ items:
     viewCount: 6482
     favorites: 68
     curatedAt: 2026-01-08T13:32:32.000Z
-    status: error
-    reason: HTTP 429
+    status: download-disabled
+    reason: HTTP 404
   - repoUrl: WB-010
     title: Animal Shelter Operation
     author: author-redacted
@@ -1372,8 +1401,8 @@ items:
     viewCount: 12707
     favorites: 72
     curatedAt: 2026-01-07T06:00:00.000Z
-    status: error
-    reason: HTTP 429
+    status: download-disabled
+    reason: HTTP 404
   - repoUrl: WB-105
     title: Slack Job Postings
     author: author-redacted
@@ -1381,1500 +1410,7 @@ items:
     viewCount: 6830
     favorites: 24
     curatedAt: 2026-01-06T13:32:43.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-302
-    title: "Hospital ER Dashboard | #RWFD"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 11827
-    favorites: 90
-    curatedAt: 2026-01-05T13:32:42.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-038
-    title: "Employment Hero: Headcount &amp; Performance"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 14726
-    favorites: 100
-    curatedAt: 2026-01-01T13:32:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-208
-    title: AXZ Oil and Gas Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5184
-    favorites: 44
-    curatedAt: 2025-12-30T13:32:27.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-242
-    title: Daylight
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2800
-    favorites: 17
-    curatedAt: 2025-12-29T13:32:32.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-330
-    title: SuperMart Sales Overview
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 16213
-    favorites: 96
-    curatedAt: 2025-12-27T06:00:00.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-353
-    title: Whiskers at the Table
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4409
-    favorites: 22
-    curatedAt: 2025-12-23T13:32:30.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-359
-    title: Sales Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13217
-    favorites: 50
-    curatedAt: 2025-12-22T13:32:34.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-269
-    title: KPI Widgets
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6847
-    favorites: 91
-    curatedAt: 2025-12-19T13:32:34.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-354
-    title: Why is Alaska so empty?
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3440
-    favorites: 16
-    curatedAt: 2025-12-18T13:32:41.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-322
-    title: Global Software Retail Analytics
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 28969
-    favorites: 136
-    curatedAt: 2025-12-17T16:36:02.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-232
-    title: Recipes Advent Calendar
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2417
-    favorites: 56
-    curatedAt: 2025-12-16T13:32:28.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-226
-    title: Interactive Resume - Kérine Taylor&#039;s CV
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5766
-    favorites: 86
-    curatedAt: 2025-12-15T13:59:50.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-306
-    title: "@SQLSekou Fitness Activity"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3933
-    favorites: 14
-    curatedAt: 2025-12-12T13:32:37.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-326
-    title: "Spiritual &amp; Religious Beliefs | #MakeoverMonday 2025 W27"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2687
-    favorites: 20
-    curatedAt: 2025-12-11T13:32:28.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-273
-    title: Logistics Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13077
-    favorites: 85
-    curatedAt: 2025-12-10T13:35:15.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-301
-    title: RHCP – Dosed
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2712
-    favorites: 20
-    curatedAt: 2025-12-09T14:32:40.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-201
-    title: Game Log Analytics Dashboard
-    author: author-redacted
-    profileName: "author-redacted"
-    viewCount: 11002
-    favorites: 68
-    curatedAt: 2025-12-08T17:04:11.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-319
-    title: Shipment Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 9486
-    favorites: 84
-    curatedAt: 2025-12-05T13:32:35.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-280
-    title: Melbourne in Motion - V02
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5057
-    favorites: 42
-    curatedAt: 2025-12-04T13:32:36.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-259
-    title: Help Desk Dashboard | RWFD
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 26186
-    favorites: 207
-    curatedAt: 2025-12-03T14:24:48.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-358
-    title: Xmas Escape Room
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 11861
-    favorites: 88
-    curatedAt: 2025-12-02T13:32:28.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-311
-    title: Sales and Profit Trend Analyzer - KPI Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 1067
-    favorites: 8
-    curatedAt: 2025-12-01T14:07:55.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-341
-    title: The 10 Commandments of Big Numbers in Practice
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4158
-    favorites: 57
-    curatedAt: 2025-11-28T13:32:40.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-211
-    title: "Africa’s Digital Leap: Cloud, Connectivity &amp; AI in the next Decade"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2398
-    favorites: 18
-    curatedAt: 2025-11-27T13:32:30.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-237
-    title: Advanced Table with Map Layers
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 20728
-    favorites: 179
-    curatedAt: 2025-11-26T06:32:38.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-275
-    title: "The Last Poppies: WWII Veterans in 2025 America | #MakeoverMonday 2025
-      W44"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2287
-    favorites: 28
-    curatedAt: 2025-11-25T14:32:26.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-307
-    title: Stock Performance
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7409
-    favorites: 123
-    curatedAt: 2025-11-24T09:32:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-210
-    title: Access to Safe Drinking Water
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3867
-    favorites: 36
-    curatedAt: 2025-11-21T18:43:48.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-352
-    title: Which kidult hobbies do Britons see as childish?
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3197
-    favorites: 23
-    curatedAt: 2025-11-20T13:00:00.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-340
-    title: Tableau Liquid Glass Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 17831
-    favorites: 382
-    curatedAt: 2025-11-19T17:00:44.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-323
-    title: Something That Sounds Human
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7442
-    favorites: 96
-    curatedAt: 2025-11-18T16:32:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-335
-    title: Superstore Performance Overview
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 22130
-    favorites: 176
-    curatedAt: 2025-11-17T22:54:27.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-290
-    title: My Travels in 2025
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8197
-    favorites: 83
-    curatedAt: 2025-11-14T17:26:21.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-355
-    title: World Athletics Championships 2025 Tokyo
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4896
-    favorites: 34
-    curatedAt: 2025-11-13T19:47:52.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-297
-    title: Personal Finance Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 60331
-    favorites: 482
-    curatedAt: 2025-11-12T09:00:00.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-282
-    title: "Minds for Care: Global Concern for Mental Health | #B2VB-Week 20"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3166
-    favorites: 18
-    curatedAt: 2025-11-11T17:34:22.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-224
-    title: Business Performance Overview
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 11708
-    favorites: 111
-    curatedAt: 2025-11-10T18:49:21.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-283
-    title: "Drug Consumptions | MoM2025 W41 "
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8583
-    favorites: 54
-    curatedAt: 2025-11-07T17:06:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-200
-    title: Periodic Table of Cheese
-    author: "author-redacted"
-    profileName: author-redacted
-    viewCount: 6537
-    favorites: 71
-    curatedAt: 2025-11-06T17:36:39.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-265
-    title: Human Resources Dashboard - RWFD
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 19728
-    favorites: 137
-    curatedAt: 2025-11-05T19:00:27.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-207
-    title: A Tale of 27 T-Shirts
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 10489
-    favorites: 28
-    curatedAt: 2025-11-04T18:18:36.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-310
-    title: Sales Operations Dashboard (GTM Ops)
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 30168
-    favorites: 214
-    curatedAt: 2025-11-03T18:54:30.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-262
-    title: Horrors Hall of Fame
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 16592
-    favorites: 85
-    curatedAt: 2025-10-31T16:30:12.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-284
-    title: Moon Phase Calendar
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4962
-    favorites: 63
-    curatedAt: 2025-10-30T15:40:33.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-245
-    title: Adhoc Fundraising Tool
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2128
-    favorites: 21
-    curatedAt: 2025-10-29T17:17:33.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-362
-    title: " Return to space"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6391
-    favorites: 58
-    curatedAt: 2025-10-28T07:18:17.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-212
-    title: Airline Alliance Activity Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 12247
-    favorites: 58
-    curatedAt: 2025-10-27T15:50:59.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-356
-    title: World Homelessness Day | Homelessness in Australia
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4362
-    favorites: 46
-    curatedAt: 2025-10-24T16:16:37.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-346
-    title: The Tornents
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3589
-    favorites: 42
-    curatedAt: 2025-10-23T15:14:45.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-308
-    title: Sales - Sales vs Quota (Tableau Accelerators Remake)
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 11438
-    favorites: 108
-    curatedAt: 2025-10-22T15:53:52.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-350
-    title: Viztory Lane | The Iron Viz Champs
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3255
-    favorites: 27
-    curatedAt: 2025-10-21T16:56:57.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-231
-    title: Child and Family Well-Being Agency Database
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2847
-    favorites: 35
-    curatedAt: 2025-10-20T16:15:15.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-244
-    title: Deep Dive into Viz of the Day
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4412
-    favorites: 58
-    curatedAt: 2025-10-17T16:06:18.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-228
-    title: "Call Center Dashboard | #RWFD"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 19971
-    favorites: 138
-    curatedAt: 2025-10-16T17:50:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-255
-    title: Hidden Flood Risk Across Jakarta
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3309
-    favorites: 24
-    curatedAt: 2025-10-15T16:38:56.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-247
-    title: Economic Freedom
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4818
-    favorites: 166
-    curatedAt: 2025-10-14T15:43:01.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-234
-    title: Consumer Insights Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13324
-    favorites: 138
-    curatedAt: 2025-10-13T19:46:54.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-291
-    title: NFL Week Review - 2026
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8763
-    favorites: 47
-    curatedAt: 2025-10-10T16:53:21.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-221
-    title: How the Boy Who Lived Changed the World
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 10673
-    favorites: 117
-    curatedAt: 2025-10-09T14:42:26.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-248
-    title: Email Marketing Campaigns
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8376
-    favorites: 157
-    curatedAt: 2025-10-08T14:56:21.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-253
-    title: Golf Club Overview Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8334
-    favorites: 52
-    curatedAt: 2025-10-07T16:00:11.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-235
-    title: Cosmic Visual Vocabulary
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6829
-    favorites: 119
-    curatedAt: 2025-10-03T15:31:17.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-295
-    title: PACIFIC RESILIENCE
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4246
-    favorites: 78
-    curatedAt: 2025-10-02T16:35:52.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-229
-    title: Campaign Analysis - Paid and Organic Content
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13266
-    favorites: 160
-    curatedAt: 2025-10-01T16:38:45.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-289
-    title: My Tableau Journey
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6016
-    favorites: 93
-    curatedAt: 2025-09-30T15:59:13.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-321
-    title: Social Media Marketing Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7443
-    favorites: 65
-    curatedAt: 2025-09-29T16:05:33.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-339
-    title: 2025 - 2026 Tableau Ambassadors
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7121
-    favorites: 54
-    curatedAt: 2025-09-26T15:47:43.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-363
-    title: the quito subway
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4279
-    favorites: 34
-    curatedAt: 2025-09-25T15:31:18.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-333
-    title: Executive Sales Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 12346
-    favorites: 85
-    curatedAt: 2025-09-24T20:07:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-220
-    title: Bhumi Volunteering Across India
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2681
-    favorites: 41
-    curatedAt: 2025-09-23T14:53:30.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-303
-    title: Marketing Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8660
-    favorites: 87
-    curatedAt: 2025-09-22T15:43:40.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-250
-    title: Explore World Heritage Sites
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4331
-    favorites: 26
-    curatedAt: 2025-09-19T15:59:20.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-347
-    title: "Global AI Job Trends #MakeoverMonday"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6545
-    favorites: 69
-    curatedAt: 2025-09-18T13:50:20.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-332
-    title: Superstore Executive Scorecard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 19251
-    favorites: 225
-    curatedAt: 2025-09-17T15:32:55.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-293
-    title: O, Shakespeare!
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3548
-    favorites: 35
-    curatedAt: 2025-09-16T15:12:02.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-213
-    title: Airline Loyalty Program
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 24348
-    favorites: 283
-    curatedAt: 2025-09-15T15:36:48.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-251
-    title: Exploring Historically Black Colleges and Universities
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6133
-    favorites: 107
-    curatedAt: 2025-09-12T15:47:49.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-249
-    title: Enterprise Risk Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 49023
-    favorites: 346
-    curatedAt: 2025-09-11T15:37:45.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-357
-    title: World Sustainability Metrics
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5067
-    favorites: 49
-    curatedAt: 2025-09-10T15:37:35.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-342
-    title: The Ghost Job Market
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4923
-    favorites: 52
-    curatedAt: 2025-09-09T16:02:28.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-285
-    title: Music Streaming Churn Analysis
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 24960
-    favorites: 207
-    curatedAt: 2025-09-08T15:54:18.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-317
-    title: Shark Attacks in Australia
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 9716
-    favorites: 67
-    curatedAt: 2025-09-05T15:06:08.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-264
-    title: Hot or Not
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2552
-    favorites: 15
-    curatedAt: 2025-09-04T20:02:35.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-260
-    title: "Help Desk | Real World Fake Data #RWFD"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2932
-    favorites: 46
-    curatedAt: 2025-09-03T16:19:42.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-313
-    title: Satisfying the appetite for sustainable seafood
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3790
-    favorites: 36
-    curatedAt: 2025-09-02T15:31:05.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-267
-    title: Iris Chromatics | Worldwide Eye Color Map
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7208
-    favorites: 83
-    curatedAt: 2025-08-29T15:45:54.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-230
-    title: Performance Insights Vizathon
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5811
-    favorites: 39
-    curatedAt: 2025-08-28T16:00:55.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-334
-    title: Superstore KPI Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 18077
-    favorites: 161
-    curatedAt: 2025-08-27T16:07:05.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-343
-    title: The Golden Honmoon
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2898
-    favorites: 27
-    curatedAt: 2025-08-26T15:54:19.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-252
-    title: Flowsync Saas Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 19820
-    favorites: 179
-    curatedAt: 2025-08-25T15:55:03.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-360
-    title: Common MythConceptions
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3764
-    favorites: 37
-    curatedAt: 2025-08-22T15:50:29.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-328
-    title: Matcha Nutrition
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5526
-    favorites: 49
-    curatedAt: 2025-08-21T15:59:44.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-312
-    title: Tableau Pulse using Sample Superstore
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 30980
-    favorites: 530
-    curatedAt: 2025-08-20T16:56:52.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-243
-    title: Dear Barbie
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 22986
-    favorites: 53
-    curatedAt: 2025-08-19T16:26:18.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-304
-    title: Client Portfolio for Real Estate Finance
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7701
-    favorites: 59
-    curatedAt: 2025-08-18T15:58:53.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-223
-    title: Britain&#039;s National Grid Energy Sources
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3775
-    favorites: 46
-    curatedAt: 2025-08-15T15:48:45.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-324
-    title: Spatial Sales Analysis Using Map Viewport Parameters
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2823
-    favorites: 33
-    curatedAt: 2025-08-14T15:45:03.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-218
-    title: Bears Will Be Boys
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4588
-    favorites: 34
-    curatedAt: 2025-08-13T14:49:11.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-298
-    title: Podcast Analytics
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8150
-    favorites: 55
-    curatedAt: 2025-08-12T15:33:32.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-271
-    title: Let&#039;s Get Accessible
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 9101
-    favorites: 61
-    curatedAt: 2025-08-11T16:42:44.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-329
-    title: Steppin&#039; On Up with my Best Friend
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3444
-    favorites: 32
-    curatedAt: 2025-08-08T15:59:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-320
-    title: Shipment Tracking Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8157
-    favorites: 63
-    curatedAt: 2025-08-07T16:01:09.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-309
-    title: Sales Dashboard (Retail Toy Store)
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 23476
-    favorites: 187
-    curatedAt: 2025-08-06T15:30:49.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-278
-    title: Mastering Tableau with Color Encoded KPIs
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 12194
-    favorites: 205
-    curatedAt: 2025-08-05T15:46:19.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-219
-    title: Between Forests and Shores
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4730
-    favorites: 89
-    curatedAt: 2025-08-04T15:44:31.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-268
-    title: It&#039;s Raining, It&#039;s Pouring...or is it?
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3130
-    favorites: 36
-    curatedAt: 2025-08-01T13:46:12.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-254
-    title: A Comparative Analysis of 50 Cars
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2657
-    favorites: 21
-    curatedAt: 2025-07-31T14:05:38.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-261
-    title: Higher Education Admissions Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 72491
-    favorites: 542
-    curatedAt: 2025-07-30T12:49:21.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-305
-    title: "Recruitment Funnel "
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 20049
-    favorites: 291
-    curatedAt: 2025-07-29T13:12:38.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-272
-    title: Life Expectancy
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7316
-    favorites: 60
-    curatedAt: 2025-07-28T13:08:17.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-206
-    title: A Night in the Life
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4873
-    favorites: 11
-    curatedAt: 2025-07-25T12:37:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-287
-    title: Master&#039;s Degree Wrapped
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3804
-    favorites: 56
-    curatedAt: 2025-07-24T12:29:42.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-348
-    title: Utility Expense Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 23228
-    favorites: 209
-    curatedAt: 2025-07-23T12:46:26.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-349
-    title: Viz Design Catalog
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 31329
-    favorites: 241
-    curatedAt: 2025-07-22T12:47:11.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-202
-    title: Mapping Potential Asteroid Impacts
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3773
-    favorites: 55
-    curatedAt: 2025-07-21T12:45:43.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-351
-    title: The Silent Revolutionary of the Environment
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4587
-    favorites: 82
-    curatedAt: 2025-07-18T14:07:42.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-327
-    title: Sports Seasonality
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5018
-    favorites: 56
-    curatedAt: 2025-07-17T12:50:54.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-336
-    title: Superstore Sales and Orders Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 28746
-    favorites: 210
-    curatedAt: 2025-07-16T12:38:40.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-270
-    title: Kevin and Ken Doing Cool Stuff in Tableau
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 20997
-    favorites: 416
-    curatedAt: 2025-07-15T13:05:13.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-294
-    title: Our World&#039;s Aging Societies
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 10116
-    favorites: 174
-    curatedAt: 2025-07-14T12:56:34.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-338
-    title: Data Behind the Leadership
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8500
-    favorites: 71
-    curatedAt: 2025-07-11T12:53:10.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-266
-    title: Investment Portfolio
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8948
-    favorites: 76
-    curatedAt: 2025-07-10T12:52:32.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-257
-    title: HR Onboarding Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 25589
-    favorites: 190
-    curatedAt: 2025-07-09T12:51:08.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-238
-    title: Custom Table with Map Layers
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 9278
-    favorites: 185
-    curatedAt: 2025-07-08T12:43:12.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-292
-    title: Not Broken Just Different
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4175
-    favorites: 55
-    curatedAt: 2025-07-07T13:52:00.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-276
-    title: MakeoverMonday Submission Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 15408
-    favorites: 140
-    curatedAt: 2025-07-03T14:31:04.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-314
-    title: Academic Performance Tracker - Student Profile
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 15463
-    favorites: 172
-    curatedAt: 2025-07-02T12:54:06.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-345
-    title: The Step Change
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2560
-    favorites: 26
-    curatedAt: 2025-07-01T13:53:16.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-316
-    title: Seven Bar Charts to Visualise Year-Over-Year Growth
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 11147
-    favorites: 222
-    curatedAt: 2025-06-24T12:53:58.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-361
-    title: Halo
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5510
-    favorites: 58
-    curatedAt: 2025-06-20T12:50:38.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-239
-    title: Dashboard Usage of ChatGpt in Brazil
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5402
-    favorites: 53
-    curatedAt: 2025-06-18T13:30:13.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-227
-    title: "Call Center Dashboard #RWFD"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 21654
-    favorites: 303
-    curatedAt: 2025-06-17T13:09:59.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-214
-    title: All In The Wins
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13951
-    favorites: 54
-    curatedAt: 2025-06-16T13:12:17.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-299
-    title: Video Game Streaming
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3022
-    favorites: 30
-    curatedAt: 2025-06-13T12:44:59.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-296
-    title: LinkedIn Performance Review Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 26199
-    favorites: 196
-    curatedAt: 2025-06-12T12:40:22.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-281
-    title: Merchandise Sales Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 248746
-    favorites: 456
-    curatedAt: 2025-06-11T13:51:25.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-222
-    title: Monaco Race
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8994
-    favorites: 120
-    curatedAt: 2025-06-10T11:59:03.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-258
-    title: Happiness Around the World
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 19603
-    favorites: 190
-    curatedAt: 2025-06-09T17:36:05.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-318
-    title: Shining Stars
-    author: author-redacted
-    profileName: "author-redacted"
-    viewCount: 10903
-    favorites: 220
-    curatedAt: 2025-06-06T14:31:11.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-288
-    title: Survey Response Analysis Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 6690
-    favorites: 123
-    curatedAt: 2025-06-05T13:49:31.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-277
-    title: Marketing Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 21489
-    favorites: 138
-    curatedAt: 2025-06-04T13:12:10.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-209
-    title: Accessibility Dashboard Design
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 28412
-    favorites: 387
-    curatedAt: 2025-06-03T13:44:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-274
-    title: Baseball Attendance 2024
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 9993
-    favorites: 100
-    curatedAt: 2025-06-02T13:57:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-246
-    title: Epic the Musical
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5912
-    favorites: 95
-    curatedAt: 2025-05-30T12:51:51.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-344
-    title: "The Page Turners: Book Club Analysis"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2636
-    favorites: 63
-    curatedAt: 2025-05-29T15:03:46.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-263
-    title: Hospital Emergency Department Performance Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 38625
-    favorites: 387
-    curatedAt: 2025-05-28T12:47:47.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-286
-    title: My Activity Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 8770
-    favorites: 144
-    curatedAt: 2025-05-27T12:47:34.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-217
-    title: Digital Quality of Life Index
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7401
-    favorites: 130
-    curatedAt: 2025-05-23T13:45:22.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-300
-    title: Regional Daycare Cost Scorecard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2776
-    favorites: 32
-    curatedAt: 2025-05-22T13:39:48.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-279
-    title: MediTech Business Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 30881
-    favorites: 222
-    curatedAt: 2025-05-21T12:57:22.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-204
-    title: "Histograms "
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5709
-    favorites: 93
-    curatedAt: 2025-05-20T14:04:31.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-325
-    title: Spiraling Satellite Charts
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 13557
-    favorites: 326
-    curatedAt: 2025-05-19T13:11:38.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-241
-    title: DataFam Rising Stars 2025
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 3709
-    favorites: 56
-    curatedAt: 2025-05-16T12:58:41.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-205
-    title: 30-Day Chart Challenge 2025
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 14911
-    favorites: 142
-    curatedAt: 2025-05-15T12:39:42.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-233
-    title: Citizen Service Requests
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 20395
-    favorites: 183
-    curatedAt: 2025-05-14T12:48:01.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-216
-    title: Productivity Benchmark Report
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5883
-    favorites: 91
-    curatedAt: 2025-05-13T13:14:17.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-337
-    title: Tableau Conference 2025 Favorite Charts and Techniques
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 7874
-    favorites: 261
-    curatedAt: 2025-05-12T14:21:22.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-240
-    title: "Data Art: Happy Mother&#039;s Day"
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5638
-    favorites: 96
-    curatedAt: 2025-05-09T15:08:46.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-364
-    title: Stargazer&#039;s Map
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 5147
-    favorites: 130
-    curatedAt: 2025-05-08T15:32:13.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-331
-    title: SuperStore Business Dashboard 2025
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 42608
-    favorites: 486
-    curatedAt: 2025-05-07T12:59:03.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-236
-    title: Crumbs of Crumble
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2876
-    favorites: 58
-    curatedAt: 2025-05-06T17:28:15.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-215
-    title: A Spring full of British Blossoms
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 4041
-    favorites: 259
-    curatedAt: 2025-05-05T15:08:52.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-315
-    title: 100 Years of the Home of Scottish Rugby
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2809
-    favorites: 27
-    curatedAt: 2025-05-02T12:53:01.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-256
-    title: HR Management Dashboard
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 26587
-    favorites: 241
-    curatedAt: 2025-05-01T15:14:16.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-225
-    title: Recovery Report
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 20928
-    favorites: 301
-    curatedAt: 2025-04-30T12:55:40.000Z
-    status: error
-    reason: HTTP 429
-  - repoUrl: WB-203
-    title: 2025 Habit Tracker
-    author: author-redacted
-    profileName: author-redacted
-    viewCount: 2809
-    favorites: 48
-    curatedAt: 2025-04-29T13:53:11.000Z
-    status: error
-    reason: HTTP 429
+    status: downloaded
+    bytes: 1100226
+    sha256: f65ca66d95c4f4954f6e60b09067c7d460a35a768405b3622d9ab882ca4260f7
+    savedAs: design/references/top100/WB-105.twbx

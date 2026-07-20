@@ -1,4 +1,33 @@
 - formats:
+    border-color: '#000000'
+    border-style: none
+    border-width: '0'
+    margin: '4'
+    padding: '0'
+  sha256: dee10357fdb39d518f736853b71401775f9c698e00fa27073528d33b4363fea7
+  source: WB-005.twbx
+  xpath: /workbook/dashboards/dashboard[1]/devicelayouts/devicelayout/zones/zone/zone/zone[13]/zone-style
+  zone_type: filter
+- formats:
+    border-color: '#000000'
+    border-style: none
+    border-width: '0'
+    margin: '4'
+    padding: '0'
+  sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+  source: WB-012.twbx
+  xpath: /workbook/dashboards/dashboard/devicelayouts/devicelayout/zones/zone/zone/zone[3]/zone-style
+  zone_type: color
+- formats:
+    border-color: '#000000'
+    border-style: none
+    border-width: '0'
+    margin: '0'
+  sha256: 6b5e2e6d23f0c0c34819560e0d047e6ccf03d7e36b52e94fc1d7d71194f011d6
+  source: WB-012.twbx
+  xpath: /workbook/dashboards/dashboard/zones/zone[1]/zone-style
+  zone_type: layout-basic
+- formats:
     background-color: '#ffffff'
     border-color: '#000000'
     border-style: none

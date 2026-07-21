@@ -27,10 +27,10 @@ construct. **Nothing in this corpus is invented.** Concretely:
    10-workbook allowlist it came from, that source's sha256, and a short description of the exact
    construct (often including the recipe's `xpath`, for direct auditability).
 4. The **10-workbook allowlist was fixed for the D0 slice**: the 3 downloaded `.twbx` exemplars
-   (`WB-117.twbx`, `WB-118.twbx`,
-   `WB-114.twbx` — see `design/references/README.md`) plus the 7 pre-existing
-   reference `.twb` files (`WB-015`, `WB-093`, `WB-095`, `WB-133`,
-   `WB-058`, `WB-062`, `WB-063`). **Slice T1 legitimately extends this
+   (`WB-117`, `WB-118`, `WB-114` — see `design/references/README.md`) plus the 7 pre-existing
+   reference `.twb` files (`WB-015`, `WB-093`, `WB-095`, `WB-133`, `WB-058`, `WB-062`, `WB-063`).
+   Source identities are redacted to these opaque, stable `WB-NNN` identifiers by policy (see
+   "Source-identity redaction" below). **Slice T1 legitimately extends this
    allowlist** with 14 top-100-corpus sources (see "Notable-construct append" under `stats/`
    below) — `tests/designCorpus.test.ts`'s `WORKBOOK_ALLOWLIST` is the union of the D0 set and
    this T1 addition, and asserts every `source`/`source_file` value in the corpus is drawn from
@@ -54,7 +54,7 @@ anywhere in the document:
 ```yaml
 - zone_type: empty          # parent <zone type-v2="...">, or "worksheet" if the parent isn't a <zone>
   formats: { background-color: "#2f2e41", margin: "0", ... }   # verbatim <format attr/value> pairs
-  source: WB-117.twbx
+  source: WB-117
   sha256: 5665d0ae...
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[1]/zone-style
 ```
@@ -147,7 +147,7 @@ palette is often copy-pasted across several dashboards/worksheets within one wor
 - name: ""
   type: ordered-sequential
   colors: ["#f1f1f1", "#d9d8df", ..., "#2f2e41"]
-  source: WB-117.twbx
+  source: WB-117
   sha256: 5665d0ae...
   xpath: /workbook/datasources/datasource[1]/color-palette
 ```
@@ -166,7 +166,7 @@ formatting but different text must both survive):
     - { bold: "true", fontcolor: "#ffffff", fontname: "Tableau Semibold", fontsize: "20", text: "Superstore |" }
     - { fontcolor: "#ffffff", fontname: "Tableau Light", fontsize: "14", text: "ORDER DETAILS" }
   zone_role_hint: title
-  source: WB-117.twbx
+  source: WB-117
   sha256: 5665d0ae...
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]
 ```
@@ -296,8 +296,8 @@ cd sidecar
 uv run python design_stats.py \
   --refs-dir ../design/references \
   --top100-dir ../design/references/top100 \
-  --extra-refs <path-to>/WB-058 <path-to>/WB-133 <path-to>/WB-095 \
-    <path-to>/WB-062 <path-to>/WB-063 <path-to>/WB-015 <path-to>/WB-093 \
+  --extra-refs <path-to>/<WB-058-file> <path-to>/<WB-133-file> <path-to>/<WB-095-file> \
+    <path-to>/<WB-062-file> <path-to>/<WB-063-file> <path-to>/<WB-015-file> <path-to>/<WB-093-file> \
   --out ../design/corpus
 ```
 
@@ -350,8 +350,8 @@ enough tag coverage for it to be implementable deterministically.
 A recipe/theme literal being schema-valid and mined-verbatim does not guarantee Tableau Cloud
 actually *renders* it — the KPI-tile (BAN) `<customized-label>` mechanism took three live-probe
 hotfix rounds plus a dedicated offline bisect ladder (a dozen `.twbx` variants, V0–V12, isolating
-one variable at a time against `WB-118`'s real, published "Sales KPI (BAN) New" worksheet,
-`WB-118.twbx`) to get right. These constraints are **render-time**
+one variable at a time against `WB-118`'s real, published "Sales KPI (BAN) New" worksheet) to
+get right. These constraints are **render-time**
 facts about the Tableau Cloud engine, not corpus/provenance facts about the mined XML — they don't
 fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's own record of
 "XSD-valid ≠ Cloud-renders", so a future slice doesn't have to re-discover them:

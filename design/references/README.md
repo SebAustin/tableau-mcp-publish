@@ -3,7 +3,7 @@
 This directory holds the raw `.twbx` files the user identified as "beautiful" Tableau Public
 Superstore dashboards, downloaded with the user's explicit authorization (see PLAN.md context and
 `ASSUMPTIONS.md`). **The `.twbx` files themselves are not committed** — they are covered by the
-repo-root `.gitignore` (`*.twbx`, `*.twb`; verified with `git check-ignore design/references/WB-114.twbx`).
+repo-root `.gitignore` (`*.twbx`, `*.twb`; verified with `git check-ignore` against each downloaded file).
 This README is the durable, committed record of what was downloaded and when, plus their sha256
 for reproducibility — `sidecar/design_miner.py` was run directly against these three files (see
 `design/corpus/SCHEMA.md`).
@@ -16,11 +16,11 @@ bytes.
 
 ## Downloaded exemplars (3 of 4)
 
-| WB-id | File | Direction | Downloaded | Size (bytes) | sha256 |
-|---|---|---|---|---|---|
-| `WB-117` | `WB-117.twbx` | dark — navy KPI band/header, white BANs | 2026-07-17 | 491446 | `79fb59f394e61002db52e3a4b79eeb5e1b4e145d40218d959d9bc03f43fd60f1` |
-| `WB-118` | `WB-118.twbx` | light — white cards, hairline borders | 2026-07-17 | 1969910 | `f52da3f982cd8c4b9c5f5d48b68f01051496318dcf605c90919e9e4110790c92` |
-| `WB-114` | `WB-114.twbx` | light — white cards, hairline borders | 2026-07-17 | 375946 | `e22672587b11869fe717d6fee292e33ca50c188ba3ded9bf836f5e4bc3962f57` |
+| WB-id | Direction | Downloaded | Size (bytes) | sha256 |
+|---|---|---|---|---|
+| `WB-117` | dark — navy KPI band/header, white BANs | 2026-07-17 | 491446 | `79fb59f394e61002db52e3a4b79eeb5e1b4e145d40218d959d9bc03f43fd60f1` |
+| `WB-118` | light — white cards, hairline borders | 2026-07-17 | 1969910 | `f52da3f982cd8c4b9c5f5d48b68f01051496318dcf605c90919e9e4110790c92` |
+| `WB-114` | light — white cards, hairline borders | 2026-07-17 | 375946 | `e22672587b11869fe717d6fee292e33ca50c188ba3ded9bf836f5e4bc3962f57` |
 
 sha256 above is of the `.twbx` zip archive itself (as downloaded). `sidecar/design_miner.py`
 additionally records the sha256 of the *inner* `.twb` XML member (see
@@ -55,9 +55,9 @@ sha256); the miner's cross-file dedup collapses their mined entries into one set
 ```bash
 cd sidecar
 uv run python design_miner.py \
-  ../design/references/WB-117.twbx \
-  ../design/references/WB-118.twbx \
-  ../design/references/WB-114.twbx \
+  ../design/references/<WB-117-file>.twbx \
+  ../design/references/<WB-118-file>.twbx \
+  ../design/references/<WB-114-file>.twbx \
   <path-to>/<WB-015-file> <path-to>/<WB-093-file> <path-to>/<WB-095-file> \
   <path-to>/<WB-133-file> <path-to>/<WB-058-file> <path-to>/<WB-062-file> <path-to>/<WB-063-file> \
   --out ../design/corpus

@@ -14,12 +14,12 @@ Covers:
 
 Every construct in the fixture is copied verbatim from a real mined exemplar
 (see ``design/corpus/recipes/*.yaml`` for the equivalent real entries):
-- zone-style: WB-117.twbx (WB-117), navy
+- zone-style: WB-117 (WB-117), navy
   band background-color #2f2e41.
 - style-rule (workbook, element=title): same source, font-size 11 / color
   #2f2e41.
 - style-rule (worksheet, element=mark): WB-015, mark-labels-show.
-- action (tsc:tsl-filter): WB-117.twbx's
+- action (tsc:tsl-filter): WB-117's
   "Clear Selection - Pag All Left" action shape.
 - custom palette: same source's ordered-sequential navy palette.
 - text zone: same source's "Superstore |" header run (bold, #ffffff, 20pt,

@@ -6,7 +6,7 @@ static-image-render artifact (as SCHEMA.md constraint #5 previously
 concluded); it reproduced live on Tableau Cloud too.
 
 Decisive experiment: the UNTOUCHED WB-118 exemplar workbook
-(``design/references/WB-118.twbx``) was
+(``design/references/WB-118``) was
 published as-is to our own dev site and its "Superstore Dashboard" view
 (which mixes BAN tiles with charts) rendered its numbers PERFECTLY. This
 ruled out a renderer/site-level limitation and proved the failure was in

@@ -40,7 +40,7 @@ diagnostic found four concrete, mined-evidence-backed defects:
    ZONE was already correct, but the worksheet's own TABLE has an opaque
    white fill that paints on top of it. Mined verbatim from WB-118's
    real, published "Sales KPI (BAN) New" worksheet
-   (WB-118.twbx):
+   (WB-118):
    ``<style-rule element='table'><format attr='background-color'
    value='#00000000'/></style-rule>`` — :func:`twb_builder._kpi_tile_table_transparency_rule`
    emits this whenever ``kpi_tile.background`` is set, so the zone's navy

@@ -6,11 +6,11 @@ mined-XML citations):
 
 - ``tsc:tsl-filter`` cross-filter actions, one per chart worksheet on a
   dashboard with >=2 chart sheets (WB-118's
-  ``WB-118.twbx`` "State FA"/"Cat FA"/... family
-  + WB-114's ``WB-114.twbx`` Action4 "Map to Scatter Plot"
+  ``WB-118`` "State FA"/"Cat FA"/... family
+  + WB-114's ``WB-114`` Action4 "Map to Scatter Plot"
   self-exclusion evidence).
 - ``tsc:brush`` highlight actions, one per chart worksheet carrying a color
-  encoding (WB-114's ``WB-114.twbx`` Action1 "Highlight 1
+  encoding (WB-114's ``WB-114`` Action1 "Highlight 1
   (generated)").
 
 Emitted as a single workbook-level ``<actions>`` element positioned AFTER

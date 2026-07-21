@@ -12,7 +12,7 @@ Mirrors the mined vocabulary in ``design/corpus/recipes/chrome_rules.yaml``:
   ``Workbook-DataSources-G`` sequence.
 - Worksheet TABLE-level ``<style><style-rule element='axis'>`` with
   ``line-visibility='off'`` + ``tick-color='#00000000'`` — mirrors
-  WB-117's ``WB-117.twbx``
+  WB-117's ``WB-117``
   ``worksheet[10]/table/style/style-rule[1]`` EXACTLY (including the
   ``#00000000`` transparent tick color).
 - Worksheet PANE-level ``<style>`` carrying ``datalabel`` THEN ``mark``

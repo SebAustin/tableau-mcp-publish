@@ -1283,7 +1283,7 @@ def _build_text_zone(
 # D5 ORIGINAL VALUE (9722) mirrored one exemplar dashboard's OWN ``h``
 # attribute verbatim (design/corpus/recipes/text_zones.yaml ->
 # /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1], source
-# WB-117.twbx: ``<zone forceUpdate='true'
+# WB-117: ``<zone forceUpdate='true'
 # h='9722' id='556' type-v2='text' ...>``). Beauty-gate round 2 flagged the
 # resulting themed header as "too big" — nearly double the non-themed title
 # zone's ``h=6000``, occupying ~9.7% of a dashboard-sized canvas.
@@ -1314,7 +1314,7 @@ def _build_header_zone(
     Design Excellence, Slice D5. Mirrors the mined MULTI-RUN title-zone
     vocabulary in ``design/corpus/recipes/text_zones.yaml`` at
     ``/workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]``
-    (source ``WB-117.twbx``, cited verbatim by
+    (source ``WB-117``, cited verbatim by
     ``design/corpus/themes/executive_dark.yaml``'s header provenance entry):
     a bold title run, a bare glyph-separator run (``"Æ  "`` — Tableau
     Desktop's own manual-line-break idiom, copied byte-for-byte from the
@@ -1502,7 +1502,7 @@ def _chart_card_zone_style_formats(
 
 # Design Excellence, Slice D4 BEAUTY-GATE hotfix (live-probe #5): mined
 # verbatim from WB-118's real, published "Superstore Dashboard" (the
-# SAME WB-118.twbx exemplar the whole D4 BAN
+# SAME WB-118 exemplar the whole D4 BAN
 # mechanism is grafted from) — its KPI band's fixed-size WRAPPER flow
 # (e.g. `<zone fixed-size='210' ... is-fixed='true' param='horz'
 # type-v2='layout-flow' ...>` wrapping `<zone fixed-size='150' ...
@@ -1525,7 +1525,7 @@ def _kpi_wrapped_indices(n: int) -> set[int]:
     brand-new workbook identity (ruling out both a font-fit issue and a
     render-cache issue) — after wrapping ALL FOUR tiles in the cascade.
     Re-examining the mined exemplar's OWN "4 KPI quadrants" row
-    (``WB-118.twbx``, zone id 9) showed it does
+    (``WB-118``, zone id 9) showed it does
     NOT mark every quadrant ``is-fixed``: 3 of its 4 quadrant wrappers
     carry ``is-fixed='true' fixed-size='...'``, but the 3rd one (id 74,
     "Total Orders") has NEITHER attribute — it is the flow's one FLEXIBLE
@@ -1572,7 +1572,7 @@ def _append_worksheet_zones(
         show_title:          Design Excellence, Slice D4 FINAL SHAPE. When
                               ``False``, every zone gets ``show-title='false'``
                               — mirrors WB-118's OWN mined KPI-tile zone
-                              attribute (``WB-118.twbx``:
+                              attribute (``WB-118``:
                               ``<zone ... name='Sales KPI (BAN) New'
                               show-title='false' ...>``), used when the
                               worksheet's own ``<customized-label>`` already
@@ -1743,7 +1743,7 @@ def _workbook_style_rules(chrome: dict[str, Any] | None) -> list[tuple[str, dict
 
     ``title_color`` additionally emits a ``title`` style-rule with a plain
     ``color`` format — mirrors WB-117's
-    ``WB-117.twbx`` ``/workbook/style/style-rule[1]``
+    ``WB-117`` ``/workbook/style/style-rule[1]``
     (``font-size='11' color='#2f2e41'``; only ``color`` is emitted here since
     no theme field for title font-size exists). ``title_color`` is NOT a
     field on Slice D1's ``ThemeChromeModel`` — it is read defensively via
@@ -1974,7 +1974,7 @@ def _map_filled_sequential_colors(brand: dict[str, Any] | None) -> list[str] | N
 # a customized-label with brand-driven styling) — root-caused only by an
 # offline bisect ladder (a dozen ``.twbx`` variants, V0-V12, isolating one
 # variable at a time against a verbatim graft of WB-118's real, published
-# "Sales KPI (BAN) New" worksheet, WB-118.twbx).
+# "Sales KPI (BAN) New" worksheet, WB-118).
 #
 # FOUR mined locations, each covering a DIFFERENT concern (see each
 # helper's own docstring for the full root-cause writeup of why it lives
@@ -2016,7 +2016,7 @@ def _map_filled_sequential_colors(brand: dict[str, Any] | None) -> list[str] | N
 _KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
 
 # Mined delta arrow-direction pattern (WB-117's
-# WB-117.twbx, default-format='*▲ #,##;▼ #,##'
+# WB-117, default-format='*▲ #,##;▼ #,##'
 # on [MOM - Sales (copy)_233624247371403264] et al.) -- the D7-deferred
 # fallback for true color-by-sign (see _append_kpi_ban_calc_column's
 # docstring). Direction is visible (▲/▼) without any new calc-field
@@ -2117,7 +2117,7 @@ def _compact_currency_format(currency_format: str) -> str:
     """Return the mined compact-currency pattern for *currency_format*'s symbol.
 
     Mirrors WB-117's ``c"R$ "#,##0,.0K;-"R$ "#,##0,.0K`` and WB-118's
-    ``c"$"#,##0,.0K;-"$"#,##0,.0K`` (WB-118.twbx)
+    ``c"$"#,##0,.0K;-"$"#,##0,.0K`` (WB-118)
     -- the ONLY parameterization this builder permits is the currency SYMBOL
     itself; the surrounding ``#,##0,.0K`` compaction grammar is copied
     verbatim (Tableau's format-code grammar is opaque to us — same discipline
@@ -2224,7 +2224,7 @@ def _kpi_tile_table_transparency_rule(
     renders correctly, but the worksheet's own TABLE has an opaque white
     fill of its own that paints on top of it, hiding the navy band. Mirrors
     WB-118's real, published ``"Sales KPI (BAN) New"`` worksheet
-    (WB-118.twbx) verbatim:
+    (WB-118) verbatim:
     ``<style-rule element='table'><format attr='background-color'
     value='#00000000'/></style-rule>`` — a fully transparent table fill so
     the containing zone's background shows through.
@@ -2537,7 +2537,7 @@ _KPI_LABEL_VALUE_FONTSIZE_FALLBACK = 17
 # the value renders as "###" (a Tableau cell-overflow placeholder, not a
 # label failure). V12's own tested value (17) rendered correctly; the
 # largest BAN fontsize anywhere in the 10-workbook mined corpus is 26
-# (WB-117's WB-117.twbx). The PRIMARY
+# (WB-117's WB-117). The PRIMARY
 # value run's fontsize is therefore clamped to this mined maximum whenever
 # brand.typography.ban.size is set (brand can still request anything up to
 # 26; larger requests are capped, not rejected) — see
@@ -2574,7 +2574,7 @@ def _kpi_tile_caption_text(title: str) -> str:
     """Return the letter-spaced UPPERCASE caption text for a KPI tile's
     in-label caption run (e.g. ``"Sales"`` -> ``"S A L E S"``) — mirrors
     WB-118's mined ``"S A L E S"``/``"P R O F I T"`` caption runs
-    (WB-118.twbx, "Sales KPI (BAN) New") and
+    (WB-118, "Sales KPI (BAN) New") and
     the bisect ladder's confirmed-working V11/V12 shape."""
     return " ".join(title.strip().upper())
 
@@ -2639,7 +2639,7 @@ def _kpi_tile_customized_label(
     calc-column instances built by :func:`_append_kpi_ban_calc_column`.
 
     Verified DIRECTLY against WB-118's real, published "Sales KPI (BAN)
-    New" worksheet (WB-118.twbx): its
+    New" worksheet (WB-118): its
     ``<pane>`` children, IN ORDER, are ``view, mark, encodings,
     customized-label, style`` — ``<customized-label>`` COEXISTS with the
     full ``<encodings>`` list (all measures stay declared; the label is a
@@ -3604,7 +3604,7 @@ def _dashboard_chart_and_kpi_titles(
 def _sheet_color_field_caption(sheet: dict[str, Any] | None) -> str | None:
     """Return ``sheet["color"]["field"]`` (a plain field caption), or ``None``.
 
-    Mirrors WB-114's ``WB-114.twbx`` "Highlight 1 (generated)"
+    Mirrors WB-114's ``WB-114`` "Highlight 1 (generated)"
     action's ``field-captions`` param: a plain caption string (e.g.
     ``"Clusters"``), never a bracketed ``[field]`` reference. Returns ``None``
     when *sheet* has no ``color`` block or an empty ``field`` — the caller
@@ -3659,7 +3659,7 @@ def _build_actions(
     ``command='tsc:tsl-filter'``, params ``exclude``/``special-fields='all'``/
     ``target={dashboard name}``, ``activation auto-clear='true'`` — is
     mirrored VERBATIM from WB-118's
-    ``WB-118.twbx`` (``Superstore Dashboard.twb``
+    ``WB-118`` (``Superstore Dashboard.twb``
     ``/workbook/actions/action`` — captions "State FA"/"Cat FA"/"Segment FA"/
     "Subcat filter"/"Manufacturer FA", every one targeting the shared
     ``Superstore Dashboard``).
@@ -3679,7 +3679,7 @@ def _build_actions(
        a "last updated" text zone, an info button) — proving ``target`` +
        ``exclude`` together express "filter every OTHER chart/KPI on this
        dashboard", the cross-filter behavior this flag is named for.
-    2. WB-114's ``WB-114.twbx`` Action4 ("Map to Scatter
+    2. WB-114's ``WB-114`` Action4 ("Map to Scatter
        Plot", source worksheet ``Prescriptive Map``, target dashboard
        ``Super: Prescriptive``) is the SAME shape but its ``exclude`` value
        — ``'Annotations Button: Inactive,Descriptive Button:
@@ -3719,7 +3719,7 @@ def _build_actions(
           </command>
         </action>
 
-    Mirrored VERBATIM from WB-114's ``WB-114.twbx`` Action1,
+    Mirrored VERBATIM from WB-114's ``WB-114`` Action1,
     caption "Highlight 1 (generated)" — ``tsc:brush`` with ONLY
     ``field-captions``/``target`` params (no ``exclude``), a ``<source>``
     with NO ``dashboard`` attribute (unscoped — a sheet-level auto-generated
@@ -3736,7 +3736,7 @@ def _build_actions(
     workbook) — deterministic, reproducible output is required here (this
     slice's own gate: "deterministic naming/ordering, two builds identical"),
     and the plain ``[ActionN]`` form is ITSELF real, mined XML: WB-114's
-    ``WB-114.twbx`` uses exactly this GUID-free form
+    ``WB-114`` uses exactly this GUID-free form
     throughout (``[Action1]``, ``[Action2]``, … ``[Action10]``). ``name``
     values are assigned by a single counter spanning the WHOLE ``<actions>``
     element (every dashboard's cross-filter actions, in chart order, THEN

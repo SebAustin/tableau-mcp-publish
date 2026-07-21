@@ -18,7 +18,7 @@ published — even though the XML was independently verified correct. An
 offline bisect ladder of a dozen ``.twbx`` variants (kept in scratchpad,
 never committed) isolated the EXACT working shape by starting from a
 verbatim graft of WB-118's real, published "Sales KPI (BAN) New"
-worksheet (WB-118.twbx) and making the smallest
+worksheet (WB-118) and making the smallest
 possible edits, rather than continuing to morph this builder's own
 (independently-plausible but non-rendering) shape:
 
@@ -548,7 +548,7 @@ def test_kpi_tile_title_color_rule_absent_when_ban_active() -> None:
 
 def test_kpi_tile_zone_show_title_false_when_kpi_tile_active() -> None:
     """Mirrors WB-118's own mined zone attribute
-    (WB-118.twbx: ``<zone ...
+    (WB-118: ``<zone ...
     name='Sales KPI (BAN) New' show-title='false' ...>``)."""
     xml = twb_builder.build_twb_xml(
         "DS", "kpi_ds", "site", SHEETS_MIXED, dashboards=DASHBOARD_KPI_BAND, design_theme=THEME_KPI

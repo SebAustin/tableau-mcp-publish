@@ -432,12 +432,12 @@ class InteractionsModel(BaseModel):
 
     ``cross_filter``: one ``tsc:tsl-filter`` ``<action>`` per chart worksheet
     on a dashboard with >=2 chart sheets (mirrors WB-118's
-    ``WB-118.twbx`` "State FA"/"Cat FA"/...
+    ``WB-118`` "State FA"/"Cat FA"/...
     action family — real mined XML, see
     ``design/corpus/recipes/actions.yaml``).
 
     ``highlight``: one ``tsc:brush`` ``<action>`` per chart worksheet that
-    carries a color encoding (mirrors WB-114's ``WB-114.twbx``
+    carries a color encoding (mirrors WB-114's ``WB-114``
     "Highlight 1 (generated)" action).
 
     See ``twb_builder._build_actions``'s docstring for the full derivation,

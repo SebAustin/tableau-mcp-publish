@@ -13,7 +13,7 @@ Rather than continue guessing, an offline bisect ladder of a dozen
 ``.twbx`` variants (V0-V12; kept in scratchpad, never committed to the
 repo) isolated the EXACT working shape by starting from a near-verbatim
 GRAFT of WB-118's real, published "Sales KPI (BAN) New" worksheet
-(WB-118.twbx) and making the smallest possible
+(WB-118) and making the smallest possible
 edits, instead of continuing to morph this builder's own shape one
 attribute at a time:
 

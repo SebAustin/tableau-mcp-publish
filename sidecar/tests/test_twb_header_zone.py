@@ -3,7 +3,7 @@
 Mirrors the mined MULTI-RUN title-zone vocabulary in
 ``design/corpus/recipes/text_zones.yaml`` at
 ``/workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]`` (source
-``WB-117.twbx``, cited verbatim by
+``WB-117``, cited verbatim by
 ``design/corpus/themes/executive_dark.yaml``'s header provenance entry): a
 bold title run, a bare glyph-separator run (``"Æ  "``), and a plain subtitle
 run — all inside ONE ``<formatted-text>``, replacing the pre-D5 separate

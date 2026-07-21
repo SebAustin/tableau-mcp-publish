@@ -423,6 +423,21 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
    tiles inside dense dashboards (e.g. accepting a smaller pre-truncated value format server-side,
    or steering users toward viewing KPI tiles as their own full worksheet tab).
 
+6. **Bracketed section colors in a number format (`[Green]…;[Red]…`) are STRIPPED in the
+   `<customized-label>` CDATA-placeholder context on Tableau Cloud — and they take the `▲`/`▼`
+   arrow down with them.** N4 (sign-based delta color, external-skill-suite Calc-Engine "KPI Status") tried to
+   color the KPI delta by sign via Tableau's documented bracketed number-format section colors:
+   `[Green]*▲ #,##;[Red]▼ #,##`. Live probe (2026-07-21, workbook 2527341): the format publishes and
+   XSD-validates, but Cloud renders the delta with **neither** the color **nor** the arrow — strictly
+   worse than the plain `*▲ #,##;▼ #,##` arrow format, which renders the arrow (see M2). No reference
+   workbook in the corpus uses bracketed-color formats, so there was nothing to mirror — this was
+   built on documented Desktop behavior and refuted live. **Resolution:** the `deltaColorBySign`
+   theme flag is retained (additive, default off) but the builder falls back to the arrow-only
+   format when it is set — it never emits the broken construct. The correct `_nearest_tableau_format_color`
+   mapping is kept + unit-tested, ready if a future Cloud release renders section colors here. Color-
+   by-sign in a KPI tile would need a different mechanism (e.g. a calculated boolean + a value→color
+   `<encoding>`, which this builder does not emit) — recorded for a future slice, not shipped.
+
    **Follow-up round, `sizing-mode='fixed'` hypothesis — tested, REFUTED.** Our emitted
    `<dashboard><size>` carried equal `min`/`max` but no `sizing-mode` attribute, unlike every mined
    exemplar dashboard (WB-118/WB-117 both carry `<size ... sizing-mode='fixed'/>`) — a

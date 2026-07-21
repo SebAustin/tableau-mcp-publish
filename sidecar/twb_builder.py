@@ -2061,18 +2061,24 @@ def _kpi_delta_arrow_format(
 ) -> str:
     """The delta arrow format, optionally with sign-based bracketed section colors.
 
-    When ``delta_color_by_sign`` is set on the KPI-tile theme AND the brand
-    carries semantic ``good``/``bad`` palette colors, prepend each section with
-    its nearest Tableau format color: ``[Green]*▲ #,##;[Red]▼ #,##``. Otherwise
-    the plain, corpus-proven arrow format (byte-identical to prior behavior).
+    VERIFY-LIVE → REFUTED (2026-07-21 live probe, workbook 2527341): the intended
+    ``[Green]*▲ #,##;[Red]▼ #,##`` bracketed-section-color format publishes and
+    validates, but Tableau Cloud STRIPS it in the ``<customized-label>``
+    CDATA-placeholder context — it renders the delta with neither color NOR the
+    ▲/▼ arrow (worse than the plain arrow, which does render). So
+    ``delta_color_by_sign`` deliberately falls back to the corpus-proven
+    arrow-only format: the flag records intent + keeps the (correct, unit-tested)
+    ``_nearest_tableau_format_color`` mapping ready, but never emits the broken
+    construct. See design/corpus/SCHEMA.md "Discovered render constraints" and
+    ADR-0015. (Flip the one line below if a future Cloud release renders it.)
     """
     if theme_kpi_tile.get("delta_color_by_sign") and brand:
         palette = brand.get("palette") or {}
         good, bad = palette.get("good"), palette.get("bad")
         if good and bad:
-            gc = _nearest_tableau_format_color(str(good))
-            bc = _nearest_tableau_format_color(str(bad))
-            return f"[{gc}]*▲ #,##;[{bc}]▼ #,##"  # VERIFY-LIVE (see _TABLEAU_FORMAT_COLORS)
+            # Nearest-color mapping is computed (and tested) but NOT emitted —
+            # the bracketed-color format does not render in this context (above).
+            _ = (_nearest_tableau_format_color(str(good)), _nearest_tableau_format_color(str(bad)))
     return _KPI_DELTA_ARROW_FORMAT
 
 _CURRENCY_SYMBOL_RE = re.compile(r"^([^#0-9]*)")

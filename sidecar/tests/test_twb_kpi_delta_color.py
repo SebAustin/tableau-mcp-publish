@@ -31,11 +31,15 @@ def test_arrow_format_plain_when_color_by_sign_off() -> None:
     assert fmt == twb_builder._KPI_DELTA_ARROW_FORMAT
 
 
-def test_arrow_format_colored_when_flag_and_brand_present() -> None:
+def test_delta_color_by_sign_falls_back_to_arrow_only_refuted_live() -> None:
+    # VERIFY-LIVE → REFUTED: Cloud strips bracketed-color number formats in the
+    # customized-label context (they kill the arrow too). The flag therefore
+    # emits the corpus-proven arrow-only format — never the broken colored one.
     fmt = twb_builder._kpi_delta_arrow_format(
         {"use_semantic_delta_colors": True, "delta_color_by_sign": True}, _brand()
     )
-    assert fmt == "[Green]*▲ #,##;[Red]▼ #,##"
+    assert fmt == twb_builder._KPI_DELTA_ARROW_FORMAT
+    assert "[Green]" not in fmt and "[Red]" not in fmt
 
 
 def test_arrow_format_plain_when_flag_set_but_no_brand() -> None:

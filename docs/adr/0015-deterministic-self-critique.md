@@ -43,4 +43,9 @@ Tool count 27 → **30**.
   mined stat (`n`, `confidence`) — a testable quality gate that needs no live site and no LLM.
 - `critique_dashboard` couples to the committed `visual_norms.yaml` shape; a `designVisual` regeneration
   test already guards that shape, and the critique tests read the real committed file so drift fails CI.
-- Sign-based delta color is the one unproven construct; it is flag-gated and live-probed, never a default.
+- Sign-based delta color was the one unproven construct; it is flag-gated and was live-probed.
+  **Live-probe verdict: REFUTED** (2026-07-21) — Tableau Cloud strips bracketed number-format section
+  colors in the customized-label context, and takes the ▲/▼ arrow with them (worse than arrow-only).
+  `deltaColorBySign` therefore falls back to the arrow-only format; the finding is recorded as render
+  constraint #6 in `design/corpus/SCHEMA.md`. This is the mirror-real discipline working as intended:
+  a construct with no corpus precedent was gated behind a live probe and did not ship broken.

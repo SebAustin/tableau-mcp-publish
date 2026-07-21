@@ -271,3 +271,60 @@ None — no CRITICAL/HIGH on the T0–T3 surface. 0 CRITICAL · 0 HIGH · 1 MEDI
 The single MEDIUM (TC-01) is dev-tooling defense-in-depth for the offline corpus-acquisition
 script; it is not part of the shipped MCP-server attack surface. Recommend adding the `repoUrl`
 charset+containment guard before the next corpus regeneration.
+
+## N-phase surface (external-skill-suite assimilation) — added surface
+
+Delta audit over `feat/design-excellence` (`6109a7d..75b45ef`): three new read-only MCP tools
+(`critique_dashboard`, `generate_metric_dictionary`, `scan_governance`) plus one sidecar
+number-format change (`twb_builder.py` N4). Read-only review; STRIDE-lite. Prior VB-*/DX-*/TC-*
+sections stand at 0 CRITICAL / 0 HIGH; this surface holds that line.
+
+### New surface
+- `src/tools/critiqueDashboard.ts` + `src/planner/critique.ts` — reads the committed
+  `design/corpus/stats/visual_norms.yaml` at the tool boundary, then deterministically scores a
+  caller-supplied `plan` object (no LLM; A-01 preserved). Pure scorer.
+- `src/tools/metricDictionary.ts` + `src/planner/metricDict.ts` — reuses the existing VDS field
+  fetch (`ctx.rest.getDatasourceFields`) and derives role / aggregation / format / a definition
+  template per field. Pure derivation; no new external call surface.
+- `src/tools/scanGovernance.ts` + `src/governance/checks.ts` — read-only pass over the existing
+  `listContent()` surface flagging stale / Default-project / naming issues. Caller may supply a
+  `namingPattern` regex source; clock is injected (`nowIso`), scanner is a pure function.
+- `sidecar/twb_builder.py` N4 — `_kpi_delta_arrow_format` gates a brand-semantic-color number
+  format behind `delta_color_by_sign`; the bracketed-color construct was live-REFUTED and is now
+  arrow-only (colors are hex from `brand.yaml`; no user-free-text sink).
+
+### STRIDE (N-phase surface)
+- **Spoofing/Repudiation:** no new auth, network, or identity surface. `metric_dictionary` reuses
+  the already-audited VDS fetch; `scan_governance` reuses `listContent()`; `critique_dashboard`
+  makes no network call (`ctx` is explicitly voided — norms come from the committed corpus).
+- **Tampering:** `critique_dashboard` reads a **fixed repo-relative** path
+  (`DEFAULT_VISUAL_NORMS_PATH`, resolved from `import.meta.url` like `DEFAULT_BRAND_PATH`) — no
+  path segment is taken from caller input, so no path traversal. The YAML is parsed with the
+  `yaml` package's non-executing `parse` (v2.9.0, pinned) — not a code-exec loader. The scored
+  `plan` is zod-validated (`.passthrough()`) and only structurally read; every use is a property
+  read or a template-literal into a JSON output field — no `eval`, no `Function`, no dynamic
+  require, no XML/HTML/SQL/shell sink.
+- **Info disclosure:** outputs are structured JSON derived from the caller's own plan, the
+  datasource's own field metadata, or the site's own content list. Field names and content names
+  flow only into structured output strings/templates (`definitionTemplate`, finding `detail`) —
+  no injection sink and no secret exposure. No secrets on the new surface.
+- **DoS:** the one live question — see NX-01. `critique`/`metricDict` are O(n) over
+  caller/datasource-sized arrays, bounded by normal MCP message limits. The sidecar change removes
+  a construct; it adds no loop.
+- **Elevation:** no `eval`/`exec`/`subprocess`/dynamic import; no filesystem write; the sidecar
+  path computes but deliberately discards `_nearest_tableau_format_color` and emits a constant.
+
+### Findings & remediation status
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| NX-01 | LOW | `scan_governance` compiles a caller-supplied `namingPattern` via `new RegExp(namingPattern)` and runs `.test(it.name)` over site content names — a catastrophic-backtracking pattern (e.g. `(a+)+$`) is a ReDoS vector. Realistic assessment: this is a **read-only dev tool**; the *same caller* supplies both the regex and triggers the scan, so a bad pattern is a **self-inflicted stall** of that caller's single-threaded Node event loop, not a cross-tenant DoS. The match input (`it.name`) is site-controlled but length-bounded by Tableau's ~255-char name limit. A genuine two-party exploit needs an attacker who both publishes a name engineered to backtrack *and* gets a benign-looking-but-vulnerable regex used against it — contrived. The default pattern (`/^\s\|\s$\|\s{2,}/`) is linear-safe. | OPEN — **does NOT block ship**. Not fixed here (task scope: read-only + this append). Recommended cheap hardening before promoting this tool beyond dev use: cap `namingPattern` length (e.g. ≤200 chars) in the zod schema, and/or run the match under a bounded budget (worker/`RegExp` timeout or a linear-time engine such as `re2`). Sub-note: an *invalid* pattern throws `SyntaxError` synchronously in the handler → surfaces as a normal rejected tool call, not a server crash — acceptable as-is. |
+| NX-02 | INFO | `critique_dashboard` reads `visual_norms.yaml` at the tool boundary. | Accepted — path is fixed/repo-relative (no caller input in the path; `loadBusinessNorms`'s optional `path` arg is never passed by the tool), parse is the non-executing `yaml.parse`, and the file is a committed repo artifact, not runtime-attacker-controlled. |
+| NX-03 | INFO | Caller-supplied `plan` object scored by `critiqueDashboardPlan`. | Accepted — zod-validated then only structurally read; template-literal interpolations (`Layout "${archetype}"`, title casing, etc.) land in JSON output fields returned to the caller, not in any executable/markup/query sink. No `eval`. DoS is linear and message-size-bounded. |
+| NX-04 | INFO | Datasource field names/captions (external, from VDS) flow into `generate_metric_dictionary` output (`name`, `caption`, `definitionTemplate`). | Accepted — they reach structured JSON output and template strings only; no injection sink. The static `CURRENCY_HINT`/`PERCENT_HINT` regexes are constants (not from input) so carry no ReDoS. Reuses the existing `getDatasourceFields` call — no new external surface. |
+| NX-05 | INFO | Sidecar N4 brand-semantic-color → number-format string. | Accepted/refuted — colors are hex from `brand.yaml` (no user free-text), and the risky bracketed-color construct is live-REFUTED and no longer emitted (arrow-only constant). No sink. |
+
+### Recommended fixes for HIGH/CRITICAL
+None — no CRITICAL/HIGH on the N-phase surface. **0 CRITICAL · 0 HIGH · 1 LOW · 4 INFO.**
+The single LOW (NX-01, `namingPattern` ReDoS) is a self-DoS on a read-only dev tool and is **not a
+ship blocker**; add the pattern-length cap (and optionally a bounded-time match) before exposing
+`scan_governance` to untrusted or multi-tenant callers.

@@ -597,3 +597,24 @@ a period-over-period delta instead of echoing a raw column.
   confirmed both in the fresh render and the published `.twbx`'s calc columns.
 
 Gate: 694 TS + 622 Python green. Wire additions (`comparison_kind`/`date_field`) additive + schema-growth-tested.
+
+---
+
+## N-phase — assimilate the remaining an external Tableau MCP skill suite skills (+ docs & architecture app)
+
+**Date:** 2026-07-21 · **Branch:** `feat/design-excellence` · **Commits:** `6109a7d` (N1–N5) + `75b45ef` (N4 refuted close) · **Verdict: SOLID (solution-verifier, rubric 100/100; gate independently re-run 726 TS + Python)**
+
+User asked "did you assimilate all the skills from the an external Tableau MCP skill suite repo?" — the honest answer was no (a deliberate architecture-triage, ADR-0014). This phase built the full buildable remainder they then green-lit. Tool count **27 → 30**.
+
+| Slice | Deliverable | Outcome |
+|---|---|---|
+| N1 | **`critique_dashboard`** — deterministic self-critique (VizCritique-lite): scores a `DashboardPlan` against the mined `visual_norms.yaml` business stratum + WCAG contrast + ENFORCED Few rules; every dimension cites its stat, low-`n` buckets degrade to `note`. **No LLM** (A-01-honest assimilation of the one skill declined in ADR-0014). | ✅ pure, tested |
+| N2 | **`generate_metric_dictionary`** — Scribe Metric-Builder over VDS fields; reuses the planner's role inference + format word-hints. | ✅ deterministic |
+| N3 | **`scan_governance`** — Governance-Scanner-lite: stale / Default-project / naming checks over the existing `list_content` surface; injected-clock pure fn; honest read-scope caveat. | ✅ read-only |
+| N4 | **Sign-based delta color** — bracketed number-format section colors (`[Green]▲;[Red]▼`), additive `deltaColorBySign` flag. **Live probe REFUTED** (workbook 2527341): Cloud strips section colors in the customized-label context and kills the arrow too → falls back to arrow-only; finding recorded as **render constraint #6** (SCHEMA.md) + ADR-0015. | ✅ honest fallback |
+| N5 | Wire (30 tools everywhere), 3 tool_reference entries, **ADR-0015** (deterministic-not-ported rationale + why the LLM/read-scope items stay declined), GAPS §4 status cleanup, and an **interactive architecture "React-app"** (published Artifact: signal flow · 30 tools · design corpus · propose→confirm loop). | ✅ |
+| N6 | security delta (NX-01..NX-05: 0 crit / 0 high / 1 low; the LOW namingPattern ReDoS hardened in-branch with a 200-char cap) + verifier SOLID + this record. | ✅ |
+
+**Still declined with reasons (ADR-0015, unchanged):** VizCritique's LLM scoring engine (A-01), Scribe Auto-Doc / Governance full audit (read scope), Calc-Engine spatial/sets/parameter-actions (YAGNI), Dashboard-Blueprint filter/device tables (mined-evidence-declined), memory-file/scheduled-agent patterns (stateless architecture). **Pulse remains blocked** — external-skill-suite Pulse-Blueprint does NOT provide a working `basic_specification` (routes creation to the UI).
+
+Architecture app: https://claude.ai/code/artifact/76e9bf07-f1e0-4378-9cef-9fc53f0dcf04

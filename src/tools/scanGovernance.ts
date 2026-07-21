@@ -31,6 +31,7 @@ export function registerScanGovernance(server: McpServer, ctx: ToolContext): voi
           .describe("Content not updated in this many days flags 'stale' (default 180)."),
         namingPattern: z
           .string()
+          .max(200) // NX-01: bound the caller-supplied regex source to blunt ReDoS backtracking.
           .optional()
           .describe(
             "Optional regex source; a content name matching it flags 'naming'. Defaults to a leading/trailing/double-whitespace check.",

@@ -549,3 +549,24 @@ Trigger: beauty-gate round 3 — "title too big, story irrelevant, download the 
 | T4 | Rebuilt dashboard + story live (fresh renders verified); security delta TC-01..TC-05 (0 crit/0 high/1 med → **TC-01 fixed in-branch**: slug-validated repoUrl at both path boundaries); verifier SOLID 100/100 | this commit |
 
 Live: workbook 2527341 (short title + full BAN row + brand-blue map) and story 2523370 (v2 captions) republished. Awaiting user beauty verdict round 4.
+
+---
+
+## Visual Review (V) + external-skill-suite Safe Bundle (M1)
+
+**Date:** 2026-07-20 · **Branch:** `feat/design-excellence` · **Gate: 675 TS + 605 Python green**
+
+### V — parallel vision review of the top-100 VOTD snapshots (commit `073da34`)
+- Answer to "use the Tableau Public MCP to review the top 100": no such MCP is connected — instead pulled Tableau's own curated snapshot per top-100 workbook (99/100; 1 feed-rotated) and ran a **parallel vision-agent rubric** (99 full reviews + classification-verify pass; 4 disputed).
+- Deterministic aggregator (`scripts/aggregate-visual-norms.ts`, same confidence discipline as the XML stats) → `design/corpus/stats/visual_norms.yaml`; qualitative `VISUAL_REVIEW.md` (top-10 business-dashboard lessons, exemplar-cited). `visual_reviews.json` committed as source of truth; 13 tests incl. regeneration-equality + no-hex boundary + **3 product-alignment CI gates, all PASS**.
+- **Category split:** data_journalism 41 / business_dashboard 36 / personal 11 / art 7. Business stratum n=36 (confidence ok).
+- **Independent validation of the shipped fixes:** business dashboards are 86% `top_left` title / 0% "dominant" size (our auto-shorten + 6.96% header lands in the mined "modest" band); `kpi_band_top` is the 58% modal layout (our `kpi_band_over_charts` default matches); modal BAN placement `top_band` (matches our band). The beauty-gate fixes were confirmed by real-world evidence, not just asserted.
+
+### M1 — an external Tableau MCP skill suite safe deterministic bundle (commit `31fd666`, user-approved scope)
+Analyzed an external Tableau MCP skill suite's 6 Tableau-MCP Claude skills (ADR-0014). **Honest headline: Pulse-Blueprint does NOT unblock live Pulse creation** (routes to UI, no basic_specification body) — the create-400 stands. Applied the deterministic subset:
+- **WCAG contrast check** in `validate_brand` (new `src/branding/contrast.ts`, additive `contrastChecks` output, fail-soft warnings; 15 tests incl. black/white=21:1, AA-boundary grays).
+- **Descending-by-measure sort** for single-dimension ranking bar charts (`computed-sort DESC` mirrored from `WB-133`, XSD-gated, temporal/stacked/kpi-tile excluded; 11 tests; live-render-probed no regression).
+- **Pulse enum widening** (fiscal comparison/granularity tokens, currency codes, 8-value INSIGHT_TYPE family, row-level fields) — every token `// VERIFY-LIVE`, additive-only (ADR-0011 updated: schema-readiness, NOT a 400 fix).
+- Remaining Mico backlog + "not worth pursuing" reasons recorded in `GAPS.md` §4.
+
+Live: demo dashboard 2527341 re-rendered clean (no regression from the bar-sort builder change).

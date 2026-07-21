@@ -148,7 +148,15 @@ in `validate_brand`, a default descending-by-measure sort for ranking bar charts
 enum/schema widening — see ADR-0014 + ADR-0011's 2026-07-20 update). This section records the
 remaining candidates: those deferred to a future slice, and those declined outright with reasons.
 
-### Deferred candidates (future slice, not applied here)
+> **Status update (2026-07-21).** Most of this backlog has since shipped. **#1 + #2** (YoY
+> period-comparison delta calc + comparison-period heuristic) landed as **M2/M3**. **#6** (metric
+> dictionary → `generate_metric_dictionary`), **#7** (sign-based delta color, `deltaColorBySign`,
+> VERIFY-LIVE), a scoped **#8** (`scan_governance`), and the previously-declined VizCritique value
+> (as the deterministic `critique_dashboard`) all landed in the **N-phase** — see
+> `docs/adr/0015-deterministic-self-critique.md`. The table below is retained as the original
+> analysis of record; only the genuinely-declined set (next section) remains unbuilt by design.
+
+### Deferred candidates (original analysis — most now shipped, see status note above)
 
 | # | Candidate | Effort | Hook | Why deferred |
 |---|---|---|---|---|

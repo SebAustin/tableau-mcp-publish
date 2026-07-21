@@ -382,6 +382,11 @@ class ThemeKpiTileModel(BaseModel):
     padding: int | None = None
     ban_color: str | None = Field(default=None, alias="banColor")
     use_semantic_delta_colors: bool = Field(default=True, alias="useSemanticDeltaColors")
+    # N4 (external-skill-suite Calc-Engine "KPI Status", GAPS.md Sec 4 #7): when set (and
+    # use_semantic_delta_colors is on), the delta arrow is colored by sign via
+    # bracketed number-format section colors ([good]▲;[bad]▼). Default off →
+    # byte-identical to prior output. VERIFY-LIVE.
+    delta_color_by_sign: bool = Field(default=False, alias="deltaColorBySign")
     # Design Excellence, Slice D4 FINAL SHAPE: the BAN customized-label's
     # in-label CAPTION run color (e.g. "S A L E S"). Optional — the builder
     # defaults to `ban_color` when `background` is set, else the graft's

@@ -23,13 +23,16 @@ import { registerScheduleTools } from "./tools/schedules.js";
 import { registerWebhookTools } from "./tools/webhooks.js";
 import { registerCreateLiveDatasource } from "./tools/createLiveDatasource.js";
 import { registerPulseTools } from "./tools/pulse.js";
+import { registerCritiqueDashboard } from "./tools/critiqueDashboard.js";
+import { registerMetricDictionary } from "./tools/metricDictionary.js";
+import { registerScanGovernance } from "./tools/scanGovernance.js";
 
 /** stderr only — stdout is reserved for the MCP stdio transport. */
 function log(message: string): void {
   process.stderr.write(`[tableau-mcp-publish] ${message}\n`);
 }
 
-/** Register all 27 tools onto the server. Exported for tests. */
+/** Register all 30 tools onto the server. Exported for tests. */
 export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerProjectTools(server, ctx);
   registerContentTools(server, ctx);
@@ -56,6 +59,11 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerCreateLiveDatasource(server, ctx);
   // E3 — Tableau Pulse metric definitions + metrics
   registerPulseTools(server, ctx);
+  // N-phase (external-skill-suite assimilation): deterministic self-critique, metric
+  // dictionary, and governance-lite scanner.
+  registerCritiqueDashboard(server, ctx);
+  registerMetricDictionary(server, ctx);
+  registerScanGovernance(server, ctx);
 }
 
 async function main(): Promise<void> {

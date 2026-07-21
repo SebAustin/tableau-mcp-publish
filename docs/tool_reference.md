@@ -681,3 +681,31 @@ Grant or deny capabilities on a published datasource or workbook.
   `confirmElevated: true`; otherwise the call throws before any REST work.
 
 > *"Grant Read access on the Top Customers datasource to the Sales group."*
+
+## Self-critique & governance (N-phase — external-skill-suite assimilation)
+
+### `critique_dashboard`
+
+Deterministically score a generated dashboard **plan** against the mined top-100
+`business_dashboard` norms (`design/corpus/stats/visual_norms.yaml`), the WCAG contrast math
+(`src/branding/contrast.ts`), and the ENFORCED Stephen Few rules. **No LLM** — this is the
+architecture-honest assimilation of external-skill-suite VizCritique-Pro (whose LLM judge would violate the
+A-01 no-LLM-in-server invariant). Dimensions: layout, KPI count, chart mix + Few, title, contrast.
+A dimension whose backing norm bucket is `confidence: low` degrades to a `note` (excluded from the
+score). Returns `{ overallScore, dimensions: [{ dimension, verdict: pass|warn|note, finding, normCited? }] }`.
+
+### `generate_metric_dictionary`
+
+Derive a structured metric dictionary for a published datasource from its VDS field metadata
+(reuses the `get_datasource_fields` fetch and the planner's own field-role inference). Per field:
+`{ name, caption?, role: measure|dimension|date, suggestedAggregation?, format: currency|percent|number|text, definitionTemplate }`.
+Deterministic; the natural-language prose is left to the calling agent (external-skill-suite Scribe's Metric-Builder,
+architecture-honest subset). Returns `{ metrics, count }`.
+
+### `scan_governance`
+
+A read-only governance-lite site audit (external-skill-suite Governance-Scanner, deterministic subset) over the
+existing `list_content` surface. Three checks: **stale** (not updated in `staleDays`, default 180),
+**Default-project** residence, and **naming** hygiene. Owner-concentration, adoption, and certification
+checks are intentionally out of scope — they need read introspection this publish-oriented server does
+not carry (see ADR-0014). Returns `{ findings, summary }`.

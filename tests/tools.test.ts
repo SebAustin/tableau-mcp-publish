@@ -115,8 +115,8 @@ async function invoke(name: string, rawArgs: Record<string, unknown>) {
 }
 
 describe("tool registration", () => {
-  it("registers all 27 tools, each with a description and declared schemas", () => {
-    expect(server.tools.size).toBe(27);
+  it("registers all 30 tools, each with a description and declared schemas", () => {
+    expect(server.tools.size).toBe(30);
     for (const { config } of server.tools.values()) {
       expect(config.description && config.description.length).toBeGreaterThan(0);
       expect(config.inputSchema).toBeDefined();
@@ -160,6 +160,10 @@ describe("tool registration", () => {
       "list_pulse_definitions",
       "create_pulse_metric",
       "delete_pulse_definition",
+      // N-phase — external-skill-suite assimilation
+      "critique_dashboard",
+      "generate_metric_dictionary",
+      "scan_governance",
     ]) {
       expect(names).toContain(t);
     }
@@ -511,6 +515,7 @@ describe("validate_brand (E1)", () => {
       warnings: string[];
       personas: string[];
       summary: string;
+      contrastChecks: { pair: string; ratio: number; required: number; pass: boolean }[];
     };
     expect(result.valid).toBe(true);
     expect(result.warnings).toEqual([]);
@@ -518,6 +523,14 @@ describe("validate_brand (E1)", () => {
       expect.arrayContaining(["ceo", "cto", "slt_manager", "analyst", "client"]),
     );
     expect(result.summary).toMatch(/valid/i);
+    // Additive field (an external Tableau MCP skill suite enhancement backlog #3): WCAG contrast checks
+    // never touch `warnings` — see checkBrandContrast's docstring.
+    expect(result.contrastChecks.length).toBeGreaterThan(0);
+    for (const check of result.contrastChecks) {
+      expect(typeof check.pair).toBe("string");
+      expect(typeof check.ratio).toBe("number");
+      expect(typeof check.pass).toBe("boolean");
+    }
   });
 
   it("reports valid=false (never throws) for a malformed brand file", async () => {
@@ -553,6 +566,17 @@ palette:
     expect(result.valid).toBe(true);
     expect(result.warnings).toHaveLength(1);
     expect(result.warnings[0]).toMatch(/not found/i);
+  });
+
+  it("returns an empty contrastChecks array (never throws) when the brand file is invalid", async () => {
+    tmpDir = mkdtempSync(join(tmpdir(), "brand-validate-contrast-test-"));
+    const brandPath = join(tmpDir, "brand.yaml");
+    writeFileSync(brandPath, `palette:\n  semantic:\n    good: "not-a-hex-color"\n`, "utf8");
+
+    const res = await invoke("validate_brand", { path: brandPath });
+    const result = res.structuredContent as { valid: boolean; contrastChecks: unknown[] };
+    expect(result.valid).toBe(false);
+    expect(result.contrastChecks).toEqual([]);
   });
 });
 

@@ -333,6 +333,8 @@ export const ThemeKpiTileSchema = z.object({
   padding: z.number().optional(),
   banColor: z.string().optional(),
   useSemanticDeltaColors: z.boolean().optional(),
+  /** N4: color the delta arrow by sign via bracketed number-format colors (VERIFY-LIVE). */
+  deltaColorBySign: z.boolean().optional(),
   /** BAN customized-label caption run color (see sidecar.ts ThemeKpiTile). */
   captionColor: z.string().optional(),
 });

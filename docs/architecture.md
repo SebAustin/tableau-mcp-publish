@@ -5,7 +5,7 @@
 ## TypeScript MCP server (`src/`)
 
 - **`index.ts`** — MCP server entry (stdio). Loads config, signs in to Tableau, spawns the
-  sidecar, registers all **27 tools** (`registerAllTools`), and handles graceful shutdown (sign
+  sidecar, registers all **30 tools** (`registerAllTools`), and handles graceful shutdown (sign
   out + stop sidecar).
 - **`config.ts`** — env-var config (`SERVER`, `SITE_NAME`, `PAT_NAME`, `PAT_VALUE`,
   `TABLEAU_API_VERSION`, `SIDECAR_HOST/PORT`), validated with zod. Errors never echo the PAT.
@@ -302,7 +302,7 @@ The two `.twbx` paths serve different purposes and must not be confused:
 
 ```mermaid
 flowchart TD
-    Agent["AI agent (LLM)\nowns conversation state"] -- "MCP stdio" --> Index["src/index.ts\n27 tools"]
+    Agent["AI agent (LLM)\nowns conversation state"] -- "MCP stdio" --> Index["src/index.ts\n30 tools"]
 
     Index --> CDF["create_datasource_from_file"]
     Index --> CLD["create_live_datasource"]

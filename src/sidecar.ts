@@ -337,6 +337,12 @@ export interface ThemeKpiTile {
   banColor?: string;
   useSemanticDeltaColors?: boolean;
   /**
+   * N4 (external-skill-suite Calc-Engine "KPI Status"): when set (with
+   * useSemanticDeltaColors), the delta arrow is colored by sign via bracketed
+   * number-format section colors. Default off. VERIFY-LIVE.
+   */
+  deltaColorBySign?: boolean;
+  /**
    * Design Excellence, Slice D4 FINAL SHAPE: the BAN customized-label's
    * in-label caption run color (e.g. "S A L E S"). Optional — the sidecar
    * defaults to banColor when background is set, else "#555555".

@@ -800,7 +800,7 @@ def _build_worksheet(
         if delta_field:
             delta_field = str(delta_field)
             delta_format = (
-                _KPI_DELTA_ARROW_FORMAT
+                _kpi_delta_arrow_format(theme_kpi_tile, brand)
                 if theme_kpi_tile.get("use_semantic_delta_colors")
                 else _kpi_compact_format(delta_field, brand_formats or {})
             )
@@ -820,7 +820,7 @@ def _build_worksheet(
             # docstring / comparison.ts's scoping note for why.
             date_field = str(kpi_spec["date_field"])
             delta_format = (
-                _KPI_DELTA_ARROW_FORMAT
+                _kpi_delta_arrow_format(theme_kpi_tile, brand)
                 if theme_kpi_tile.get("use_semantic_delta_colors")
                 else _kpi_compact_format(primary_field, brand_formats or {})
             )
@@ -2022,6 +2022,58 @@ _KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
 # docstring). Direction is visible (▲/▼) without any new calc-field
 # machinery beyond the BAN mechanism itself.
 _KPI_DELTA_ARROW_FORMAT = "*▲ #,##;▼ #,##"
+
+# Tableau custom number formats accept a bracketed section color from this fixed
+# 8-name set (positive;negative sections colored independently). N4 (external-skill-suite
+# Calc-Engine "KPI Status", GAPS.md Sec 4 #7): color the delta value itself by
+# sign — [good]▲ up / [bad]▼ down — without any per-value calc machinery, since
+# the color is applied at RENDER by the delta's actual sign. VERIFY-LIVE: no
+# reference workbook in the corpus uses bracketed-color formats, so this is
+# built on documented Tableau behavior and hard-gated by a live probe; falls
+# back to the plain arrow format when `delta_color_by_sign` is off.
+_TABLEAU_FORMAT_COLORS: dict[str, tuple[int, int, int]] = {
+    "Black": (0, 0, 0),
+    "Blue": (0, 0, 255),
+    "Cyan": (0, 255, 255),
+    "Green": (0, 128, 0),
+    "Magenta": (255, 0, 255),
+    "Red": (255, 0, 0),
+    "White": (255, 255, 255),
+    "Yellow": (255, 255, 0),
+}
+
+
+def _nearest_tableau_format_color(hex_color: str) -> str:
+    """Nearest Tableau format-color NAME to a hex color (RGB-Euclidean).
+
+    e.g. brand good ``#59a14f`` → ``Green``, bad ``#e15759`` → ``Red``.
+    """
+    norm = _normalize_hex_color(hex_color).lstrip("#")
+    r, g, b = int(norm[0:2], 16), int(norm[2:4], 16), int(norm[4:6], 16)
+    return min(
+        _TABLEAU_FORMAT_COLORS.items(),
+        key=lambda kv: (r - kv[1][0]) ** 2 + (g - kv[1][1]) ** 2 + (b - kv[1][2]) ** 2,
+    )[0]
+
+
+def _kpi_delta_arrow_format(
+    theme_kpi_tile: dict[str, Any], brand: dict[str, Any] | None
+) -> str:
+    """The delta arrow format, optionally with sign-based bracketed section colors.
+
+    When ``delta_color_by_sign`` is set on the KPI-tile theme AND the brand
+    carries semantic ``good``/``bad`` palette colors, prepend each section with
+    its nearest Tableau format color: ``[Green]*▲ #,##;[Red]▼ #,##``. Otherwise
+    the plain, corpus-proven arrow format (byte-identical to prior behavior).
+    """
+    if theme_kpi_tile.get("delta_color_by_sign") and brand:
+        palette = brand.get("palette") or {}
+        good, bad = palette.get("good"), palette.get("bad")
+        if good and bad:
+            gc = _nearest_tableau_format_color(str(good))
+            bc = _nearest_tableau_format_color(str(bad))
+            return f"[{gc}]*▲ #,##;[{bc}]▼ #,##"  # VERIFY-LIVE (see _TABLEAU_FORMAT_COLORS)
+    return _KPI_DELTA_ARROW_FORMAT
 
 _CURRENCY_SYMBOL_RE = re.compile(r"^([^#0-9]*)")
 

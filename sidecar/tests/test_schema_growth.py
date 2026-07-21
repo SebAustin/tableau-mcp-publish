@@ -489,6 +489,8 @@ def test_design_theme_round_trips() -> None:
             "padding": 10,
             "ban_color": "#ffffff",
             "use_semantic_delta_colors": True,
+            # N4 — sign-based delta color; additive, defaults False.
+            "delta_color_by_sign": False,
             # Design Excellence, Slice D4 FINAL SHAPE: new optional field
             # (see server.ThemeKpiTileModel.caption_color), unset here.
             "caption_color": None,

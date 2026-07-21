@@ -64,6 +64,12 @@ function buildKpiStripItems(plan: DashboardPlan): KpiStripItem[] {
 
     const kpi = sheet.kpi;
     if (kpi) {
+      // M3 precedence fix (GAPS.md Sec 4): a KPI tile's delta now renders
+      // either from an explicit/auto-paired kpi.deltaMeasure OR from a
+      // computed YoY (kpi.comparisonKind === "yoy" — "mom" is not yet
+      // builder-rendered, see comparison.ts). direction must reflect
+      // whichever one will actually render, not deltaMeasure alone.
+      const hasRenderedDelta = kpi.deltaMeasure !== undefined || kpi.comparisonKind === "yoy";
       items.push({
         label: sheet.title,
         primaryMeasure: kpi.primaryMeasure,
@@ -71,7 +77,7 @@ function buildKpiStripItems(plan: DashboardPlan): KpiStripItem[] {
           ? { comparisonMeasure: kpi.comparisonMeasure }
           : {}),
         ...(kpi.deltaMeasure !== undefined ? { deltaMeasure: kpi.deltaMeasure } : {}),
-        direction: kpiDirection(kpi.deltaIsPositiveGood, kpi.deltaMeasure !== undefined),
+        direction: kpiDirection(kpi.deltaIsPositiveGood, hasRenderedDelta),
       });
     } else {
       // Graceful degradation: no kpi block — use first measure or title

@@ -109,12 +109,18 @@ describe("buildProposal — exec plan (Slice 5)", () => {
     expect(proposal.kpiStrip.length).toBeGreaterThan(0);
   });
 
-  it("kpiStrip Sales entry has correct primaryMeasure, comparison, delta, direction", () => {
+  it("kpiStrip Sales entry has correct primaryMeasure, comparison, direction (M3: computed YoY, no raw deltaMeasure)", () => {
+    // M3 precedence fix (GAPS.md Sec 4): the exec Superstore plan's Sales
+    // tile now resolves to a COMPUTED YoY delta (not the auto-paired
+    // "Sales Difference" column, which is 100% NULL on real data) —
+    // KpiStripItemSchema does not yet surface comparisonKind/dateField, so
+    // deltaMeasure stays unset here, but `direction` must still reflect the
+    // computed delta's sign (proposal.ts's kpiDirection fix).
     const salesKpi = proposal.kpiStrip.find((k) => k.label.toLowerCase().includes("sales"));
     expect(salesKpi).toBeDefined();
     expect(salesKpi!.primaryMeasure).toBe("Sales");
     expect(salesKpi!.comparisonMeasure).toBe("PP Sales");
-    expect(salesKpi!.deltaMeasure).toBe("Sales Difference");
+    expect(salesKpi!.deltaMeasure).toBeUndefined();
     expect(salesKpi!.direction).toBe("up_good");
   });
 
@@ -459,7 +465,8 @@ describe("KPI strip direction (Slice 5)", () => {
     const proposal = buildProposal(plan);
     const quantityKpi = proposal.kpiStrip.find((k) => k.primaryMeasure === "Quantity");
     if (quantityKpi) {
-      // Quantity has a delta binding (Quantity Difference), so direction is not neutral
+      // M3: Quantity now resolves to a computed YoY delta (SUPERSTORE_FIELDS
+      // has "Order Date"), so direction is still not neutral.
       expect(["up_good", "down_good"]).toContain(quantityKpi.direction);
     }
   });

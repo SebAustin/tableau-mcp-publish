@@ -219,7 +219,7 @@ describe("findPeriodPair (Slice 4)", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildKpiStrip (Slice 4)", () => {
-  it("produces kpi_tile sheets with correct PP/Difference binding", () => {
+  it("produces kpi_tile sheets with correct PP binding + computed YoY delta (M3 precedence)", () => {
     const all = classifyFields(SUPERSTORE_FIELDS);
     const primaryMeasures = ["Sales", "Profit", "Profit Ratio", "Quantity"];
     const tiles = buildKpiStrip(primaryMeasures, all, 4);
@@ -230,17 +230,39 @@ describe("buildKpiStrip (Slice 4)", () => {
       expect(tile.markType).toBe("text");
       expect(tile.kpi).toBeDefined();
       expect(tile.kpi!.primaryMeasure).toBeTruthy();
-      // All four have PP counterparts in Superstore
+      // All four have PP counterparts in Superstore — comparisonMeasure is
+      // always bound regardless of the delta precedence below.
       expect(tile.kpi!.comparisonMeasure).toContain("PP ");
-      expect(tile.kpi!.deltaMeasure).toContain("Difference");
+      // M3 precedence fix (GAPS.md Sec 4): SUPERSTORE_FIELDS carries a
+      // usable date dimension ("Order Date"), so a computed YoY delta wins
+      // over the auto-paired "*_Difference" column — that column is the
+      // exact 100%-NULL-on-real-data case this precedence fix guards
+      // against. deltaMeasure must stay unset; comparisonKind/dateField
+      // carry the computed delta instead.
+      expect(tile.kpi!.deltaMeasure).toBeUndefined();
+      expect(tile.kpi!.comparisonKind).toBe("yoy");
+      expect(tile.kpi!.dateField).toBe("Order Date");
     }
 
     // Sales tile
     const salesTile = tiles[0]!;
     expect(salesTile.kpi!.primaryMeasure).toBe("Sales");
     expect(salesTile.kpi!.comparisonMeasure).toBe("PP Sales");
-    expect(salesTile.kpi!.deltaMeasure).toBe("Sales Difference");
     expect(salesTile.kpi!.deltaIsPositiveGood).toBe(true);
+  });
+
+  it("falls back to the auto-paired Difference column when NO date dimension exists", () => {
+    // Same period-compare shape as SUPERSTORE_FIELDS but with "Order Date"
+    // removed — YoY is not computable, so the auto-paired delta column
+    // (tier 3 of the precedence) is used instead (unchanged pre-M3 behavior
+    // for datasets with no date dimension).
+    const fieldsNoDate: FieldHint[] = SUPERSTORE_FIELDS.filter((f) => f.name !== "Order Date");
+    const all = classifyFields(fieldsNoDate);
+    const tiles = buildKpiStrip(["Sales"], all, 1);
+    expect(tiles[0]!.kpi!.deltaMeasure).toBe("Sales Difference");
+    expect(tiles[0]!.kpi!.comparisonMeasure).toBe("PP Sales");
+    expect(tiles[0]!.kpi!.comparisonKind).toBeUndefined();
+    expect(tiles[0]!.kpi!.dateField).toBeUndefined();
   });
 
   it("Discount tile → deltaIsPositiveGood=false (cost-like)", () => {
@@ -337,14 +359,22 @@ describe("exec plan — Superstore-like input (Slice 4)", () => {
     }
   });
 
-  it("KPI tile for Sales binds PP Sales and Sales Difference", () => {
+  it("KPI tile for Sales binds PP Sales for comparison and a COMPUTED YoY delta (M3 precedence)", () => {
+    // Regression guard for the live-probe finding: the exec Superstore plan
+    // carries BOTH a "Sales Difference" auto-paired column AND an "Order
+    // Date" date dimension. The computed YoY delta must win — deferring to
+    // "Sales Difference" would silently reproduce the exact 100%-NULL-delta
+    // bug this backlog item exists to close (see comparison.ts's
+    // "Precedence vs. an auto-paired *_Difference/*_Delta column" section).
     const plan = execPlan();
     const salesTile = plan.sheets.find(
       (s) => s.kind === "kpi_tile" && s.kpi?.primaryMeasure === "Sales",
     );
     expect(salesTile).toBeDefined();
     expect(salesTile!.kpi!.comparisonMeasure).toBe("PP Sales");
-    expect(salesTile!.kpi!.deltaMeasure).toBe("Sales Difference");
+    expect(salesTile!.kpi!.deltaMeasure).toBeUndefined();
+    expect(salesTile!.kpi!.comparisonKind).toBe("yoy");
+    expect(salesTile!.kpi!.dateField).toBe("Order Date");
     expect(salesTile!.kpi!.deltaIsPositiveGood).toBe(true);
   });
 

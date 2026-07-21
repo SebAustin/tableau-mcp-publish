@@ -465,19 +465,40 @@ export function isCostLikeMeasure(name: string): boolean {
  *
  * Rules:
  * - Only primary measures (not period_compare) are included.
- * - CP/PP/Difference counterparts are bound via the kpi block (not as measures).
- * - Only when a PP or Difference counterpart exists in the field list does the
- *   KPI tile carry comparisonMeasure/deltaMeasure (graceful degradation).
+ * - A PP/CP counterpart, when present, is always bound as `comparisonMeasure`
+ *   (kept as a plain raw-field encoding regardless of the delta precedence
+ *   below — see `twb_builder._append_kpi_ban_calc_column`'s docstring for
+ *   why comparisonMeasure is never calc-backed).
  * - Cost-like measures (Discount, Returns, Days to Ship) get deltaIsPositiveGood=false.
  * - The strip is capped at maxTiles.
+ *
+ * Delta precedence (M3 fix — GAPS.md Sec 4, live-probe finding; see
+ * `comparison.ts`'s docstring for the full rationale):
+ * 1. A future user-explicit delta/comparison measure (not yet wired — no
+ *    such input exists on `buildKpiStrip` today; reserved as the highest
+ *    tier so a future caller-supplied override is never silently beaten by
+ *    the tiers below).
+ * 2. A COMPUTED YoY delta, whenever `selectComparisonPeriod` resolves to
+ *    `"yoy"` (i.e. a usable date dimension exists) — this OUTRANKS an
+ *    auto-paired `*_Difference`/`*_Delta` column, because auto-pairing is a
+ *    NAME heuristic that can silently be empty (proven by the Superstore
+ *    dataset itself: "Sales" auto-pairs to "Sales Difference", which is
+ *    100% NULL — the exact bug this backlog item exists to fix). A
+ *    computed YoY is always well-defined once computable.
+ * 3. An auto-paired `*_Difference`/`*_Delta` column from the data — used
+ *    only when YoY is NOT computable (no usable date dimension), or when
+ *    the question's keyword signal resolved to `"mom"` (not yet builder-
+ *    supported — see `comparison.ts` — so a usable auto-paired delta stays
+ *    preferable to rendering nothing).
+ * 4. No delta at all.
  *
  * @param primaryMeasures  Names of the primary measures to tile (not CP/PP/Diff).
  * @param allClassifications  Full field list including suppressed period_compare fields.
  * @param maxTiles  Maximum number of KPI tiles to produce (audience-driven cap).
- * @param questionText  Business question / directions string, used only to pick a
- *   COMPUTED comparison kind (`selectComparisonPeriod`) when no `deltaMeasure`
- *   COLUMN exists in the data. Defaults to `""` (no keyword signal — falls back
- *   to the date-dimension-presence default of `selectComparisonPeriod`).
+ * @param questionText  Business question / directions string, used to pick a
+ *   COMPUTED comparison kind (`selectComparisonPeriod`). Defaults to `""` (no
+ *   keyword signal — falls back to the date-dimension-presence default of
+ *   `selectComparisonPeriod`).
  */
 export function buildKpiStrip(
   primaryMeasures: string[],
@@ -494,32 +515,40 @@ export function buildKpiStrip(
   return primaryMeasures.slice(0, maxTiles).map((measure) => {
     const pair = findPeriodPair(measure, allClassifications);
     const hasComparison = pair.pp !== undefined || pair.cp !== undefined;
-    const hasDelta = pair.diff !== undefined;
+    const autoPairedDelta = pair.diff;
 
-    // an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4): when the data carries no
-    // pre-existing delta COLUMN (the common case — e.g. the Superstore CSV),
-    // fall back to a COMPUTED comparison instead of leaving the KPI's delta
-    // permanently NULL. selectComparisonPeriod returns kind "none" when no
-    // usable date dimension exists, so this never adds a dead field.
-    const computed = hasDelta
-      ? undefined
-      : selectComparisonPeriod(questionText, allClassifications);
-    const hasComputedComparison = computed !== undefined && computed.kind !== "none";
+    // an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4), M3 precedence fix: a
+    // computable YoY always wins over an auto-paired delta column — see
+    // this function's own docstring ("Delta precedence") and
+    // comparison.ts's docstring for the full rationale.
+    const computed = selectComparisonPeriod(questionText, allClassifications);
+
+    let deltaMeasure: string | undefined;
+    let comparisonKind: "yoy" | "mom" | undefined;
+    let dateField: string | undefined;
+
+    if (computed.kind === "yoy") {
+      comparisonKind = "yoy";
+      dateField = computed.dateField;
+    } else if (autoPairedDelta) {
+      deltaMeasure = autoPairedDelta;
+    } else if (computed.kind === "mom") {
+      comparisonKind = "mom";
+      dateField = computed.dateField;
+    }
 
     const kpi: RawSheet["kpi"] = {
       primaryMeasure: measure,
       ...(hasComparison ? { comparisonMeasure: pair.pp ?? pair.cp } : {}),
-      ...(hasDelta ? { deltaMeasure: pair.diff } : {}),
-      ...(hasComputedComparison
-        ? { comparisonKind: computed.kind as "yoy" | "mom", dateField: computed.dateField }
-        : {}),
+      ...(deltaMeasure ? { deltaMeasure } : {}),
+      ...(comparisonKind ? { comparisonKind, dateField } : {}),
       deltaIsPositiveGood: !isCostLikeMeasure(measure),
     };
 
-    const rationale = hasComparison || hasDelta
-      ? `KPI tile: ${measure} with period comparison (${pair.pp ?? pair.cp ?? "none"} / ${pair.diff ?? "none"}).`
-      : hasComputedComparison
-        ? `KPI tile: ${measure} with computed ${computed.kind.toUpperCase()} delta (${computed.dateField}).`
+    const rationale = comparisonKind
+      ? `KPI tile: ${measure} with computed ${comparisonKind.toUpperCase()} delta (${dateField}).`
+      : deltaMeasure
+        ? `KPI tile: ${measure} with period comparison (${pair.pp ?? pair.cp ?? "none"} / ${deltaMeasure}).`
         : `KPI tile: ${measure} (no period comparison columns found).`;
 
     return {

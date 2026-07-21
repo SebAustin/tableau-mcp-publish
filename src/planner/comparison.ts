@@ -11,6 +11,26 @@
  * instead of requiring the caller to supply a pre-existing delta COLUMN in
  * the source data.
  *
+ * Precedence vs. an auto-paired *_Difference/*_Delta column (M3 fix — live
+ * probe finding)
+ * -----------------------------------------------------------------------
+ * `fields.ts`'s `findPeriodPair` auto-pairs a primary measure with a
+ * same-named CP/PP/Difference column purely by NAME (e.g. "Sales" ->
+ * "Sales Difference"). That is a heuristic, not a guarantee: the exact
+ * Superstore dataset that motivated this backlog item auto-pairs "Sales" ->
+ * "Sales Difference", and "Sales Difference" is itself 100% NULL — the
+ * SAME broken-column problem this backlog item exists to fix. Deferring to
+ * that auto-paired column (as an earlier version of `buildKpiStrip` did)
+ * silently reproduces the exact NULL-delta bug being closed.
+ *
+ * A computed YoY, by contrast, is well-defined whenever a usable date
+ * dimension exists — it needs no cooperation from an unreliable
+ * name-matched column. So `buildKpiStrip` now gives a computable YoY
+ * PRECEDENCE over an auto-paired delta column (not the reverse): auto-
+ * pairing is only trusted as a fallback once YoY is not computable (no
+ * usable date dimension). See `buildKpiStrip`'s own docstring for the full
+ * four-tier precedence order.
+ *
  * Scoping note (kept intentionally narrow, mirroring GAPS.md's own declined-
  * candidate discipline: no calc recipe without a proven, cited builder
  * shape to consume it):

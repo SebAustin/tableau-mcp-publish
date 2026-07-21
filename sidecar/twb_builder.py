@@ -307,6 +307,54 @@ def _measure_instance(field: str) -> str:
     return f"[sum:{field}:qk]"
 
 
+# ---------------------------------------------------------------------------
+# Design Excellence, an external Tableau MCP skill suite enhancement #2 — default descending-by-
+# measure sort for ranking bar charts (BI_DESIGN.md Sec 2.2).
+# ---------------------------------------------------------------------------
+
+# Defensive name-pattern guard mirroring BI_DESIGN.md Sec 1.2 priority-2
+# (temporal dimension detection). Sec 2.1's decision table never routes a
+# temporal dimension onto a bar mark (C-01/C-02 send those to Line), so this
+# should never actually fire in practice — it exists purely as a second line
+# of defense against a caller that bypasses the planner's own rules.
+_TEMPORAL_DIM_NAME_RE = re.compile(
+    r"\b(date|day|month|quarter|year|week|timestamp|time|period|fiscal|fy|cy)\b",
+    re.IGNORECASE,
+)
+
+
+def _bar_ranking_sort_target(sheet: dict[str, Any]) -> tuple[str, str] | None:
+    """Return ``(dimension_field, measure_field)`` for a ranking bar sheet
+    that should get a default descending-by-measure sort, or ``None`` when
+    the sheet does not unambiguously qualify.
+
+    VizCritique-Pro flags alphabetical-when-ranking as the single most common
+    "make it readable" anti-pattern; BI_DESIGN.md Sec 2.2 previously had no
+    sort rule at all. This default is deliberately narrow — exactly one
+    dimension and exactly one measure, ``mark_type == "bar"``,
+    ``kind != "kpi_tile"`` — so the no-op path (multi-measure C-08 stacked
+    bar, multi-dimension C-09 Color-encoded bar, any non-bar mark, KPI
+    tiles) stays byte-identical to before this slice: guessing which of
+    several measures/dimensions should drive the sort would be worse than
+    leaving Tableau's own default (source order) in place.
+    """
+    if str(sheet.get("kind", "chart")) == "kpi_tile":
+        return None
+    if str(sheet.get("mark_type", "bar")).lower() != "bar":
+        return None
+
+    dims = [str(d) for d in sheet.get("cols", [])] + [str(d) for d in sheet.get("rows", [])]
+    measures = [str(m) for m in sheet.get("measures", [])]
+    if len(dims) != 1 or len(measures) != 1:
+        return None
+
+    dim_field = dims[0]
+    if _TEMPORAL_DIM_NAME_RE.search(dim_field):
+        return None
+
+    return dim_field, measures[0]
+
+
 def _repository_path(site: str) -> str:
     return f"/t/{site}/datasources" if site else "/datasources"
 
@@ -750,6 +798,27 @@ def _build_worksheet(
                 caption=f"{delta_field} (BAN Delta)",
                 default_format=delta_format,
             )
+
+    # Design Excellence, an external Tableau MCP skill suite enhancement #2: default descending-by-
+    # measure sort for ranking bar charts (BI_DESIGN.md Sec 2.2). Mirrors
+    # WB-133's real <computed-sort> element — a child of <view>,
+    # placed immediately before <aggregation> (ViewSpecification-G's Sort-G
+    # precedes the mandatory <aggregation> in the XSD sequence). Unconditional
+    # (not gated on design_theme): this is a data-readability default, not a
+    # cosmetic theme choice. No-op (nothing appended) whenever the sheet does
+    # not unambiguously qualify — see _bar_ranking_sort_target's docstring.
+    bar_sort_target = _bar_ranking_sort_target(sheet)
+    if bar_sort_target is not None:
+        sort_dim_field, sort_measure_field = bar_sort_target
+        ET.SubElement(
+            view,
+            "computed-sort",
+            {
+                "column": f"{ds_ref}.{_dim_instance(sort_dim_field)}",
+                "direction": "DESC",
+                "using": f"{ds_ref}.{_measure_instance(sort_measure_field)}",
+            },
+        )
 
     # <aggregation> is required by the XSD (last mandatory child of <view>)
     ET.SubElement(view, "aggregation", {"value": "true"})

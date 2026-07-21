@@ -137,3 +137,49 @@ construct (lessons #1, #9) rather than a placement change.
 See `VISUAL_REVIEW.md`'s dedicated "T2 title cross-check" section: both the `_HEADER_ZONE_H`
 pixel-ratio fix and the `top_left` placement independently agree with the vision-side evidence.
 No action routed here — this is a confirmation, not a gap.
+
+## 4. an external Tableau MCP skill suite enhancement backlog (analyzed 2026-07-20)
+
+An external agent-skill review (six an external Tableau MCP skill suite Claude `SKILL.md` playbooks over the *official*
+tableau-mcp's read-only surface — see `docs/adr/0014-external-skill-analysis.md` for the full
+analysis and the applied/declined split) surfaced eight candidate enhancements. Three deterministic,
+low-risk candidates were applied in the same slice this section was written (WCAG contrast checking
+in `validate_brand`, a default descending-by-measure sort for ranking bar charts, and additive Pulse
+enum/schema widening — see ADR-0014 + ADR-0011's 2026-07-20 update). This section records the
+remaining candidates: those deferred to a future slice, and those declined outright with reasons.
+
+### Deferred candidates (future slice, not applied here)
+
+| # | Candidate | Effort | Hook | Why deferred |
+|---|---|---|---|---|
+| 1 | **YoY/period-comparison calc-column for KPI delta** — the row-level CY/PY recipe from Calc-Engine, generalizing `sidecar/twb_builder.py`'s hardcoded `_append_kpi_ban_calc_column` `SUM([field])` shape into a real prior-period comparison. This is the one shape that closes ACCEPTANCE.md's own NULL-delta residual for a dimensionless BAN (a KPI tile currently cannot show a real period-over-period delta without a pre-computed comparison measure supplied by the caller). | M | `sidecar/twb_builder.py` `_append_kpi_ban_calc_column` (generalize) + `src/planner/plan.ts` (emit the calc spec) | Real calc-formula generation touching the KPI-tile BAN mechanism, which already carries a documented 12-variant live-probe bisect history (Slice D4) — a change here needs its own live-probe cycle, not a same-slice addition alongside three independent, lower-risk deterministic changes. |
+| 2 | **Comparison-period selection heuristic** (question keyword → YoY/MoM/vs-target) — pairs with #1; a planner-side heuristic mapping natural-language cues ("compared to last year", "month over month") to the right comparison calc. | S | `src/planner/plan.ts` | Depends on #1 landing first (no comparison calc column to select a period for yet). |
+| 6 | **Metric-dictionary doc recipe** — Scribe's Metric-Builder pattern (a structured metric-definition writeup: name, formula, grain, owner) applied over this server's existing `get_datasource_fields` output. | S | new `docs/` generation helper, or a new tool surfacing structured field metadata | Pure-documentation value-add, not blocking any existing gap; lower priority than the three applied changes and the M-effort delta-calc work above. |
+| 7 | **Sign-based conditional KPI delta color** — Calc-Engine's KPI-status pattern combined with `palette.semantic.good`/`bad`: color the delta value itself (not just an arrow) based on its sign. | L, RISKY | `sidecar/twb_builder.py`'s `_kpi_tile_customized_label` mechanism | The customized-label BAN mechanism already required a 12-variant live-probe bisect to prove working (Slice D4 — see its module-level "BAN mechanism" comment block). Dynamic per-value color inside a static `<customized-label>` run is a materially different mechanism than what was proven and needs its own live-probe cycle before it can ship with confidence, not a speculative attempt alongside this slice's three low-risk, previously-provable-by-XSD-and-math changes. |
+| 8 | **Governance-scanner-lite** — stale-content, Default-project, and naming-convention checks built ONLY from what this server's existing `list_content`-family tools already return (no new read scope). | M | new tool over `src/tools/` list/get calls already present | Full Governance-Scanner parity needs read scope (workbook/view metadata introspection) this repo deliberately does not carry (see ADR-0014's "declined" list) — a lite variant scoped to existing list-content output is plausible future work, not attempted this slice to keep the applied bundle to purely deterministic, already-tested primitives (contrast math, XML structural predicates, additive schema fields). |
+
+### Not worth pursuing (recorded so the decision doesn't get re-litigated)
+
+- **VizCritique-Pro's full LLM-judged dashboard scoring as a server tool** — violates this
+  project's A-01 invariant (no LLM call inside the server; see `CODEBASE.md`). The rubric's fixed
+  NUMBERS (4.5:1/3:1 contrast ratios) were ported as pure math; the JUDGMENT mechanism was not.
+- **Scribe's Auto-Doc and Governance-Scanner's full 7-domain audit** — both need the official
+  server's read/introspection scope (`get_view_image`, full `list_content` metadata, workbook
+  read-back) this repo deliberately does not carry; this server is publish-oriented, not a
+  read/audit tool. (A read-scope-free LITE governance variant is deferred candidate #8 above, not
+  declined outright.)
+- **Calc-Engine's spatial/sets/zone-visibility/parameter-actions calc recipes** — no matching
+  `twb_builder.py` construct exists for any of these (no zone-visibility toggle, no
+  parameter-action wiring, no spatial calc emission path); YAGNI — a calc-formula recipe with no
+  builder support to consume it would be dead code.
+- **Dashboard-Blueprint's filter-card and device-layout tables** — already independently declined
+  above in §2 from real mined evidence (filter zones 17.0-24.6%, device layouts 23.4% — both below
+  the plan's own 40% "implement automatically" bar). This skill's guidance doesn't change that
+  evidence-based conclusion.
+- **Memory-file/scheduled-agent continuity patterns** — several an external Tableau MCP skill suite skills assume a
+  persistent agent session/memory file between runs; incompatible with this server's
+  stateless-per-call architecture (ADR-0005/0007) — there is no server-side session to persist a
+  memory file against.
+
+See `docs/adr/0014-external-skill-analysis.md` for the full context, alternatives considered, and
+consequences of this triage.

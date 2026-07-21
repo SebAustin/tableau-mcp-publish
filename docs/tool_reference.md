@@ -543,6 +543,10 @@ Pulse enablement/permission failures can't be reliably distinguished from other 
 > locked against a live fixture. Every enum beyond the few tokens the research brief explicitly
 > confirms is marked VERIFY-LIVE in `src/rest/pulse.ts`. Treat these tools as best-effort until a
 > definition is created once in the Pulse UI, fetched back via GET, and used to correct the client.
+> **2026-07-20 addendum:** an external agent-skill cross-check (`docs/adr/0014-external-skill-analysis.md`)
+> added purely additive, VERIFY-LIVE enum/field widening (`currencyCode`, `insightSettings`,
+> `rowLevelIdField`/`rowLevelNameField`/`rowLevelEntityNames`, fiscal granularity/comparison
+> tokens) — this is schema-readiness only and does **not** close the live-blocked 400 above.
 
 ### `create_pulse_definition`
 
@@ -560,6 +564,10 @@ Create a Tableau Pulse metric definition.
 | `numberFormat` | `"NUMBER"` \| `"CURRENCY"` \| `"PERCENT"` | no | `"NUMBER"` | |
 | `sentiment` | `"NONE"` \| `"UP_IS_GOOD"` \| `"DOWN_IS_GOOD"` | no | `"NONE"` | |
 | `isRunningTotal` | boolean | no | `false` | |
+| `currencyCode` | `"USD"` \| `"EUR"` \| `"GBP"` \| `"JPY"` \| `"UNSPECIFIED"` | no | — | VERIFY-LIVE (schema-readiness only — see honest status note). Emitted as `representation_options.currency_code` only when set. |
+| `insightSettings` | `{ type, disabled? }[]` | no | `[]` | VERIFY-LIVE. `type` is one of the 8 `INSIGHT_TYPE_*` values (`CURRENT_TREND`, `NEW_TREND`, `TOP_DRIVERS`, `TOP_DETRACTORS`, `BOTTOM_CONTRIBUTORS`, `RISKY_MONOPOLY`, `UNUSUAL_CHANGE`, `RECORD_LEVEL_OUTLIERS`). Emitted as `insights_options.settings` entries. |
+| `rowLevelIdField` / `rowLevelNameField` | string | no | — | VERIFY-LIVE. Identifier/label columns enabling `INSIGHT_TYPE_RECORD_LEVEL_OUTLIERS`. |
+| `rowLevelEntityNames` | `{ singular, plural }` | no | — | VERIFY-LIVE. Emitted as `specification.row_level_entity_names.{singular_noun,plural_noun}`. |
 | `skipPreflight` | boolean | no | `false` | Skip the VDS pre-flight field check (e.g. when VDS itself is known unavailable). |
 
 **Returns:** `{ definitionId, name, note }`

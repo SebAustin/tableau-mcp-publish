@@ -65,6 +65,35 @@ publish tool's confidence level:** rejected — directly conflicts with this pro
 Bridge note and `create_live_datasource`'s key-pair rejection); a Pulse tool that silently fails in
 production because of an unconfirmed enum token is worse than one whose docs say so upfront.
 
+## Update (2026-07-20) — an external Tableau MCP skill suite enhancement #5: additive schema widening, still not a fix
+
+An external agent-skill review (`docs/adr/0014-external-skill-analysis.md`) cross-checked this
+module against an external Tableau MCP skill suite's Pulse-Blueprint skill, which ships its own "confirmed" API enum
+reference. Four purely additive widenings landed as a result, every new token still marked
+`VERIFY-LIVE`:
+
+- `PulseGranularitySchema` gained `GRANULARITY_BY_FISCAL_QUARTER` / `GRANULARITY_BY_FISCAL_YEAR`;
+  `PulseComparisonSchema` gained `TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD`.
+- A new `PulseCurrencyCodeSchema` (`USD`/`EUR`/`GBP`/`JPY`/`UNSPECIFIED`, bare-suffix — same
+  in/out convention as `PulseAggregationSchema`) backs an optional `currencyCode` input field,
+  emitted as `representation_options.currency_code` only when supplied.
+- A new `PulseInsightTypeSchema` (the 8-value `INSIGHT_TYPE_*` family: `CURRENT_TREND` /
+  `NEW_TREND` / `TOP_DRIVERS` / `TOP_DETRACTORS` / `BOTTOM_CONTRIBUTORS` / `RISKY_MONOPOLY` /
+  `UNUSUAL_CHANGE` / `RECORD_LEVEL_OUTLIERS`) backs an optional `insightSettings` array, emitted as
+  `insights_options.settings` entries only when supplied.
+- Optional `rowLevelIdField` / `rowLevelNameField` / `rowLevelEntityNames` input fields, emitted as
+  `specification.row_level_id_field` / `row_level_name_field` / `row_level_entity_names` only when
+  supplied.
+
+**This is schema-readiness only — it does NOT close the live-blocked gap above.** Pulse-Blueprint
+itself is explicit that Tableau's official MCP only exposes READ-only Pulse endpoints and that
+"Pulse metric creation requires the Tableau UI" — it never constructs a `basic_specification` body
+from scratch, so it corroborates nothing about whether the underlying REST `POST` accepts these
+fields. Every new field/token is additive (omitted by default, reproducing the pre-widening wire
+body byte-for-byte — see `tests/pulse.test.ts`'s "additive-only guard") and still requires the same
+create → `GET` → correct-the-client de-risking step described above before any of it can be trusted
+in production.
+
 ## Consequences
 
 **Positive:**

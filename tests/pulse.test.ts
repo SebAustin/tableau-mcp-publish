@@ -21,6 +21,10 @@ import {
   parseDefinitionList,
   parseMetric,
   parseMetricList,
+  PulseComparisonSchema,
+  PulseCurrencyCodeSchema,
+  PulseGranularitySchema,
+  PulseInsightTypeSchema,
   validatePulsePreflight,
   type CreatePulseDefinitionInput,
   type CreatePulseMetricInput,
@@ -128,6 +132,128 @@ describe("rest/pulse — buildCreateDefinitionBody", () => {
     expect(body.representation_options).toEqual({
       type: "NUMBER_FORMAT_TYPE_CURRENCY",
       sentiment_type: "SENTIMENT_TYPE_UP_IS_GOOD",
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pure module: an external Tableau MCP skill suite enhancement #5 — Pulse enum/schema widening
+// (schema-readiness only — does NOT fix the bare-create 400; see ADR-0011 /
+// ADR-0014). Every new token is additive: an unset field must reproduce
+// EXPECTED_WIRE_BODY exactly (the existing deep-equal test above stays green
+// untouched).
+// ---------------------------------------------------------------------------
+
+describe("rest/pulse — enum widening (an external Tableau MCP skill suite #5, schema-readiness)", () => {
+  it("PulseComparisonSchema accepts the new fiscal-year-ago token", () => {
+    expect(PulseComparisonSchema.safeParse("TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD").success).toBe(true);
+  });
+
+  it("PulseGranularitySchema accepts the new fiscal quarter/year tokens", () => {
+    expect(PulseGranularitySchema.safeParse("GRANULARITY_BY_FISCAL_QUARTER").success).toBe(true);
+    expect(PulseGranularitySchema.safeParse("GRANULARITY_BY_FISCAL_YEAR").success).toBe(true);
+  });
+
+  it("PulseCurrencyCodeSchema accepts the confirmed currency + UNSPECIFIED tokens (bare suffix, same convention as PulseAggregationSchema)", () => {
+    for (const code of ["USD", "EUR", "GBP", "JPY", "UNSPECIFIED"]) {
+      expect(PulseCurrencyCodeSchema.safeParse(code).success).toBe(true);
+    }
+    expect(PulseCurrencyCodeSchema.safeParse("CAD").success).toBe(false);
+  });
+
+  it("PulseInsightTypeSchema accepts the 8-value INSIGHT_TYPE_* family (bare suffix)", () => {
+    for (const type of [
+      "CURRENT_TREND",
+      "NEW_TREND",
+      "TOP_DRIVERS",
+      "TOP_DETRACTORS",
+      "BOTTOM_CONTRIBUTORS",
+      "RISKY_MONOPOLY",
+      "UNUSUAL_CHANGE",
+      "RECORD_LEVEL_OUTLIERS",
+    ]) {
+      expect(PulseInsightTypeSchema.safeParse(type).success).toBe(true);
+    }
+  });
+
+  it("threading a comparison=TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD metric input builds the expected wire body", () => {
+    const input = CreatePulseMetricInputSchema.parse({
+      definitionId: "DEF1",
+      comparison: "TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD",
+    });
+    expect(buildCreateMetricBody(input).specification.comparison).toEqual({
+      comparison: "TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD",
+    });
+  });
+
+  it("threading granularity=GRANULARITY_BY_FISCAL_QUARTER builds the expected wire body", () => {
+    const input = CreatePulseMetricInputSchema.parse({
+      definitionId: "DEF1",
+      granularity: "GRANULARITY_BY_FISCAL_QUARTER",
+    });
+    expect(buildCreateMetricBody(input).specification.measurement_period.granularity).toBe(
+      "GRANULARITY_BY_FISCAL_QUARTER",
+    );
+  });
+
+  it("leaving currencyCode/insightSettings/row-level fields unset reproduces EXPECTED_WIRE_BODY exactly (additive-only guard)", () => {
+    expect(buildCreateDefinitionBody(salesDefinitionInput)).toEqual(EXPECTED_WIRE_BODY);
+  });
+
+  it("threads an explicit currencyCode into representation_options.currency_code", () => {
+    const input = CreatePulseDefinitionInputSchema.parse({
+      name: "Sales",
+      datasourceLuid: "DS-luid",
+      measure: { field: "Sales", aggregation: "SUM" },
+      timeDimension: { field: "Order Date" },
+      numberFormat: "CURRENCY",
+      currencyCode: "USD",
+    });
+    const body = buildCreateDefinitionBody(input);
+    expect(body.representation_options).toEqual({
+      type: "NUMBER_FORMAT_TYPE_CURRENCY",
+      sentiment_type: "SENTIMENT_TYPE_NONE",
+      currency_code: "CURRENCY_CODE_USD",
+    });
+  });
+
+  it("threads insightSettings into insights_options.settings as INSIGHT_TYPE_* wire tokens", () => {
+    const input = CreatePulseDefinitionInputSchema.parse({
+      name: "Sales",
+      datasourceLuid: "DS-luid",
+      measure: { field: "Sales", aggregation: "SUM" },
+      timeDimension: { field: "Order Date" },
+      insightSettings: [
+        { type: "TOP_DRIVERS" },
+        { type: "RISKY_MONOPOLY", disabled: true },
+      ],
+    });
+    const body = buildCreateDefinitionBody(input);
+    expect(body.insights_options).toEqual({
+      show_insights: true,
+      settings: [
+        { type: "INSIGHT_TYPE_TOP_DRIVERS" },
+        { type: "INSIGHT_TYPE_RISKY_MONOPOLY", disabled: true },
+      ],
+    });
+  });
+
+  it("threads row-level fields onto specification as row_level_id_field/row_level_name_field/row_level_entity_names", () => {
+    const input = CreatePulseDefinitionInputSchema.parse({
+      name: "Sales",
+      datasourceLuid: "DS-luid",
+      measure: { field: "Sales", aggregation: "SUM" },
+      timeDimension: { field: "Order Date" },
+      rowLevelIdField: "Order ID",
+      rowLevelNameField: "Order Name",
+      rowLevelEntityNames: { singular: "order", plural: "orders" },
+    });
+    const body = buildCreateDefinitionBody(input);
+    expect(body.specification.row_level_id_field).toBe("Order ID");
+    expect(body.specification.row_level_name_field).toBe("Order Name");
+    expect(body.specification.row_level_entity_names).toEqual({
+      singular_noun: "order",
+      plural_noun: "orders",
     });
   });
 });

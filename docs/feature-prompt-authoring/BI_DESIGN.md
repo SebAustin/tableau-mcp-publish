@@ -194,6 +194,35 @@ color:    [secondary_dimension]   // requires new builder support; see §2.3
 ```
 Fall back to dropping the secondary dimension if Color encoding is not yet supported.
 
+### 2.2a Default sort — ranking bar charts (an external Tableau MCP skill suite enhancement #2)
+
+**Rule:** a bar sheet that ranks exactly ONE measure across exactly ONE non-temporal
+categorical dimension (C-03/C-04) gets a default **descending sort by that measure** —
+`twb_builder.py` emits a `<computed-sort column='{dimension}' direction='DESC'
+using='{measure}' />` element as a child of the worksheet's `<view>`, immediately before the
+mandatory `<aggregation>` element (mirrors the real `<computed-sort>` shape mined from
+`WB-133`'s "LOD Calcs" worksheet — see `docs/adr/0014-external-skill-analysis.md`).
+Alphabetical-when-ranking is the single most common "make it readable" fix VizCritique-Pro
+flags; this codebase had no sort rule at all before this slice.
+
+**Scope (deliberately narrow — every sheet outside this scope is a no-op, byte-identical to
+before this slice):**
+- `mark_type == "bar"` and `kind != "kpi_tile"`.
+- Exactly one dimension total across `cols` + `rows` combined, and exactly one measure. C-08
+  (stacked bar, multiple measures) and C-09 (Color-encoded second dimension) are left alone —
+  guessing which measure/dimension should drive the sort would be worse than Tableau's own
+  default (source order).
+- The single dimension's name does not match the temporal name-pattern regex from §1.2
+  priority 2 (`date|day|month|...|fiscal|fy|cy`) — a defensive second check; §2.1's decision
+  table already never routes a temporal dimension onto a bar mark (C-01/C-02 send those to
+  Line), so this should never actually fire, but the builder does not trust upstream callers
+  that bypass the planner.
+
+**Not gated on `design_theme`:** unlike the Slice D3/D4 chrome/KPI-tile styling (which are
+cosmetic and stay silent absent a theme), this is a data-readability default — it applies
+whether or not a `design_theme` is supplied, on the reasoning that a random-order ranking bar
+chart is objectively harder to read regardless of visual theme.
+
 ### 2.3 Builder gap register — chart types requiring NEW `twb_builder.py` support
 
 The following chart types or encodings are referenced in the decision table but are not

@@ -105,6 +105,8 @@ export const PulseGranularitySchema = z.enum([
   "GRANULARITY_BY_MONTH",
   "GRANULARITY_BY_QUARTER",
   "GRANULARITY_BY_YEAR",
+  "GRANULARITY_BY_FISCAL_QUARTER", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
+  "GRANULARITY_BY_FISCAL_YEAR", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
 ]);
 export type PulseGranularity = z.infer<typeof PulseGranularitySchema>;
 
@@ -117,8 +119,62 @@ export const PulseComparisonSchema = z.enum([
   "TIME_COMPARISON_NONE",
   "TIME_COMPARISON_PREVIOUS_PERIOD",
   "TIME_COMPARISON_YEAR_AGO_PERIOD",
+  "TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
 ]);
 export type PulseComparison = z.infer<typeof PulseComparisonSchema>;
+
+/**
+ * VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint's confirmed API enum reference
+ * (a "Currency Codes (common)" list); no member of this enum, including
+ * `UNSPECIFIED`, has been confirmed against a live create.
+ */
+export const PulseCurrencyCodeSchema = z.enum([
+  "USD", // VERIFY-LIVE
+  "EUR", // VERIFY-LIVE
+  "GBP", // VERIFY-LIVE
+  "JPY", // VERIFY-LIVE
+  "UNSPECIFIED", // VERIFY-LIVE
+]);
+export type PulseCurrencyCode = z.infer<typeof PulseCurrencyCodeSchema>;
+
+/**
+ * VERIFY-LIVE — the 8-value `INSIGHT_TYPE_*` family from an external Tableau MCP skill suite
+ * Pulse-Blueprint's confirmed API enum reference. Bare suffix, same
+ * bare-in/prefixed-out convention as {@link PulseAggregationSchema}
+ * ({@link buildCreateDefinitionBody} adds the `INSIGHT_TYPE_` prefix).
+ * Unconfirmed against a live create; `insightSettings` on
+ * {@link CreatePulseDefinitionInputSchema} is schema-readiness only (see
+ * module docstring / ADR-0011 / ADR-0014).
+ */
+export const PulseInsightTypeSchema = z.enum([
+  "CURRENT_TREND", // VERIFY-LIVE
+  "NEW_TREND", // VERIFY-LIVE
+  "TOP_DRIVERS", // VERIFY-LIVE
+  "TOP_DETRACTORS", // VERIFY-LIVE
+  "BOTTOM_CONTRIBUTORS", // VERIFY-LIVE
+  "RISKY_MONOPOLY", // VERIFY-LIVE
+  "UNUSUAL_CHANGE", // VERIFY-LIVE
+  "RECORD_LEVEL_OUTLIERS", // VERIFY-LIVE
+]);
+export type PulseInsightType = z.infer<typeof PulseInsightTypeSchema>;
+
+/**
+ * A single insight enable/disable setting. Tool/API callers pass the bare
+ * `INSIGHT_TYPE_*` suffix (e.g. `"TOP_DRIVERS"`); {@link buildCreateDefinitionBody}
+ * adds the `INSIGHT_TYPE_` prefix. VERIFY-LIVE — see {@link PulseInsightTypeSchema}.
+ */
+export const PulseInsightSettingSchema = z.object({
+  type: PulseInsightTypeSchema.describe("Bare INSIGHT_TYPE_* suffix, e.g. \"TOP_DRIVERS\"."),
+  disabled: z.boolean().optional().describe("Whether this insight type is disabled for the metric."),
+});
+export type PulseInsightSetting = z.infer<typeof PulseInsightSettingSchema>;
+
+/** VERIFY-LIVE — a `{singular, plural}` noun pair naming the row-level entity (e.g. "deal"/"deals"). See `rowLevelEntityNames`. */
+export const PulseRowLevelEntityNamesSchema = z.object({
+  singular: z.string().min(1).describe("Singular noun for one row-level entity, e.g. \"deal\"."),
+  plural: z.string().min(1).describe("Plural noun for row-level entities, e.g. \"deals\"."),
+});
+export type PulseRowLevelEntityNames = z.infer<typeof PulseRowLevelEntityNamesSchema>;
 
 // ---------------------------------------------------------------------------
 // Create definition — input schema + wire body
@@ -149,6 +205,33 @@ export const CreatePulseDefinitionInputSchema = z.object({
   numberFormat: PulseNumberFormatSchema.default("NUMBER").describe("Display format for the metric value."),
   sentiment: PulseSentimentSchema.default("NONE").describe("Whether up/down movement reads as good or bad."),
   isRunningTotal: z.boolean().default(false).describe("Whether the metric accumulates as a running total."),
+  currencyCode: PulseCurrencyCodeSchema.optional().describe(
+    "VERIFY-LIVE, optional: currency code for representation_options when numberFormat is CURRENCY " +
+      "(e.g. \"USD\"). Omitted by default — additive, does not change the wire body when unset.",
+  ),
+  insightSettings: z
+    .array(PulseInsightSettingSchema)
+    .optional()
+    .describe(
+      "VERIFY-LIVE, optional: per-insight-type enable/disable settings for insights_options.settings. " +
+        "Omitted by default (empty settings array, matching prior behavior).",
+    ),
+  rowLevelIdField: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "VERIFY-LIVE, optional: identifier column enabling row-level outlier detection " +
+        "(INSIGHT_TYPE_RECORD_LEVEL_OUTLIERS), e.g. \"Order ID\".",
+    ),
+  rowLevelNameField: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("VERIFY-LIVE, optional: human-readable label column for row-level entities, e.g. \"Order Name\"."),
+  rowLevelEntityNames: PulseRowLevelEntityNamesSchema.optional().describe(
+    "VERIFY-LIVE, optional: singular/plural noun pair naming the row-level entity, e.g. {singular: \"order\", plural: \"orders\"}.",
+  ),
 });
 export type CreatePulseDefinitionInput = z.infer<typeof CreatePulseDefinitionInputSchema>;
 
@@ -163,6 +246,12 @@ export interface PulseDefinitionRequestBody {
     };
     is_running_total: boolean;
     datasource: { id: string };
+    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    row_level_id_field?: string;
+    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    row_level_name_field?: string;
+    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    row_level_entity_names?: { singular_noun: string; plural_noun: string };
   };
   extension_options: {
     allowed_dimensions: string[];
@@ -174,8 +263,10 @@ export interface PulseDefinitionRequestBody {
   representation_options: {
     type: string;
     sentiment_type: string;
+    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    currency_code?: string;
   };
-  insights_options: { show_insights: boolean; settings: unknown[] };
+  insights_options: { show_insights: boolean; settings: { type: string; disabled?: boolean }[] };
   comparisons: { comparisons: unknown[] };
   datasource_goals: unknown[];
   related_links: unknown[];
@@ -187,6 +278,10 @@ export interface PulseDefinitionRequestBody {
  * `representation_options` / `insights_options` / `comparisons` /
  * `datasource_goals` / `related_links` / `certification` are TOP-LEVEL,
  * siblings of `specification` — see the module docstring.
+ *
+ * `currencyCode` / `insightSettings` / `rowLevel*` (an external Tableau MCP skill suite enhancement
+ * #5 — schema-readiness only, VERIFY-LIVE) are ADDITIVE: when omitted, the
+ * output is byte-for-byte identical to before this widening.
  */
 export function buildCreateDefinitionBody(input: CreatePulseDefinitionInput): PulseDefinitionRequestBody {
   return {
@@ -199,6 +294,16 @@ export function buildCreateDefinitionBody(input: CreatePulseDefinitionInput): Pu
       },
       is_running_total: input.isRunningTotal,
       datasource: { id: input.datasourceLuid },
+      ...(input.rowLevelIdField !== undefined ? { row_level_id_field: input.rowLevelIdField } : {}),
+      ...(input.rowLevelNameField !== undefined ? { row_level_name_field: input.rowLevelNameField } : {}),
+      ...(input.rowLevelEntityNames !== undefined
+        ? {
+            row_level_entity_names: {
+              singular_noun: input.rowLevelEntityNames.singular,
+              plural_noun: input.rowLevelEntityNames.plural,
+            },
+          }
+        : {}),
     },
     extension_options: {
       allowed_dimensions: input.allowedDimensions,
@@ -210,8 +315,15 @@ export function buildCreateDefinitionBody(input: CreatePulseDefinitionInput): Pu
     representation_options: {
       type: `NUMBER_FORMAT_TYPE_${input.numberFormat}`,
       sentiment_type: `SENTIMENT_TYPE_${input.sentiment}`,
+      ...(input.currencyCode !== undefined ? { currency_code: `CURRENCY_CODE_${input.currencyCode}` } : {}),
     },
-    insights_options: { show_insights: true, settings: [] },
+    insights_options: {
+      show_insights: true,
+      settings: (input.insightSettings ?? []).map((setting) => ({
+        type: `INSIGHT_TYPE_${setting.type}`,
+        ...(setting.disabled !== undefined ? { disabled: setting.disabled } : {}),
+      })),
+    },
     comparisons: { comparisons: [] },
     datasource_goals: [],
     related_links: [],

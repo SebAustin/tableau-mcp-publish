@@ -178,6 +178,49 @@ def test_sheet_model_kpi_minimal() -> None:
     assert sheet.kpi.primary_measure == "Profit"
     assert sheet.kpi.comparison_measure is None
     assert sheet.kpi.delta_measure is None
+    assert sheet.kpi.comparison_kind is None
+    assert sheet.kpi.date_field is None
+
+
+# ===========================================================================
+# SheetModel — optional kpi.comparisonKind/dateField fields (M2, GAPS.md Sec 4)
+# ===========================================================================
+
+
+def test_sheet_model_kpi_computed_comparison_parses_and_round_trips() -> None:
+    """comparisonKind/dateField (camelCase in) must parse and round-trip
+    snake_case out, additively alongside a bare primaryMeasure kpi block."""
+    payload = {
+        **MINIMAL_SHEET_PAYLOAD,
+        "kind": "kpi_tile",
+        "kpi": {
+            "primaryMeasure": "Sales",
+            "comparisonKind": "yoy",
+            "dateField": "Order Date",
+        },
+    }
+    sheet = SheetModel.model_validate(payload)
+    assert sheet.kpi is not None
+    assert sheet.kpi.comparison_kind == "yoy"
+    assert sheet.kpi.date_field == "Order Date"
+    dumped = sheet.model_dump()
+    assert dumped["kpi"]["comparison_kind"] == "yoy"
+    assert dumped["kpi"]["date_field"] == "Order Date"
+
+
+def test_sheet_model_kpi_computed_comparison_absent_is_none() -> None:
+    """A kpi block that never mentions comparisonKind/dateField (e.g. the
+    explicit-delta path) must leave both fields None — additive, not
+    required."""
+    payload = {
+        **MINIMAL_SHEET_PAYLOAD,
+        "kind": "kpi_tile",
+        "kpi": {"primaryMeasure": "Sales", "deltaMeasure": "Sales Difference"},
+    }
+    sheet = SheetModel.model_validate(payload)
+    assert sheet.kpi is not None
+    assert sheet.kpi.comparison_kind is None
+    assert sheet.kpi.date_field is None
 
 
 # ===========================================================================

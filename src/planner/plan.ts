@@ -396,6 +396,7 @@ function buildExecKpiBandPlan(
     measures,
     allClassifications,
     EXEC_MAX_KPI_TILES,
+    questionText,
   );
 
   // 2. Chart sheets below the KPI band

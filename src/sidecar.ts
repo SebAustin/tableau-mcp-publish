@@ -66,6 +66,14 @@ export interface SheetKpi {
   sparklineField?: string;
   valuePrefix?: string;
   valueSuffix?: string;
+  /**
+   * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+   * GAPS.md Sec 4). Mirrors `planner/schema.ts`'s `SheetKpiSchema` — set only
+   * when no pre-existing `deltaMeasure` column exists in the data.
+   */
+  comparisonKind?: "yoy" | "mom";
+  /** The date/temporal field driving a computed `comparisonKind` delta. */
+  dateField?: string;
 }
 
 /** Scatter-plot axis binding (x / y measures, optional breakdown dimension). */

@@ -753,6 +753,19 @@ def _build_worksheet(
             kpi_field = kpi_spec.get(kpi_field_key)
             if kpi_field and str(kpi_field) not in dep_measures:
                 dep_measures.append(str(kpi_field))
+        # M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): the raw date field
+        # driving a COMPUTED YoY delta is a dependency too — the CY/PY calc
+        # formulas reference it directly (see
+        # _append_computed_yoy_delta_calc). Only declared when the computed
+        # path will actually run (no explicit delta_measure — see the
+        # kpi_ban_active block below's identical precedence).
+        if (
+            not kpi_spec.get("delta_measure")
+            and kpi_spec.get("comparison_kind") == "yoy"
+            and kpi_spec.get("date_field")
+            and str(kpi_spec["date_field"]) not in dep_dims
+        ):
+            dep_dims.append(str(kpi_spec["date_field"]))
 
     # Filled map: geo dimension + color measure go into dependency declarations.
     if is_map_filled and geo_spec:
@@ -797,6 +810,26 @@ def _build_worksheet(
                 suffix="_Delta",
                 caption=f"{delta_field} (BAN Delta)",
                 default_format=delta_format,
+            )
+        elif kpi_spec.get("comparison_kind") == "yoy" and kpi_spec.get("date_field"):
+            # M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): no pre-existing
+            # delta COLUMN in the data — compute a real YoY delta instead of
+            # leaving the BAN's delta line permanently NULL. "mom" (and any
+            # other comparison_kind) intentionally falls through here with
+            # NO computed delta — see _append_computed_yoy_delta_calc's
+            # docstring / comparison.ts's scoping note for why.
+            date_field = str(kpi_spec["date_field"])
+            delta_format = (
+                _KPI_DELTA_ARROW_FORMAT
+                if theme_kpi_tile.get("use_semantic_delta_colors")
+                else _kpi_compact_format(primary_field, brand_formats or {})
+            )
+            kpi_delta_calc_instance = _append_computed_yoy_delta_calc(
+                deps,
+                primary_field,
+                date_field,
+                value_format=_kpi_compact_format(primary_field, brand_formats or {}),
+                delta_format=delta_format,
             )
 
     # Design Excellence, an external Tableau MCP skill suite enhancement #2: default descending-by-
@@ -978,9 +1011,14 @@ def _build_worksheet(
             }
             for kpi_field_key in ("primary_measure", "comparison_measure", "delta_measure"):
                 kpi_field = kpi_spec.get(kpi_field_key)
-                if not kpi_field:
-                    continue
                 calc_instance = kpi_field_instances.get(kpi_field_key)
+                # M2 (an external Tableau MCP skill suite backlog #1/#2): a COMPUTED delta (no raw
+                # kpi.delta_measure field, only a calc_instance built from
+                # comparison_kind/date_field) must still get an encoding —
+                # only skip when NEITHER a raw field NOR a calc instance
+                # exists for this key.
+                if not kpi_field and not calc_instance:
+                    continue
                 instance = calc_instance if calc_instance else _measure_instance(str(kpi_field))
                 encoding_elements.append(("text", f"{ds_ref}.{instance}"))
         elif mark_type == "text" and measures and not is_kpi_tile:
@@ -2190,6 +2228,25 @@ def _kpi_tile_pane_style_rules(
 
 _KPI_BAN_CALC_PREFIX = "Calculation_BAN_"
 
+# Instance-name prefix (the ``usr:``/``sum:`` qualifier) keyed by the
+# column-instance's own ``derivation`` attribute value — mirrors WB-118's
+# mined convention (see :func:`_append_kpi_ban_calc_column`'s docstring): a
+# calc whose formula does not already aggregate gets ``derivation='Sum'``
+# (``sum:`` prefix); one whose formula already aggregates (e.g. wraps
+# ``SUM(...)``) gets ``derivation='User'`` (``usr:`` prefix).
+_KPI_CALC_DERIVATION_PREFIX: dict[str, str] = {"User": "usr", "Sum": "sum"}
+
+
+def _kpi_ban_calc_field_name(field: str, suffix: str) -> str:
+    """Return the internal (unbracketed) calc field name for a KPI-tile BAN
+    calculated column — e.g. ``"Calculation_BAN_Sales_YoY_CY"`` for
+    ``field="Sales"``, ``suffix="_YoY_CY"``. Shared by
+    :func:`_append_kpi_ban_calc_column` and :func:`_append_computed_yoy_delta_calc`
+    so a dependent formula (e.g. the YoY delta's ``SUM([...]) - SUM([...])``)
+    can reference another BAN calc column's name without duplicating the
+    naming scheme."""
+    return f"{_KPI_BAN_CALC_PREFIX}{_slug(field)}{suffix}"
+
 
 def _append_kpi_ban_calc_column(
     deps: ET.Element,
@@ -2198,6 +2255,8 @@ def _append_kpi_ban_calc_column(
     suffix: str,
     caption: str,
     default_format: str,
+    formula: str | None = None,
+    derivation: str = "User",
 ) -> str:
     """Append a worksheet-local CALCULATED ``<column>`` + ``<column-instance>``
     pair to *deps* (a worksheet's own ``<datasource-dependencies>``), and
@@ -2231,6 +2290,16 @@ def _append_kpi_ban_calc_column(
     contains an aggregation function (as ``SUM([field])`` always does) gets
     ``derivation='User'`` (``usr:`` prefix).
 
+    M2 generalization (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): *formula*
+    and *derivation* are now overridable — every EXISTING call site omits
+    both, so ``resolved_formula`` still computes to the exact original
+    ``f"SUM([{field}])"`` and the instance still gets the ``usr:`` prefix,
+    keeping every pre-existing call byte-identical. This lets
+    :func:`_append_computed_yoy_delta_calc` reuse the same proven
+    ``<column>``/``<column-instance>`` shape for row-level (non-aggregating)
+    CY/PY helper calcs and their aggregating Delta calc, instead of
+    duplicating it.
+
     Args:
         deps:            The worksheet's ``<datasource-dependencies>`` element.
         field:           The RAW field name the calc sums (e.g. ``"Sales"``).
@@ -2241,13 +2310,21 @@ def _append_kpi_ban_calc_column(
                          collides).
         caption:         Human-readable caption for the calc column.
         default_format:  The compact/arrow ``default-format`` value.
+        formula:         The calculation's formula string. Defaults to
+                         ``f"SUM([{field}])"`` (the original, only shape any
+                         call site used before M2) when omitted.
+        derivation:      The column-instance's ``derivation`` attribute —
+                         ``"User"`` (default, ``usr:`` prefix) or ``"Sum"``
+                         (``sum:`` prefix, for a formula that does not
+                         already aggregate).
 
     Returns:
         The instance name fragment, e.g. ``"[usr:Calculation_BAN_Sales:qk]"``
         (unqualified — same contract as :func:`_measure_instance`; callers
         prefix with ``f"{ds_ref}."``).
     """
-    calc_field_name = f"{_KPI_BAN_CALC_PREFIX}{_slug(field)}{suffix}"
+    calc_field_name = _kpi_ban_calc_field_name(field, suffix)
+    resolved_formula = formula if formula is not None else f"SUM([{field}])"
     column_el = ET.SubElement(
         deps,
         "column",
@@ -2260,20 +2337,132 @@ def _append_kpi_ban_calc_column(
             "type": "quantitative",
         },
     )
-    ET.SubElement(column_el, "calculation", {"class": "tableau", "formula": f"SUM([{field}])"})
-    instance_name = f"[usr:{calc_field_name}:qk]"
+    ET.SubElement(column_el, "calculation", {"class": "tableau", "formula": resolved_formula})
+    instance_prefix = _KPI_CALC_DERIVATION_PREFIX[derivation]
+    instance_name = f"[{instance_prefix}:{calc_field_name}:qk]"
     ET.SubElement(
         deps,
         "column-instance",
         {
             "column": f"[{calc_field_name}]",
-            "derivation": "User",
+            "derivation": derivation,
             "name": instance_name,
             "pivot": "key",
             "type": "quantitative",
         },
     )
     return instance_name
+
+
+def _append_computed_yoy_delta_calc(
+    deps: ET.Element,
+    field: str,
+    date_field: str,
+    *,
+    value_format: str,
+    delta_format: str,
+) -> str:
+    """Append data-relative CY/PY/Delta calculated columns computing a
+    year-over-year KPI delta with NO pre-existing delta column in the data,
+    and return the delta calc's instance-name fragment (same contract as
+    :func:`_append_kpi_ban_calc_column`).
+
+    Design Excellence, M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4) —
+    closes ACCEPTANCE.md's documented NULL-delta residual: a KPI tile's
+    ``delta_measure`` previously required a pre-computed comparison measure
+    supplied by the caller (100% NULL on the real Superstore CSV, which
+    carries no period-comparison columns). This emits the comparison ITSELF
+    as a calculated column, from the primary measure + a date field alone.
+
+    DATA-RELATIVE latest year, not ``YEAR(TODAY())``
+    --------------------------------------------------
+    The obvious recipe (``IF YEAR([d])=YEAR(TODAY()) THEN [m] END``) fails
+    on any HISTORICAL dataset whose most recent row predates the build/open
+    date — e.g. Superstore's Order Date tops out in 2017/2018, never equal
+    to a real calendar year at build time — so "current year" would
+    silently resolve to all-NULL, and the delta would be NULL again (the
+    exact problem being fixed). ``{ MAX(YEAR([d])) }`` is a FIXED-less
+    table-scalar LOD expression: it evaluates once, over the WHOLE data
+    source, to the latest year actually present in the data, so "current
+    year" always resolves to a real, non-empty year on any dataset with at
+    least one row — independent of when the workbook is built or opened.
+
+    Emits, in order (reuses :func:`_append_kpi_ban_calc_column`'s proven
+    calculated-column shape verbatim — nested ``<calculation class='tableau'
+    formula='...'/>``, ``derivation`` -> ``usr:``/``sum:`` instance prefix):
+
+    1. ``[Calculation_BAN_<field>_YoY_CY]`` — row-level (non-aggregating)
+       IF/THEN, ``derivation='Sum'`` (mirrors WB-118's own convention for
+       a calc whose formula does not already aggregate). Formula::
+
+           IF YEAR([<date_field>]) = { MAX(YEAR([<date_field>])) } THEN [<field>] END
+
+    2. ``[Calculation_BAN_<field>_YoY_PY]`` — same shape, prior year::
+
+           IF YEAR([<date_field>]) = { MAX(YEAR([<date_field>])) } - 1 THEN [<field>] END
+
+    3. ``[Calculation_BAN_<field>_Delta]`` — the ABSOLUTE delta (matches the
+       arrow-format BAN line's ``*▲ #,##;▼ #,##`` shape), an
+       already-aggregating formula, ``derivation='User'`` (matches every
+       other BAN calc column)::
+
+           SUM([Calculation_BAN_<field>_YoY_CY]) - SUM([Calculation_BAN_<field>_YoY_PY])
+
+       This is the value returned; the caller repoints the KPI tile's delta
+       ``<text>`` encoding and ``<customized-label>`` delta run at it
+       exactly as it would an explicit ``kpi.delta_measure`` calc — the
+       render mechanism (Slice D4's 12-variant live-probe bisect) never
+       sees the difference between an explicit and a computed delta.
+
+    Args:
+        deps:         The worksheet's ``<datasource-dependencies>`` element.
+        field:        The primary measure the delta is computed FOR (e.g.
+                      ``"Sales"``).
+        date_field:   The raw date/temporal field driving the YoY split
+                      (e.g. ``"Order Date"``).
+        value_format: ``default-format`` for the intermediate CY/PY columns
+                      (never directly encoded on any shelf — cosmetic-only,
+                      kept consistent with the primary BAN value's own
+                      format).
+        delta_format: ``default-format`` for the returned delta column
+                      (compact or arrow, matching the existing
+                      ``use_semantic_delta_colors`` branch).
+
+    Returns:
+        The delta calc's instance-name fragment (e.g.
+        ``"[usr:Calculation_BAN_Sales_Delta:qk]"``) — unqualified, same
+        contract as :func:`_append_kpi_ban_calc_column`.
+    """
+    year_scalar = f"{{ MAX(YEAR([{date_field}])) }}"
+    _append_kpi_ban_calc_column(
+        deps,
+        field,
+        suffix="_YoY_CY",
+        caption=f"{field} (BAN YoY CY)",
+        default_format=value_format,
+        formula=f"IF YEAR([{date_field}]) = {year_scalar} THEN [{field}] END",
+        derivation="Sum",
+    )
+    _append_kpi_ban_calc_column(
+        deps,
+        field,
+        suffix="_YoY_PY",
+        caption=f"{field} (BAN YoY PY)",
+        default_format=value_format,
+        formula=f"IF YEAR([{date_field}]) = {year_scalar} - 1 THEN [{field}] END",
+        derivation="Sum",
+    )
+    cy_field_name = _kpi_ban_calc_field_name(field, "_YoY_CY")
+    py_field_name = _kpi_ban_calc_field_name(field, "_YoY_PY")
+    return _append_kpi_ban_calc_column(
+        deps,
+        field,
+        suffix="_Delta",
+        caption=f"{field} (BAN YoY Delta)",
+        default_format=delta_format,
+        formula=f"SUM([{cy_field_name}]) - SUM([{py_field_name}])",
+        derivation="User",
+    )
 
 
 # Design Excellence, Slice D4 FINAL SHAPE — customized-label run-idiom

@@ -89,6 +89,14 @@ class SheetKpiModel(BaseModel):
     sparkline_field: str | None = Field(default=None, alias="sparklineField")
     value_prefix: str | None = Field(default=None, alias="valuePrefix")
     value_suffix: str | None = Field(default=None, alias="valueSuffix")
+    # Design Excellence, an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4): computed
+    # period-comparison delta — set only when the caller has no pre-existing
+    # delta_measure COLUMN in the data. "yoy" is consumed by twb_builder as a
+    # real calculated-column period-over-period delta (see
+    # twb_builder._append_computed_yoy_delta_calc); "mom" is carried but not
+    # yet consumed by the builder (see comparison.ts's docstring for why).
+    comparison_kind: str | None = Field(default=None, alias="comparisonKind")
+    date_field: str | None = Field(default=None, alias="dateField")
 
 
 class SheetScatterModel(BaseModel):

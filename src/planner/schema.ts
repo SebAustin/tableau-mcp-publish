@@ -114,6 +114,16 @@ export const SheetKpiSchema = z.object({
   sparklineField: z.string().optional(),
   valuePrefix: z.string().optional(),
   valueSuffix: z.string().optional(),
+  /**
+   * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+   * GAPS.md Sec 4 — see `comparison.ts`'s `selectComparisonPeriod`). Set only
+   * when no pre-existing `deltaMeasure` column exists in the data. "yoy" is
+   * consumed by the sidecar as a real calculated-column period-over-period
+   * delta; "mom" is carried but not yet consumed by the builder.
+   */
+  comparisonKind: z.enum(["yoy", "mom"]).optional(),
+  /** The date/temporal field driving a computed `comparisonKind` delta. */
+  dateField: z.string().optional(),
 });
 export type SheetKpi = z.infer<typeof SheetKpiSchema>;
 

@@ -17,6 +17,7 @@
 import type { FieldClassification, FieldRole, GeoRole } from "./fields.js";
 import { findPeriodPair } from "./fields.js";
 import type { MarkType, SheetKind } from "./schema.js";
+import { selectComparisonPeriod } from "./comparison.js";
 
 // ---------------------------------------------------------------------------
 // Gap annotation strings (BI_DESIGN §2.3) — referenced by tests
@@ -132,6 +133,17 @@ export interface RawSheet {
     deltaMeasure?: string;
     deltaIsPositiveGood?: boolean;
     sparklineField?: string;
+    /**
+     * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+     * GAPS.md Sec 4) — set only when no pre-existing `deltaMeasure` COLUMN
+     * exists in the data and a usable date dimension does. "yoy" is
+     * consumed by the sidecar builder as a real calculated-column
+     * period-over-period delta; "mom" is carried on the wire but not yet
+     * consumed (see `selectComparisonPeriod`'s docstring for why).
+     */
+    comparisonKind?: "yoy" | "mom";
+    /** The date/temporal field driving a computed `comparisonKind` delta. */
+    dateField?: string;
   };
   scatter?: { x: string; y: string; breakdown?: string };
   geo?: { geoField: string; geoRole: GeoRole; colorMeasure?: string };
@@ -462,11 +474,16 @@ export function isCostLikeMeasure(name: string): boolean {
  * @param primaryMeasures  Names of the primary measures to tile (not CP/PP/Diff).
  * @param allClassifications  Full field list including suppressed period_compare fields.
  * @param maxTiles  Maximum number of KPI tiles to produce (audience-driven cap).
+ * @param questionText  Business question / directions string, used only to pick a
+ *   COMPUTED comparison kind (`selectComparisonPeriod`) when no `deltaMeasure`
+ *   COLUMN exists in the data. Defaults to `""` (no keyword signal — falls back
+ *   to the date-dimension-presence default of `selectComparisonPeriod`).
  */
 export function buildKpiStrip(
   primaryMeasures: string[],
   allClassifications: FieldClassification[],
   maxTiles = 4,
+  questionText = "",
 ): RawSheet[] {
   const toLabel = (name: string): string =>
     name
@@ -479,12 +496,31 @@ export function buildKpiStrip(
     const hasComparison = pair.pp !== undefined || pair.cp !== undefined;
     const hasDelta = pair.diff !== undefined;
 
+    // an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4): when the data carries no
+    // pre-existing delta COLUMN (the common case — e.g. the Superstore CSV),
+    // fall back to a COMPUTED comparison instead of leaving the KPI's delta
+    // permanently NULL. selectComparisonPeriod returns kind "none" when no
+    // usable date dimension exists, so this never adds a dead field.
+    const computed = hasDelta
+      ? undefined
+      : selectComparisonPeriod(questionText, allClassifications);
+    const hasComputedComparison = computed !== undefined && computed.kind !== "none";
+
     const kpi: RawSheet["kpi"] = {
       primaryMeasure: measure,
       ...(hasComparison ? { comparisonMeasure: pair.pp ?? pair.cp } : {}),
       ...(hasDelta ? { deltaMeasure: pair.diff } : {}),
+      ...(hasComputedComparison
+        ? { comparisonKind: computed.kind as "yoy" | "mom", dateField: computed.dateField }
+        : {}),
       deltaIsPositiveGood: !isCostLikeMeasure(measure),
     };
+
+    const rationale = hasComparison || hasDelta
+      ? `KPI tile: ${measure} with period comparison (${pair.pp ?? pair.cp ?? "none"} / ${pair.diff ?? "none"}).`
+      : hasComputedComparison
+        ? `KPI tile: ${measure} with computed ${computed.kind.toUpperCase()} delta (${computed.dateField}).`
+        : `KPI tile: ${measure} (no period comparison columns found).`;
 
     return {
       title: toLabel(measure),
@@ -494,10 +530,7 @@ export function buildKpiStrip(
       rows: [],
       measures: [measure],
       kpi,
-      rationale:
-        hasComparison || hasDelta
-          ? `KPI tile: ${measure} with period comparison (${pair.pp ?? pair.cp ?? "none"} / ${pair.diff ?? "none"}).`
-          : `KPI tile: ${measure} (no period comparison columns found).`,
+      rationale,
     };
   });
 }

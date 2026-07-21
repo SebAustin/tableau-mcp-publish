@@ -10,8 +10,8 @@
 
 User feedback on the live demo: the generated dashboards/stories work but are "not user friendly
 and not beautiful." The user supplied 4 exemplary Tableau Public Superstore dashboards
-(WB-117 `WB-117`, WB-118 `WB-118`,
-author-redacted `a-reference-workbook`, WB-114 `WB-114`) and **explicitly
+(`WB-117`/`WB-117`, `WB-118`/`WB-118`,
+a fourth (undownloadable) exemplar, `WB-114`/`WB-114`) and **explicitly
 authorized downloading them from Tableau Public**, analyzing them, and building a "RAG of Tableau
 design knowledge" so output becomes eye-candy, user-friendly, and enterprise-branded.
 

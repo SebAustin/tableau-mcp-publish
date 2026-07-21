@@ -14,13 +14,13 @@ tags:
   mood: light
 
 provenance:
-  - source: WB-114.twbx
+  - source: WB-114
     sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
     construct: >-
       zone-style background-color #ffffff (worksheet canvas) —
       dashboardBackground.
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[1]/zone-style
-  - source: WB-118.twbx
+  - source: WB-118
     sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
     construct: >-
       zone-style background-color #ffffff, border-color #e6e8ea, border-style
@@ -28,13 +28,13 @@ provenance:
       hairline border) — chartCard.background/borderColor/borderStyle/
       borderWidth/padding/margin, kpiTile.background, header.background.
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[3]/zone[1]/zone-style
-  - source: WB-118.twbx
+  - source: WB-118
     sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
     construct: >-
       zone-style margin-left 15 / margin-right 15 (empty band spacer) —
       spacing.outerMargin (15).
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[1]/zone[3]/zone-style
-  - source: WB-118.twbx
+  - source: WB-118
     sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
     construct: >-
       custom color-palette type=ordered-diverging, first color #1b1b1b
@@ -44,13 +44,13 @@ provenance:
       white" literal mined from this source — see D0 slice report for the
       explicit rationale).
       recipes/palettes.yaml (ordered-diverging, colors[0]="#1b1b1b")
-  - source: WB-118.twbx
+  - source: WB-118
     sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
     construct: >-
       formatted-text run "<Full Name>" (bold, fontcolor #6a6a6a) —
       header.subtitleColor.
       recipes/text_zones.yaml xpath /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]
-  - source: WB-118.twbx
+  - source: WB-118
     sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
     construct: >-
       worksheet-scope style-rule element=label font-size 8, font-weight bold

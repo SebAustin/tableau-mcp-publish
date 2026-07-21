@@ -59,7 +59,7 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
   registerCreateLiveDatasource(server, ctx);
   // E3 — Tableau Pulse metric definitions + metrics
   registerPulseTools(server, ctx);
-  // N-phase (external-skill-suite assimilation): deterministic self-critique, metric
+  // N-phase (external skill assimilation): deterministic self-critique, metric
   // dictionary, and governance-lite scanner.
   registerCritiqueDashboard(server, ctx);
   registerMetricDictionary(server, ctx);

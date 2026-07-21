@@ -230,8 +230,9 @@ path. Prior E0–E4 (VB-*) and D0–D7 (DX-*) sections stand at 0 CRITICAL / 0 H
   reusing `design_miner.safe_parser` (XXE-safe) + `read_twb_bytes` (zip-slip-guarded, in-memory).
 - `sidecar/design_stats.py` — corpus aggregation to committed `design/corpus/stats/*.yaml`;
   reads `manifest.yaml` (`repoUrl` → on-disk path) and appends notable constructs to recipes.
-- Committed artifacts: `design/references/top100/manifest.yaml` (provenance incl. public author
-  attribution), `design/corpus/stats/*.yaml`, `design/corpus/GAPS.md`.
+- Committed artifacts: `design/references/top100/manifest.yaml` (provenance keyed by opaque
+  `WB-NNN` identifiers post source-identity-redaction — see TC-03), `design/corpus/stats/*.yaml`,
+  `design/corpus/GAPS.md`.
 - Planner `src/planner/plan.ts` — title auto-shorten + v2 story-caption derivation.
 
 ### STRIDE (expansion surface)
@@ -262,7 +263,7 @@ path. Prior E0–E4 (VB-*) and D0–D7 (DX-*) sections stand at 0 CRITICAL / 0 H
 |---|---|---|---|
 | TC-01 | MEDIUM | Feed-controlled `workbookRepoUrl` reaches filesystem paths with no charset/containment guard — write sink `scripts/fetch-top100.ts` (`resolve(OUT_DIR, …)`→`writeFileSync`) allows traversal outside `OUT_DIR`; read sink `design_stats.py top100_paths` selects an out-of-tree file to read+parse. Mitigations: dev-only, never in the MCP runtime; HTTPS to Tableau's own BFF (MITM needs a cert break); output extension forced to `.twbx`/`.twb` and body must pass PK/`<?xml` magic; 25MB/1.5GB caps; read side is in-memory + XXE-safe + zip-slip-guarded; all 134 currently-committed `repoUrl`s are safe `[A-Za-z0-9._-]` slugs. | OPEN — recommend fix before next corpus regeneration; does not block runtime ship. Not fixed here (task scope: read-only + this SECURITY.md append). Fix: validate `workbookRepoUrl` against `^[A-Za-z0-9._-]+$` at the feed-parse boundary and assert the resolved write path stays under `OUT_DIR`; apply the same guard when reading `repoUrl` from the manifest. |
 | TC-02 | LOW | `huge_tree=True` + no independent zip/XML size cap on the T1 dashboard/story miner (via reused `read_twb_bytes`/`safe_parser`); a crafted/oversized workbook can exhaust memory. Same root as DX-01, extended to the new miner. | Accepted — offline dev-only tool run against operator-chosen files; bounded by the fetcher's 25MB per-file cap; never reachable from the MCP server. |
-| TC-03 | INFO | Committed `manifest.yaml` embeds third-party author display names + public profile slugs (`author`/`profileName`), titles, view counts. | Accepted — public attribution from the public VOTD feed (no emails/private PII); it is the intended provenance record. Feed strings are `yaml.stringify`-quoted on write and re-read via non-executing parsers. |
+| TC-03 | INFO | ~~Committed `manifest.yaml` embeds third-party author display names + public profile slugs (`author`/`profileName`), titles, view counts.~~ **RESOLVED** (source-identity redaction pass): `author`/`profileName`/`title` are no longer written to the committed manifest — every entry is keyed by an opaque, stable `WB-NNN` identifier instead of the real `repoUrl`/author metadata (see `design/corpus/SCHEMA.md`'s provenance section). `sha256`/`bytes`/`status`/`curatedAt`/`viewCount`/`favorites` remain (non-identifying, technical provenance). | Resolved — no third-party PII remains in the committed corpus; `sha256` is the sole re-identification-free integrity anchor. |
 | TC-04 | INFO | Committed `design/corpus/stats/*.yaml` derive from untrusted workbooks. | Accepted — content is aggregated numbers + `source`/`sha256`/`xpath` citations only (no author PII, no raw workbook content); consumers use `yaml.safe_load` / `yaml` `parse`; raw inputs gitignored. No injection path into tests. |
 | TC-05 | INFO | Planner title auto-shorten (`shortenDashboardTitle`/`truncateAtWordBoundary`) + v2 story captions produce question-derived strings flowing into `dashboardTitle`/`dashboardSubtitle`/`storyArc[].caption`. | Accepted — these reach the existing `xml.etree.ElementTree` `.text` sinks in `twb_builder.py` (auto-escapes `< > &`); no new raw-XML/string-concat sink (auto-shorten only splits one existing string across the existing title+subtitle fields). Escaping verified. |
 
@@ -272,7 +273,7 @@ The single MEDIUM (TC-01) is dev-tooling defense-in-depth for the offline corpus
 script; it is not part of the shipped MCP-server attack surface. Recommend adding the `repoUrl`
 charset+containment guard before the next corpus regeneration.
 
-## N-phase surface (external-skill-suite assimilation) — added surface
+## N-phase surface (external skill assimilation) — added surface
 
 Delta audit over `feat/design-excellence` (`6109a7d..75b45ef`): three new read-only MCP tools
 (`critique_dashboard`, `generate_metric_dictionary`, `scan_governance`) plus one sidecar

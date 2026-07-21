@@ -65,10 +65,10 @@ publish tool's confidence level:** rejected — directly conflicts with this pro
 Bridge note and `create_live_datasource`'s key-pair rejection); a Pulse tool that silently fails in
 production because of an unconfirmed enum token is worse than one whose docs say so upfront.
 
-## Update (2026-07-20) — an external Tableau MCP skill suite enhancement #5: additive schema widening, still not a fix
+## Update (2026-07-20) — external skill enhancement #5: additive schema widening, still not a fix
 
 An external agent-skill review (`docs/adr/0014-external-skill-analysis.md`) cross-checked this
-module against an external Tableau MCP skill suite's Pulse-Blueprint skill, which ships its own "confirmed" API enum
+module against the external skill suite's Pulse-Blueprint skill, which ships its own "confirmed" API enum
 reference. Four purely additive widenings landed as a result, every new token still marked
 `VERIFY-LIVE`:
 

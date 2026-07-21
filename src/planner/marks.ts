@@ -134,7 +134,7 @@ export interface RawSheet {
     deltaIsPositiveGood?: boolean;
     sparklineField?: string;
     /**
-     * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+     * Comparison-period kind for a COMPUTED delta (external skill backlog #1/#2,
      * GAPS.md Sec 4) — set only when no pre-existing `deltaMeasure` COLUMN
      * exists in the data and a usable date dimension does. "yoy" is
      * consumed by the sidecar builder as a real calculated-column
@@ -517,7 +517,7 @@ export function buildKpiStrip(
     const hasComparison = pair.pp !== undefined || pair.cp !== undefined;
     const autoPairedDelta = pair.diff;
 
-    // an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4), M3 precedence fix: a
+    // external skill backlog #1/#2 (GAPS.md Sec 4), M3 precedence fix: a
     // computable YoY always wins over an auto-paired delta column — see
     // this function's own docstring ("Delta precedence") and
     // comparison.ts's docstring for the full rationale.

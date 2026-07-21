@@ -15,7 +15,7 @@
     dashboard: 'Super: Prescriptive'
     type: sheet
     worksheet: 'Prescriptive Button: Active'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[10]
 - activation:
     type: on-select
@@ -34,7 +34,7 @@
     dashboard: 'Super: Annotations'
     type: sheet
     worksheet: 'Prescriptive Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[1]
 - activation:
     auto_clear: 'true'
@@ -50,7 +50,7 @@
   source:
     type: sheet
     worksheet: Prescriptive Scatter Plot
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[2]
 - activation:
     type: on-select
@@ -69,7 +69,7 @@
     dashboard: 'Super: Descriptive'
     type: sheet
     worksheet: 'Prescriptive Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[3]
 - activation:
     type: on-select
@@ -89,7 +89,7 @@
     dashboard: 'Super: Prescriptive'
     type: sheet
     worksheet: 'Descriptive Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[4]
 - activation:
     auto_clear: 'true'
@@ -109,7 +109,7 @@
     dashboard: 'Super: Prescriptive'
     type: sheet
     worksheet: Prescriptive Map
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[5]
 - activation:
     auto_clear: 'true'
@@ -129,7 +129,7 @@
     dashboard: 'Super: Descriptive'
     type: sheet
     worksheet: ''
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[6]
 - activation:
     type: on-select
@@ -147,7 +147,7 @@
     dashboard: 'Super: Prescriptive'
     type: sheet
     worksheet: 'Annotations Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[7]
 - activation:
     type: on-select
@@ -165,7 +165,7 @@
     dashboard: 'Super: Descriptive'
     type: sheet
     worksheet: 'Annotations Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[8]
 - activation:
     type: on-select
@@ -185,7 +185,7 @@
     dashboard: 'Super: Annotations'
     type: sheet
     worksheet: 'Descriptive Button: Inactive'
-  source_file: WB-114.twbx
+  source_file: WB-114
   xpath: /workbook/actions/action[9]
 - activation:
     auto_clear: 'true'
@@ -210,7 +210,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: 'Pag All Left '
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[1]
 - activation:
     auto_clear: 'true'
@@ -235,7 +235,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag All Right
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[2]
 - activation:
     type: on-select
@@ -243,13 +243,13 @@
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external profile link]'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
   source:
     dashboard: Home
     type: sheet
     worksheet: Dataside Website
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[3]
 - activation:
     auto_clear: 'true'
@@ -274,7 +274,7 @@
     dashboard: Product Analysis
     type: sheet
     worksheet: Top Sales by Sub-Category
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[4]
 - activation:
     auto_clear: 'true'
@@ -299,7 +299,7 @@
     dashboard: Overview
     type: sheet
     worksheet: Big Number Selector
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[5]
 - activation:
     auto_clear: 'true'
@@ -324,7 +324,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pagination
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[6]
 - activation:
     auto_clear: 'true'
@@ -349,7 +349,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag Left
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[7]
 - activation:
     auto_clear: 'true'
@@ -374,7 +374,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag Right
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/action[8]
 - activation:
     type: on-select
@@ -393,7 +393,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag Left
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[10]
 - activation:
     type: on-select
@@ -412,7 +412,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: 'Pag All Left '
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[11]
 - activation:
     type: on-select
@@ -431,7 +431,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag All Right
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[1]
 - activation:
     type: on-select
@@ -450,7 +450,7 @@
     dashboard: Product Analysis
     type: sheet
     worksheet: Top Sales by Sub-Category
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[2]
 - activation:
     type: on-select
@@ -469,7 +469,7 @@
     dashboard: Product Analysis
     type: sheet
     worksheet: Top Sales by Sub-Category
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[3]
 - activation:
     type: on-select
@@ -488,7 +488,7 @@
     dashboard: Product Analysis
     type: sheet
     worksheet: Top Sales by Sub-Category
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[4]
 - activation:
     type: on-select
@@ -507,7 +507,7 @@
     dashboard: Regional Analysis
     type: sheet
     worksheet: Map
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[5]
 - activation:
     type: on-select
@@ -526,7 +526,7 @@
     dashboard: Regional Analysis
     type: sheet
     worksheet: Map
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[6]
 - activation:
     type: on-select
@@ -545,7 +545,7 @@
     dashboard: Overview
     type: sheet
     worksheet: Big Number Selector
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[7]
 - activation:
     type: on-select
@@ -564,7 +564,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pagination
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[8]
 - activation:
     type: on-select
@@ -583,7 +583,7 @@
     dashboard: Order Details
     type: sheet
     worksheet: Pag Right
-  source_file: WB-117.twbx
+  source_file: WB-117
   xpath: /workbook/actions/edit-parameter-action[9]
 - activation:
     auto_clear: 'true'
@@ -605,7 +605,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Metric Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[1]
 - activation:
     type: on-select
@@ -634,7 +634,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Metric Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[2]
 - activation:
     auto_clear: 'true'
@@ -652,7 +652,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By State
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[3]
 - activation:
     auto_clear: 'true'
@@ -674,7 +674,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By State
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[4]
 - activation:
     auto_clear: 'true'
@@ -696,7 +696,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Year Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[5]
 - activation:
     auto_clear: 'true'
@@ -714,7 +714,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By Segment
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[6]
 - activation:
     auto_clear: 'true'
@@ -732,7 +732,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By Category
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[7]
 - activation:
     auto_clear: 'true'
@@ -750,7 +750,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By Sub-Category
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[8]
 - activation:
     auto_clear: 'true'
@@ -768,7 +768,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By Manufacturer
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/action[9]
 - activation:
     type: on-select
@@ -787,7 +787,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Metric Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/edit-parameter-action[1]
 - activation:
     type: on-select
@@ -806,7 +806,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Metric Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/edit-parameter-action[2]
 - activation:
     type: on-select
@@ -825,7 +825,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Sales | By Sub-Category
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/edit-parameter-action[3]
 - activation:
     type: on-select
@@ -844,7 +844,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Year Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/edit-parameter-action[4]
 - activation:
     type: on-select
@@ -863,7 +863,7 @@
     dashboard: Superstore Dashboard
     type: sheet
     worksheet: Metric Select
-  source_file: WB-118.twbx
+  source_file: WB-118
   xpath: /workbook/actions/edit-parameter-action[5]
 - activation:
     type: on-select
@@ -1015,7 +1015,7 @@
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external profile link]'
   sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
   source:
     dashboard: 10 Charts
@@ -1029,7 +1029,7 @@
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external profile link]'
   sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
   source:
     dashboard: 10 Charts
@@ -1043,7 +1043,7 @@
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external video link]'
   sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
   source:
     dashboard: 10 Charts
@@ -1057,7 +1057,7 @@
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external site link]'
   sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
   source:
     dashboard: 10 Charts
@@ -1067,16 +1067,16 @@
   xpath: /workbook/actions/action[4]
 - activation:
     type: on-select
-  caption: Kat's Wix Site
+  caption: External Site Link
   kind: url
   link:
     caption: ''
-    expression: [redacted-url]
+    expression: '[redacted: external site link]'
   sha256: 9c8922c5e14efd2b16bad240b13d6e11d46056259b8833af391394f3c9f6b726
   source:
     dashboard: 10 Charts
     type: sheet
-    worksheet: Kat's Wix Website
+    worksheet: External Website
   source_file: WB-095
   xpath: /workbook/actions/action[5]
 - activation:

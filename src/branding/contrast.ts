@@ -1,5 +1,5 @@
 /**
- * WCAG 2.x contrast-ratio checks for `brand.yaml` (an external Tableau MCP skill suite enhancement
+ * WCAG 2.x contrast-ratio checks for `brand.yaml` (external skill enhancement
  * backlog #3 — VizCritique-Pro's D5 rubric: 4.5:1 for normal text, 3:1 for
  * large text/UI components. See `docs/adr/0014-external-skill-analysis.md`).
  *

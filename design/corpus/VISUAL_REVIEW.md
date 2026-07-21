@@ -31,7 +31,7 @@ docstring's "Dispute semantics" section, mirrored in `SCHEMA.md`).
 ## Coverage
 
 - **99/99 reviewed** of the 100 workbooks the top-100 manifest marks `status: downloaded`. The
-  1 gap is `"WB-001"` ("Superstore Regional Analysis", downloaded successfully as a `.twbx`) —
+  1 gap is `"WB-001"` (downloaded successfully as a `.twbx`) —
   its VOTD marketing-feed image URL had rotated out of `tableau.com`'s feed by review time
   (`runMeta.images_of_manifest: "99/100 (missing: \"WB-001\")"`), so no reviewable PNG existed
   for it. This is a source-feed availability gap, not a review failure — `runMeta.failures` is

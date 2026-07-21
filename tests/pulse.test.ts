@@ -137,14 +137,14 @@ describe("rest/pulse — buildCreateDefinitionBody", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Pure module: an external Tableau MCP skill suite enhancement #5 — Pulse enum/schema widening
+// Pure module: external skill enhancement #5 — Pulse enum/schema widening
 // (schema-readiness only — does NOT fix the bare-create 400; see ADR-0011 /
 // ADR-0014). Every new token is additive: an unset field must reproduce
 // EXPECTED_WIRE_BODY exactly (the existing deep-equal test above stays green
 // untouched).
 // ---------------------------------------------------------------------------
 
-describe("rest/pulse — enum widening (an external Tableau MCP skill suite #5, schema-readiness)", () => {
+describe("rest/pulse — enum widening (external skill #5, schema-readiness)", () => {
   it("PulseComparisonSchema accepts the new fiscal-year-ago token", () => {
     expect(PulseComparisonSchema.safeParse("TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD").success).toBe(true);
   });

@@ -183,10 +183,17 @@ const StandoutTechniqueSchema = z.object({
   note: z.string().min(1).max(200),
 });
 
-/** Provenance quad — orchestrator-injected, never agent-guessed (V-phase plan mandate). */
+/**
+ * Provenance triad — orchestrator-injected, never agent-guessed (V-phase plan mandate).
+ *
+ * `repoUrl` is an opaque, stable `WB-NNN` identifier (source-workbook identities are redacted by
+ * policy — see `design/corpus/SCHEMA.md`'s provenance section). `imageUrl` (the original
+ * tableau.com-hosted snapshot link) was dropped in the anonymization pass: it identified the
+ * source workbook's public feed entry and carried no aggregation value the sha256 pair doesn't
+ * already provide.
+ */
 export const ProvenanceQuadSchema = z.object({
   repoUrl: z.string().regex(REPO_URL_RE),
-  imageUrl: z.string().url(),
   imageSha256: z.string().regex(SHA256_RE),
   workbookSha256: z.string().regex(SHA256_RE),
 });
@@ -432,7 +439,6 @@ function citations(records: readonly ReviewRecord[]): ProvenanceQuad[] {
     seen.add(r.repoUrl);
     out.push({
       repoUrl: r.repoUrl,
-      imageUrl: r.imageUrl,
       imageSha256: r.imageSha256,
       workbookSha256: r.workbookSha256,
     });

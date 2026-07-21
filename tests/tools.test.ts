@@ -160,7 +160,7 @@ describe("tool registration", () => {
       "list_pulse_definitions",
       "create_pulse_metric",
       "delete_pulse_definition",
-      // N-phase — external-skill-suite assimilation
+      // N-phase — external skill assimilation
       "critique_dashboard",
       "generate_metric_dictionary",
       "scan_governance",
@@ -523,7 +523,7 @@ describe("validate_brand (E1)", () => {
       expect.arrayContaining(["ceo", "cto", "slt_manager", "analyst", "client"]),
     );
     expect(result.summary).toMatch(/valid/i);
-    // Additive field (an external Tableau MCP skill suite enhancement backlog #3): WCAG contrast checks
+    // Additive field (external skill enhancement backlog #3): WCAG contrast checks
     // never touch `warnings` — see checkBrandContrast's docstring.
     expect(result.contrastChecks.length).toBeGreaterThan(0);
     for (const check of result.contrastChecks) {

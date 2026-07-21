@@ -1,7 +1,7 @@
 /**
  * VizCritique-lite — a DETERMINISTIC dashboard self-critique.
  *
- * The external-skill-suite VizCritique-Pro skill scores a rendered dashboard with an LLM
+ * The external skill suite's VizCritique-Pro skill scores a rendered dashboard with an LLM
  * judge. That mechanism violates this project's A-01 invariant (no LLM call
  * inside the server). This is the architecture-honest assimilation: score a
  * GENERATED plan against the norms we already mined — the top-100

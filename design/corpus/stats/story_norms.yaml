@@ -25,9 +25,9 @@ sources:
   - WB-095
   - WB-133
   root_refs:
-  - WB-114.twbx
-  - WB-117.twbx
-  - WB-118.twbx
+  - WB-114
+  - WB-117
+  - WB-118
   top100_manifest_downloaded: 100
   top100_missing_on_disk: 0
 usage_rate:

@@ -1,6 +1,6 @@
 /**
  * Tests for M2/M3 — computed comparison-period wiring on `buildKpiStrip` and
- * the exec KPI-band plan (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4).
+ * the exec KPI-band plan (external skill backlog #1/#2, GAPS.md Sec 4).
  *
  * Closes ACCEPTANCE.md's documented NULL-delta residual: a KPI tile whose
  * data carries no pre-existing delta COLUMN (the common case — e.g. the

@@ -8,7 +8,7 @@ import {
 } from "../governance/checks.js";
 
 /**
- * `scan_governance` — a governance-lite site audit (external-skill-suite Governance-Scanner,
+ * `scan_governance` — a governance-lite site audit (the external skill suite's Governance-Scanner,
  * deterministic subset). Reads the existing `list_content` surface and flags
  * three hygiene issues: stale content, publishing to the Default project, and
  * inconsistent naming. Owner-concentration, adoption/view-count, and

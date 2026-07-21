@@ -4,7 +4,7 @@ Date: 2026-07-21 · Status: Accepted · Supersedes/extends: ADR-0014 (external s
 
 ## Context
 
-ADR-0014 analyzed six an external Tableau MCP skill suite Claude skills and applied a deterministic subset (contrast math,
+ADR-0014 analyzed six external Claude skills and applied a deterministic subset (contrast math,
 descending sort, Pulse enum widening); the remainder was backlogged in `design/corpus/GAPS.md §4`.
 The user then green-lit building that remainder. This ADR records how each item was assimilated —
 and, for the flagship, why it was rebuilt rather than ported.

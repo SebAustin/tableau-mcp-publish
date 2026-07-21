@@ -20,9 +20,10 @@
  * Covers (per the V-phase plan's "Tests" section):
  *  1. Both files zod-validate against `scripts/aggregate-visual-norms.ts`'s schemas (the single
  *     source of truth for both the producer CLI and this test — no schema duplication).
- *  2. Every review's `repoUrl` is a real top-100 manifest entry.
- *  3. Every review carries the full provenance quad (repoUrl, imageUrl, imageSha256,
- *     workbookSha256).
+ *  2. Every review's `repoUrl` (an opaque, stable `WB-NNN` identifier — see
+ *     `design/corpus/SCHEMA.md`'s provenance section) is a real top-100 manifest entry.
+ *  3. Every review carries the full provenance triad (repoUrl, imageSha256, workbookSha256).
+ *     `imageUrl` was dropped in the anonymization pass (identifying tableau.com link).
  *  4. n/confidence discipline: n<15 => confidence "low"; every rate is in [0,1]; single-label
  *     categorical bucket counts sum to their distribution's n (multi-label
  *     `chart_type_prevalence` is exempt by design — see its own docstring).
@@ -290,7 +291,7 @@ describe.skipIf(!dataAvailable)(
     // 2 & 3 — manifest membership + provenance quad
     // -------------------------------------------------------------------
 
-    it("every review's repoUrl is a real design/references/top100/manifest.yaml entry", () => {
+    it("every review's repoUrl (WB-id) is a real design/references/top100/manifest.yaml entry", () => {
       for (const review of reviews.reviews) {
         expect(
           manifestRepoUrls.has(review.repoUrl),
@@ -299,10 +300,9 @@ describe.skipIf(!dataAvailable)(
       }
     });
 
-    it("every review carries the full provenance quad (repoUrl, imageUrl, imageSha256, workbookSha256)", () => {
+    it("every review carries the full provenance triad (repoUrl, imageSha256, workbookSha256)", () => {
       for (const review of reviews.reviews) {
         expect(review.repoUrl.length).toBeGreaterThan(0);
-        expect(review.imageUrl.length).toBeGreaterThan(0);
         expect(review.imageSha256).toMatch(/^[0-9a-f]{64}$/);
         expect(review.workbookSha256).toMatch(/^[0-9a-f]{64}$/);
       }

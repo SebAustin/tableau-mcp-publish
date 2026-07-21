@@ -89,7 +89,7 @@ class SheetKpiModel(BaseModel):
     sparkline_field: str | None = Field(default=None, alias="sparklineField")
     value_prefix: str | None = Field(default=None, alias="valuePrefix")
     value_suffix: str | None = Field(default=None, alias="valueSuffix")
-    # Design Excellence, an external Tableau MCP skill suite backlog #1/#2 (GAPS.md Sec 4): computed
+    # Design Excellence, external skill backlog #1/#2 (GAPS.md Sec 4): computed
     # period-comparison delta — set only when the caller has no pre-existing
     # delta_measure COLUMN in the data. "yoy" is consumed by twb_builder as a
     # real calculated-column period-over-period delta (see
@@ -382,7 +382,7 @@ class ThemeKpiTileModel(BaseModel):
     padding: int | None = None
     ban_color: str | None = Field(default=None, alias="banColor")
     use_semantic_delta_colors: bool = Field(default=True, alias="useSemanticDeltaColors")
-    # N4 (external-skill-suite Calc-Engine "KPI Status", GAPS.md Sec 4 #7): when set (and
+    # N4 (the external skill suite's Calc-Engine "KPI Status", GAPS.md Sec 4 #7): when set (and
     # use_semantic_delta_colors is on), the delta arrow is colored by sign via
     # bracketed number-format section colors ([good]▲;[bad]▼). Default off →
     # byte-identical to prior output. VERIFY-LIVE.

@@ -138,9 +138,9 @@ See `VISUAL_REVIEW.md`'s dedicated "T2 title cross-check" section: both the `_HE
 pixel-ratio fix and the `top_left` placement independently agree with the vision-side evidence.
 No action routed here — this is a confirmation, not a gap.
 
-## 4. an external Tableau MCP skill suite enhancement backlog (analyzed 2026-07-20)
+## 4. External skill enhancement backlog (analyzed 2026-07-20)
 
-An external agent-skill review (six an external Tableau MCP skill suite Claude `SKILL.md` playbooks over the *official*
+An external agent-skill review (six external Claude `SKILL.md` playbooks over the *official*
 tableau-mcp's read-only surface — see `docs/adr/0014-external-skill-analysis.md` for the full
 analysis and the applied/declined split) surfaced eight candidate enhancements. Three deterministic,
 low-risk candidates were applied in the same slice this section was written (WCAG contrast checking
@@ -184,7 +184,7 @@ remaining candidates: those deferred to a future slice, and those declined outri
   above in §2 from real mined evidence (filter zones 17.0-24.6%, device layouts 23.4% — both below
   the plan's own 40% "implement automatically" bar). This skill's guidance doesn't change that
   evidence-based conclusion.
-- **Memory-file/scheduled-agent continuity patterns** — several an external Tableau MCP skill suite skills assume a
+- **Memory-file/scheduled-agent continuity patterns** — several of the analyzed skills assume a
   persistent agent session/memory file between runs; incompatible with this server's
   stateless-per-call architecture (ADR-0005/0007) — there is no server-side session to persist a
   memory file against.

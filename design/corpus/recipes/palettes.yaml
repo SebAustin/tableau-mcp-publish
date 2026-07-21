@@ -24,7 +24,7 @@
   - '#34657f'
   name: ''
   sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
-  source: WB-114.twbx
+  source: WB-114
   type: ordered-diverging
   xpath: /workbook/worksheets/worksheet[22]/table/style/style-rule[1]/encoding/color-palette
 - colors:
@@ -53,7 +53,7 @@
   - '#fc4237'
   name: ''
   sha256: 17d63804be4c347a43c7290ecf3f0c36e6aae9d3248104bc6d37ce2634b001ed
-  source: WB-114.twbx
+  source: WB-114
   type: ordered-diverging
   xpath: /workbook/worksheets/worksheet[6]/table/style/style-rule[2]/encoding/color-palette
 - colors:
@@ -70,7 +70,7 @@
   - '#2f2e41'
   name: ''
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   type: ordered-sequential
   xpath: /workbook/worksheets/worksheet[9]/table/style/style-rule[2]/encoding/color-palette
 - colors:
@@ -96,7 +96,7 @@
   - '#440154'
   name: Viridis
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   type: ordered-sequential
   xpath: /workbook/preferences/color-palette
 - colors:
@@ -113,7 +113,7 @@
   - '#6b9dfe'
   name: ''
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   type: ordered-sequential
   xpath: /workbook/worksheets/worksheet[16]/table/style/style-rule[3]/encoding[1]/color-palette
 - colors:
@@ -142,7 +142,7 @@
   - '#ff7476'
   name: ''
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   type: ordered-diverging
   xpath: /workbook/worksheets/worksheet[18]/table/style/style-rule[5]/encoding/color-palette
 - colors:

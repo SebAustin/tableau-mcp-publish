@@ -5,7 +5,7 @@ import { deriveMetricDictionary, type DatasourceField } from "../planner/metricD
 
 /**
  * `generate_metric_dictionary` — a structured metric dictionary for a published
- * datasource (external-skill-suite Scribe "Metric Builder", deterministic subset). Reuses
+ * datasource (the external skill suite's Scribe "Metric Builder", deterministic subset). Reuses
  * the same VDS field fetch as `get_datasource_fields`, then derives per-field
  * role / suggested aggregation / display format / definition template via the
  * planner's own role inference. Pure derivation; no LLM prose generation (that

@@ -1,5 +1,5 @@
 /**
- * Tests for `selectComparisonPeriod` (an external Tableau MCP skill suite backlog #2, GAPS.md
+ * Tests for `selectComparisonPeriod` (external skill backlog #2, GAPS.md
  * Sec 4) — the comparison-period selection heuristic that pairs with the
  * computed YoY delta calc (backlog #1).
  */

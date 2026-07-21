@@ -1,5 +1,5 @@
 """Design Excellence, M2 — computed YoY period-comparison delta for KPI
-tiles (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4).
+tiles (external skill backlog #1/#2, GAPS.md Sec 4).
 
 Closes ACCEPTANCE.md's documented NULL-delta residual: a KPI tile's
 ``delta_measure`` previously required a PRE-EXISTING delta COLUMN in the

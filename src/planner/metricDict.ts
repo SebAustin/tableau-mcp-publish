@@ -1,5 +1,5 @@
 /**
- * Metric-dictionary derivation (external-skill-suite Scribe "Metric Builder", deterministic).
+ * Metric-dictionary derivation (the external skill suite's Scribe "Metric Builder", deterministic).
  *
  * Turns the field metadata `get_datasource_fields` already returns into a
  * structured metric dictionary — role, suggested aggregation, display format,

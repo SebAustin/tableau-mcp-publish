@@ -46,19 +46,24 @@ const THEMES_DIR = join(CORPUS_DIR, "themes");
 // step actually cited (see design/corpus/SCHEMA.md's "notable-construct
 // append" section). Every `source`/`source_file` in the corpus must be drawn
 // from this set.
+//
+// Source identities are redacted to opaque, stable `WB-NNN` identifiers by
+// policy (see `design/corpus/SCHEMA.md`'s provenance section) — these are NOT
+// the original workbook filenames, just a fixed 1:1 relabeling of the same 24
+// distinct source workbooks.
 // ---------------------------------------------------------------------------
 
 const D0_WORKBOOK_ALLOWLIST = [
-  "WB-117.twbx",
-  "WB-118.twbx",
-  "WB-114.twbx",
-  "WB-015",
-  "WB-093",
-  "WB-095",
-  "WB-133",
-  "WB-058",
-  "WB-062",
-  "WB-063",
+  "WB-117", // formerly a root .twbx exemplar (dark direction)
+  "WB-118", // formerly a root .twbx exemplar (light direction)
+  "WB-114", // formerly a root .twbx exemplar (light direction)
+  "WB-015", // formerly an on-disk .twb reference
+  "WB-093", // formerly an on-disk .twb reference
+  "WB-095", // formerly an on-disk .twb reference
+  "WB-133", // formerly an on-disk .twb reference
+  "WB-058", // formerly an on-disk .twb reference
+  "WB-062", // formerly an on-disk .twb reference
+  "WB-063", // formerly an on-disk .twb reference (byte-identical to WB-062)
 ];
 
 // Slice T1: 14 top-100-corpus sources cited by `append_notable_constructs`'s
@@ -66,20 +71,20 @@ const D0_WORKBOOK_ALLOWLIST = [
 // every one independently observed as a NEW, high-frequency (>=8 distinct
 // source files) construct not already in the D0 corpus.
 const T1_NOTABLE_CONSTRUCT_ALLOWLIST = [
-  "WB-001.twbx",
-  "WB-004.twbx",
-  "WB-005.twbx",
-  "WB-009.twbx",
-  "WB-012.twbx",
-  "WB-017.twbx",
-  "WB-018.twbx",
-  "WB-021.twbx",
-  "WB-023.twbx",
-  "WB-027.twbx",
-  "WB-028.twbx",
-  "WB-029.twbx",
-  "WB-033.twbx",
-  "WB-039.twbx",
+  "WB-001",
+  "WB-004",
+  "WB-005",
+  "WB-009",
+  "WB-012",
+  "WB-017",
+  "WB-018",
+  "WB-021",
+  "WB-023",
+  "WB-027",
+  "WB-028",
+  "WB-029",
+  "WB-033",
+  "WB-039",
 ];
 
 const WORKBOOK_ALLOWLIST = new Set([...D0_WORKBOOK_ALLOWLIST, ...T1_NOTABLE_CONSTRUCT_ALLOWLIST]);

@@ -522,7 +522,7 @@ default-format is ignored; label values overflowing the mark cell render `###`.
 ### Beauty-gate fix round (2026-07-19, post-verdict)
 
 The user's beauty-gate report ("can't see the numbers") reopened D4: KPI values were invisible in the
-**interactive** view too. A control experiment (publishing the untouched WB-118 exemplar to this site —
+**interactive** view too. A control experiment (publishing the untouched `WB-118` exemplar to this site —
 its BANs rendered) proved the earlier "platform limitation" conclusion in SCHEMA.md constraint #5 **wrong**:
 the defect was ours. Root cause: KPI tiles require a **three-level** `is-fixed`/`fixed-size` cascade —
 band container (`fixed-size='140'` + `layout-strategy-id='distribute-evenly'`) → per-tile wrapper (`210`)
@@ -552,7 +552,7 @@ Live: workbook 2527341 (short title + full BAN row + brand-blue map) and story 2
 
 ---
 
-## Visual Review (V) + external-skill-suite Safe Bundle (M1)
+## Visual Review (V) + External Skill Safe Bundle (M1)
 
 **Date:** 2026-07-20 · **Branch:** `feat/design-excellence` · **Gate: 675 TS + 605 Python green**
 
@@ -562,12 +562,12 @@ Live: workbook 2527341 (short title + full BAN row + brand-blue map) and story 2
 - **Category split:** data_journalism 41 / business_dashboard 36 / personal 11 / art 7. Business stratum n=36 (confidence ok).
 - **Independent validation of the shipped fixes:** business dashboards are 86% `top_left` title / 0% "dominant" size (our auto-shorten + 6.96% header lands in the mined "modest" band); `kpi_band_top` is the 58% modal layout (our `kpi_band_over_charts` default matches); modal BAN placement `top_band` (matches our band). The beauty-gate fixes were confirmed by real-world evidence, not just asserted.
 
-### M1 — an external Tableau MCP skill suite safe deterministic bundle (commit `31fd666`, user-approved scope)
-Analyzed an external Tableau MCP skill suite's 6 Tableau-MCP Claude skills (ADR-0014). **Honest headline: Pulse-Blueprint does NOT unblock live Pulse creation** (routes to UI, no basic_specification body) — the create-400 stands. Applied the deterministic subset:
+### M1 — external skill safe deterministic bundle (commit `31fd666`, user-approved scope)
+Analyzed an external Tableau MCP skill suite's 6 Claude skills (ADR-0014). **Honest headline: Pulse-Blueprint does NOT unblock live Pulse creation** (routes to UI, no basic_specification body) — the create-400 stands. Applied the deterministic subset:
 - **WCAG contrast check** in `validate_brand` (new `src/branding/contrast.ts`, additive `contrastChecks` output, fail-soft warnings; 15 tests incl. black/white=21:1, AA-boundary grays).
 - **Descending-by-measure sort** for single-dimension ranking bar charts (`computed-sort DESC` mirrored from `WB-133`, XSD-gated, temporal/stacked/kpi-tile excluded; 11 tests; live-render-probed no regression).
 - **Pulse enum widening** (fiscal comparison/granularity tokens, currency codes, 8-value INSIGHT_TYPE family, row-level fields) — every token `// VERIFY-LIVE`, additive-only (ADR-0011 updated: schema-readiness, NOT a 400 fix).
-- Remaining Mico backlog + "not worth pursuing" reasons recorded in `GAPS.md` §4.
+- Remaining backlog + "not worth pursuing" reasons recorded in `GAPS.md` §4.
 
 Live: demo dashboard 2527341 re-rendered clean (no regression from the bar-sort builder change).
 
@@ -600,11 +600,11 @@ Gate: 694 TS + 622 Python green. Wire additions (`comparison_kind`/`date_field`)
 
 ---
 
-## N-phase — assimilate the remaining an external Tableau MCP skill suite skills (+ docs & architecture app)
+## N-phase — assimilate the remaining external skills (+ docs & architecture app)
 
 **Date:** 2026-07-21 · **Branch:** `feat/design-excellence` · **Commits:** `6109a7d` (N1–N5) + `75b45ef` (N4 refuted close) · **Verdict: SOLID (solution-verifier, rubric 100/100; gate independently re-run 726 TS + Python)**
 
-User asked "did you assimilate all the skills from the an external Tableau MCP skill suite repo?" — the honest answer was no (a deliberate architecture-triage, ADR-0014). This phase built the full buildable remainder they then green-lit. Tool count **27 → 30**.
+User asked whether all the skills from the external suite's repo had been assimilated — the honest answer was no (a deliberate architecture-triage, ADR-0014). This phase built the full buildable remainder they then green-lit. Tool count **27 → 30**.
 
 | Slice | Deliverable | Outcome |
 |---|---|---|
@@ -615,6 +615,6 @@ User asked "did you assimilate all the skills from the an external Tableau MCP s
 | N5 | Wire (30 tools everywhere), 3 tool_reference entries, **ADR-0015** (deterministic-not-ported rationale + why the LLM/read-scope items stay declined), GAPS §4 status cleanup, and an **interactive architecture "React-app"** (published Artifact: signal flow · 30 tools · design corpus · propose→confirm loop). | ✅ |
 | N6 | security delta (NX-01..NX-05: 0 crit / 0 high / 1 low; the LOW namingPattern ReDoS hardened in-branch with a 200-char cap) + verifier SOLID + this record. | ✅ |
 
-**Still declined with reasons (ADR-0015, unchanged):** VizCritique's LLM scoring engine (A-01), Scribe Auto-Doc / Governance full audit (read scope), Calc-Engine spatial/sets/parameter-actions (YAGNI), Dashboard-Blueprint filter/device tables (mined-evidence-declined), memory-file/scheduled-agent patterns (stateless architecture). **Pulse remains blocked** — external-skill-suite Pulse-Blueprint does NOT provide a working `basic_specification` (routes creation to the UI).
+**Still declined with reasons (ADR-0015, unchanged):** VizCritique's LLM scoring engine (A-01), Scribe Auto-Doc / Governance full audit (read scope), Calc-Engine spatial/sets/parameter-actions (YAGNI), Dashboard-Blueprint filter/device tables (mined-evidence-declined), memory-file/scheduled-agent patterns (stateless architecture). **Pulse remains blocked** — the external skill suite's Pulse-Blueprint does NOT provide a working `basic_specification` (routes creation to the UI).
 
 Architecture app: https://claude.ai/code/artifact/76e9bf07-f1e0-4378-9cef-9fc53f0dcf04

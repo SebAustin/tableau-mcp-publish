@@ -17,23 +17,18 @@ category_distribution:
       rate: 0.1111
   citations:
     - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-      imageUrl: [redacted-url]
       repoUrl: WB-002
       workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
     - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-      imageUrl: [redacted-url]
       repoUrl: WB-003
       workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
     - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-      imageUrl: [redacted-url]
       repoUrl: WB-004
       workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
     - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-      imageUrl: [redacted-url]
       repoUrl: WB-005
       workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
     - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-      imageUrl: [redacted-url]
       repoUrl: WB-006
       workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
   confidence: ok
@@ -50,23 +45,18 @@ strata:
     accent_count:
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -87,23 +77,18 @@ strata:
           rate: 0.0101
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -111,23 +96,18 @@ strata:
     ban_count:
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
         - imageSha256: bebe841a15952d903e76f2e76bed0caf9bcfdb0c60d3fcfe103939b3cbe2f49a
-          imageUrl: [redacted-url]
           repoUrl: WB-016
           workbookSha256: d79e86a2c22dfd331275316d867af49ebc76cc276dca1c8a134e167c0e780216
       confidence: ok
@@ -154,23 +134,18 @@ strata:
           rate: 0.4902
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
         - imageSha256: bebe841a15952d903e76f2e76bed0caf9bcfdb0c60d3fcfe103939b3cbe2f49a
-          imageUrl: [redacted-url]
           repoUrl: WB-016
           workbookSha256: d79e86a2c22dfd331275316d867af49ebc76cc276dca1c8a134e167c0e780216
       confidence: ok
@@ -184,23 +159,18 @@ strata:
     chart_count_visible:
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -251,23 +221,18 @@ strata:
           rate: 0.3535
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -286,23 +251,18 @@ strata:
           rate: 0.5758
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -329,23 +289,18 @@ strata:
           rate: 0.0758
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
         - imageSha256: 1cdf5d4e45d6013acbf2ba65a299d7ef6e671c123252c388c39597666e518d02
-          imageUrl: [redacted-url]
           repoUrl: WB-012
           workbookSha256: 1deee29479489fbfb30b039beaaad84695c6429049eac005ed9eefc6e52a1828
       confidence: ok
@@ -373,23 +328,18 @@ strata:
           rate: 0.1616
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -416,23 +366,18 @@ strata:
           rate: 0.5152
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -456,23 +401,18 @@ strata:
           rate: 0.0404
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -493,23 +433,18 @@ strata:
           rate: 0.2222
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -530,23 +465,18 @@ strata:
           rate: 0.0909
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -561,23 +491,18 @@ strata:
           rate: 0.4949
       citations:
         - imageSha256: b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df
-          imageUrl: [redacted-url]
           repoUrl: WB-002
           workbookSha256: 9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65
         - imageSha256: 0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5
-          imageUrl: [redacted-url]
           repoUrl: WB-003
           workbookSha256: 2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e
         - imageSha256: d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd
-          imageUrl: [redacted-url]
           repoUrl: WB-004
           workbookSha256: 6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: 1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3
-          imageUrl: [redacted-url]
           repoUrl: WB-006
           workbookSha256: de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0
       confidence: ok
@@ -586,23 +511,18 @@ strata:
     accent_count:
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -620,23 +540,18 @@ strata:
           rate: 0.8611
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -644,23 +559,18 @@ strata:
     ban_count:
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
         - imageSha256: 40adb2177674511345563b06382efee3c099835c54275cf80e7563014007343e
-          imageUrl: [redacted-url]
           repoUrl: WB-030
           workbookSha256: d0bcbc48820238e1307bcfb05e6277e8e3b323c03d251b0251e491c6a18ce922
       confidence: ok
@@ -681,23 +591,18 @@ strata:
           rate: 0.6875
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
         - imageSha256: 40adb2177674511345563b06382efee3c099835c54275cf80e7563014007343e
-          imageUrl: [redacted-url]
           repoUrl: WB-030
           workbookSha256: d0bcbc48820238e1307bcfb05e6277e8e3b323c03d251b0251e491c6a18ce922
       confidence: ok
@@ -711,23 +616,18 @@ strata:
     chart_count_visible:
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -778,23 +678,18 @@ strata:
           rate: 0.3889
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -813,23 +708,18 @@ strata:
           rate: 0.5278
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -853,23 +743,18 @@ strata:
           rate: 0.0645
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -891,23 +776,18 @@ strata:
           rate: 0.1111
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -934,23 +814,18 @@ strata:
           rate: 0.7222
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -971,23 +846,18 @@ strata:
           rate: 0.0278
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -1005,23 +875,18 @@ strata:
           rate: 0.1667
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -1039,23 +904,18 @@ strata:
           rate: 0.0556
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok
@@ -1070,23 +930,18 @@ strata:
           rate: 0.25
       citations:
         - imageSha256: 1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074
-          imageUrl: [redacted-url]
           repoUrl: WB-005
           workbookSha256: 4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653
         - imageSha256: d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd
-          imageUrl: [redacted-url]
           repoUrl: WB-021
           workbookSha256: fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb
         - imageSha256: 2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0
-          imageUrl: [redacted-url]
           repoUrl: WB-023
           workbookSha256: 563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704
         - imageSha256: e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059
-          imageUrl: [redacted-url]
           repoUrl: WB-027
           workbookSha256: 1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb
         - imageSha256: 58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e
-          imageUrl: [redacted-url]
           repoUrl: WB-029
           workbookSha256: 9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b
       confidence: ok

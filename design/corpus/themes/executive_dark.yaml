@@ -14,44 +14,44 @@ tags:
   mood: dark
 
 provenance:
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       zone-style background-color #2f2e41 (navy band, zone_type=empty) —
       dashboardBackground, header.background, kpiTile.background.
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[1]/zone-style
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       zone-style background-color #f5f3f4, margin 0, padding 25 (layout-flow
       card under the navy band) — chartCard.background/margin/padding.
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[4]/zones/zone[7]/zone[2]/zone-style
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       formatted-text runs "Superstore |" (fontsize 20, bold, fontcolor
       #ffffff) and "ORDER DETAILS" (fontsize 14, fontcolor #ffffff) in the
       same header text zone — header.titleColor, header.subtitleColor.
       recipes/text_zones.yaml xpath /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       zone-style margin-left 25 / margin-right 25 / margin-bottom 30 (empty
       band spacer) — spacing.outerMargin (25), spacing.gutter (30).
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[6]/zone[2]/zone[2]/zone-style
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       dashboard-object zone-style margin 4 (KPI/BAN object spacer, reused as
       tile padding) — kpiTile.padding.
       recipes/zone_styles.yaml xpath /workbook/dashboards/dashboard[1]/zones/zone[6]/zone[2]/zone[3]/zone-style
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       worksheet-scope style-rule element=label font-size 9, font-weight bold
       (Measure Names label) — chrome.datalabel.fontSize, .fontWeight.
       recipes/chrome_rules.yaml xpath /workbook/worksheets/worksheet[12]/table/style/style-rule[4]
-  - source: WB-117.twbx
+  - source: WB-117
     sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
     construct: >-
       worksheet-scope style-rule element=mark mark-labels-show=true —

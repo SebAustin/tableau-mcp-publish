@@ -136,20 +136,21 @@ or from `@tableau/mcp-server`.
 
 ## Design-Excellence Corpus — Additional Assumptions (added 2026-07-18)
 
-### D-01 — author-redacted exemplar not downloadable; design-around via WB-117
+### D-01 — 4th exemplar not downloadable; design-around via WB-117
 
-**Assumed:** the plan's 4th exemplar, author-redacted's `a-reference-workbook`
-Tableau Public workbook, is **not mined**. The author disabled downloads for that
-specific workbook (no `.twbx` download endpoint is exposed for it — verified by
-attempting the same `https://public.tableau.com/workbooks/<name>.twbx` pattern that
-succeeded for the other 3 exemplars).
+**Assumed:** the plan's 4th exemplar Tableau Public workbook is **not mined**. The
+author disabled downloads for that specific workbook (no `.twbx` download endpoint
+is exposed for it — verified by attempting the same fixed-URL-template download
+pattern that succeeded for the other 3 exemplars).
 
-**Design-around:** author-redacted was chosen to represent the *dark* executive direction
-(navy/dark KPI band). That direction is fully covered by WB-117's
-`WB-117`, the sole real source for
+**Design-around:** the 4th exemplar was chosen to represent the *dark* executive
+direction (navy/dark KPI band). That direction is fully covered by `WB-117`
+(`WB-117`), the sole real source for
 `design/corpus/themes/executive_dark.yaml`. No dark-direction vocabulary is missing
 from the D0 corpus as a result — see `design/references/README.md` for the full
-provenance table and the non-download note.
+provenance table and the non-download note. (Source identities are redacted to
+opaque `WB-NNN` identifiers by policy — see `design/corpus/SCHEMA.md`'s
+provenance section.)
 
 **How to override:** if the workbook later becomes downloadable (the author re-enables
 downloads, or shares the file directly), re-run `sidecar/design_miner.py` against it and

@@ -308,7 +308,7 @@ def _measure_instance(field: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Design Excellence, an external Tableau MCP skill suite enhancement #2 — default descending-by-
+# Design Excellence, external skill enhancement #2 — default descending-by-
 # measure sort for ranking bar charts (BI_DESIGN.md Sec 2.2).
 # ---------------------------------------------------------------------------
 
@@ -753,7 +753,7 @@ def _build_worksheet(
             kpi_field = kpi_spec.get(kpi_field_key)
             if kpi_field and str(kpi_field) not in dep_measures:
                 dep_measures.append(str(kpi_field))
-        # M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): the raw date field
+        # M2 (external skill backlog #1/#2, GAPS.md Sec 4): the raw date field
         # driving a COMPUTED YoY delta is a dependency too — the CY/PY calc
         # formulas reference it directly (see
         # _append_computed_yoy_delta_calc). Only declared when the computed
@@ -812,7 +812,7 @@ def _build_worksheet(
                 default_format=delta_format,
             )
         elif kpi_spec.get("comparison_kind") == "yoy" and kpi_spec.get("date_field"):
-            # M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): no pre-existing
+            # M2 (external skill backlog #1/#2, GAPS.md Sec 4): no pre-existing
             # delta COLUMN in the data — compute a real YoY delta instead of
             # leaving the BAN's delta line permanently NULL. "mom" (and any
             # other comparison_kind) intentionally falls through here with
@@ -832,7 +832,7 @@ def _build_worksheet(
                 delta_format=delta_format,
             )
 
-    # Design Excellence, an external Tableau MCP skill suite enhancement #2: default descending-by-
+    # Design Excellence, external skill enhancement #2: default descending-by-
     # measure sort for ranking bar charts (BI_DESIGN.md Sec 2.2). Mirrors
     # WB-133's real <computed-sort> element — a child of <view>,
     # placed immediately before <aggregation> (ViewSpecification-G's Sort-G
@@ -1012,7 +1012,7 @@ def _build_worksheet(
             for kpi_field_key in ("primary_measure", "comparison_measure", "delta_measure"):
                 kpi_field = kpi_spec.get(kpi_field_key)
                 calc_instance = kpi_field_instances.get(kpi_field_key)
-                # M2 (an external Tableau MCP skill suite backlog #1/#2): a COMPUTED delta (no raw
+                # M2 (external skill backlog #1/#2): a COMPUTED delta (no raw
                 # kpi.delta_measure field, only a calc_instance built from
                 # comparison_kind/date_field) must still get an encoding —
                 # only skip when NEITHER a raw field NOR a calc instance
@@ -2024,8 +2024,8 @@ _KPI_COMPACT_NUMBER_FORMAT = "n#,##0,.0K;-#,##0,.0K"
 _KPI_DELTA_ARROW_FORMAT = "*▲ #,##;▼ #,##"
 
 # Tableau custom number formats accept a bracketed section color from this fixed
-# 8-name set (positive;negative sections colored independently). N4 (external-skill-suite
-# Calc-Engine "KPI Status", GAPS.md Sec 4 #7): color the delta value itself by
+# 8-name set (positive;negative sections colored independently). N4 (the external
+# skill suite's Calc-Engine "KPI Status", GAPS.md Sec 4 #7): color the delta value itself by
 # sign — [good]▲ up / [bad]▼ down — without any per-value calc machinery, since
 # the color is applied at RENDER by the delta's actual sign. VERIFY-LIVE: no
 # reference workbook in the corpus uses bracketed-color formats, so this is
@@ -2348,7 +2348,7 @@ def _append_kpi_ban_calc_column(
     contains an aggregation function (as ``SUM([field])`` always does) gets
     ``derivation='User'`` (``usr:`` prefix).
 
-    M2 generalization (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4): *formula*
+    M2 generalization (external skill backlog #1/#2, GAPS.md Sec 4): *formula*
     and *derivation* are now overridable — every EXISTING call site omits
     both, so ``resolved_formula`` still computes to the exact original
     ``f"SUM([{field}])"`` and the instance still gets the ``usr:`` prefix,
@@ -2425,7 +2425,7 @@ def _append_computed_yoy_delta_calc(
     and return the delta calc's instance-name fragment (same contract as
     :func:`_append_kpi_ban_calc_column`).
 
-    Design Excellence, M2 (an external Tableau MCP skill suite backlog #1/#2, GAPS.md Sec 4) —
+    Design Excellence, M2 (external skill backlog #1/#2, GAPS.md Sec 4) —
     closes ACCEPTANCE.md's documented NULL-delta residual: a KPI tile's
     ``delta_measure`` previously required a pre-computed comparison measure
     supplied by the caller (100% NULL on the real Superstore CSV, which

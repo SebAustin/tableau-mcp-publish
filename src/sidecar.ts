@@ -67,7 +67,7 @@ export interface SheetKpi {
   valuePrefix?: string;
   valueSuffix?: string;
   /**
-   * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+   * Comparison-period kind for a COMPUTED delta (external skill backlog #1/#2,
    * GAPS.md Sec 4). Mirrors `planner/schema.ts`'s `SheetKpiSchema` — set only
    * when no pre-existing `deltaMeasure` column exists in the data.
    */
@@ -337,7 +337,7 @@ export interface ThemeKpiTile {
   banColor?: string;
   useSemanticDeltaColors?: boolean;
   /**
-   * N4 (external-skill-suite Calc-Engine "KPI Status"): when set (with
+   * N4 (the external skill suite's Calc-Engine "KPI Status"): when set (with
    * useSemanticDeltaColors), the delta arrow is colored by sign via bracketed
    * number-format section colors. Default off. VERIFY-LIVE.
    */

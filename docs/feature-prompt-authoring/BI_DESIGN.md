@@ -194,7 +194,7 @@ color:    [secondary_dimension]   // requires new builder support; see §2.3
 ```
 Fall back to dropping the secondary dimension if Color encoding is not yet supported.
 
-### 2.2a Default sort — ranking bar charts (an external Tableau MCP skill suite enhancement #2)
+### 2.2a Default sort — ranking bar charts (external skill enhancement #2)
 
 **Rule:** a bar sheet that ranks exactly ONE measure across exactly ONE non-temporal
 categorical dimension (C-03/C-04) gets a default **descending sort by that measure** —

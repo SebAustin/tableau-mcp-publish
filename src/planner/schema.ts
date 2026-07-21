@@ -115,7 +115,7 @@ export const SheetKpiSchema = z.object({
   valuePrefix: z.string().optional(),
   valueSuffix: z.string().optional(),
   /**
-   * Comparison-period kind for a COMPUTED delta (an external Tableau MCP skill suite backlog #1/#2,
+   * Comparison-period kind for a COMPUTED delta (external skill backlog #1/#2,
    * GAPS.md Sec 4 — see `comparison.ts`'s `selectComparisonPeriod`). Set only
    * when no pre-existing `deltaMeasure` column exists in the data. "yoy" is
    * consumed by the sidecar as a real calculated-column period-over-period

@@ -1,4 +1,4 @@
-"""N4 — sign-based KPI delta color (external-skill-suite Calc-Engine "KPI Status").
+"""N4 — sign-based KPI delta color (the external skill suite's Calc-Engine "KPI Status").
 
 The delta arrow is colored by sign via Tableau's bracketed number-format
 section colors ([good]▲;[bad]▼) when `delta_color_by_sign` is set. This is

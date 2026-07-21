@@ -1,4 +1,4 @@
-"""Design Excellence, an external Tableau MCP skill suite enhancement #2 — default descending-by-
+"""Design Excellence, external skill enhancement #2 — default descending-by-
 measure sort for ranking bar charts (BI_DESIGN.md Sec 2.2).
 
 Mirrors the real ``<computed-sort>`` element found in a mined reference

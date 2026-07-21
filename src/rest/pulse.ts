@@ -105,8 +105,8 @@ export const PulseGranularitySchema = z.enum([
   "GRANULARITY_BY_MONTH",
   "GRANULARITY_BY_QUARTER",
   "GRANULARITY_BY_YEAR",
-  "GRANULARITY_BY_FISCAL_QUARTER", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
-  "GRANULARITY_BY_FISCAL_YEAR", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
+  "GRANULARITY_BY_FISCAL_QUARTER", // VERIFY-LIVE — the external skill suite's Pulse-Blueprint API enum reference; unconfirmed against a live create.
+  "GRANULARITY_BY_FISCAL_YEAR", // VERIFY-LIVE — the external skill suite's Pulse-Blueprint API enum reference; unconfirmed against a live create.
 ]);
 export type PulseGranularity = z.infer<typeof PulseGranularitySchema>;
 
@@ -119,12 +119,12 @@ export const PulseComparisonSchema = z.enum([
   "TIME_COMPARISON_NONE",
   "TIME_COMPARISON_PREVIOUS_PERIOD",
   "TIME_COMPARISON_YEAR_AGO_PERIOD",
-  "TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD", // VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint API enum reference; unconfirmed against a live create.
+  "TIME_COMPARISON_FISCAL_YEAR_AGO_PERIOD", // VERIFY-LIVE — the external skill suite's Pulse-Blueprint API enum reference; unconfirmed against a live create.
 ]);
 export type PulseComparison = z.infer<typeof PulseComparisonSchema>;
 
 /**
- * VERIFY-LIVE — an external Tableau MCP skill suite Pulse-Blueprint's confirmed API enum reference
+ * VERIFY-LIVE — the external skill suite's Pulse-Blueprint confirmed API enum reference
  * (a "Currency Codes (common)" list); no member of this enum, including
  * `UNSPECIFIED`, has been confirmed against a live create.
  */
@@ -138,8 +138,8 @@ export const PulseCurrencyCodeSchema = z.enum([
 export type PulseCurrencyCode = z.infer<typeof PulseCurrencyCodeSchema>;
 
 /**
- * VERIFY-LIVE — the 8-value `INSIGHT_TYPE_*` family from an external Tableau MCP skill suite
- * Pulse-Blueprint's confirmed API enum reference. Bare suffix, same
+ * VERIFY-LIVE — the 8-value `INSIGHT_TYPE_*` family from the external skill
+ * suite's Pulse-Blueprint confirmed API enum reference. Bare suffix, same
  * bare-in/prefixed-out convention as {@link PulseAggregationSchema}
  * ({@link buildCreateDefinitionBody} adds the `INSIGHT_TYPE_` prefix).
  * Unconfirmed against a live create; `insightSettings` on
@@ -246,11 +246,11 @@ export interface PulseDefinitionRequestBody {
     };
     is_running_total: boolean;
     datasource: { id: string };
-    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    /** VERIFY-LIVE — schema-readiness only; see the external skill suite's Pulse-Blueprint reference / ADR-0014. */
     row_level_id_field?: string;
-    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    /** VERIFY-LIVE — schema-readiness only; see the external skill suite's Pulse-Blueprint reference / ADR-0014. */
     row_level_name_field?: string;
-    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    /** VERIFY-LIVE — schema-readiness only; see the external skill suite's Pulse-Blueprint reference / ADR-0014. */
     row_level_entity_names?: { singular_noun: string; plural_noun: string };
   };
   extension_options: {
@@ -263,7 +263,7 @@ export interface PulseDefinitionRequestBody {
   representation_options: {
     type: string;
     sentiment_type: string;
-    /** VERIFY-LIVE — schema-readiness only; see an external Tableau MCP skill suite Pulse-Blueprint reference / ADR-0014. */
+    /** VERIFY-LIVE — schema-readiness only; see the external skill suite's Pulse-Blueprint reference / ADR-0014. */
     currency_code?: string;
   };
   insights_options: { show_insights: boolean; settings: { type: string; disabled?: boolean }[] };
@@ -279,7 +279,7 @@ export interface PulseDefinitionRequestBody {
  * `datasource_goals` / `related_links` / `certification` are TOP-LEVEL,
  * siblings of `specification` — see the module docstring.
  *
- * `currencyCode` / `insightSettings` / `rowLevel*` (an external Tableau MCP skill suite enhancement
+ * `currencyCode` / `insightSettings` / `rowLevel*` (external skill enhancement
  * #5 — schema-readiness only, VERIFY-LIVE) are ADDITIVE: when omitted, the
  * output is byte-for-byte identical to before this widening.
  */

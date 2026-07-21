@@ -1,5 +1,5 @@
-# operational_plain — high-density plain, minimal card chrome (threshold /
-# raisingbar direction).
+# operational_plain — high-density plain, minimal card chrome (WB-133 /
+# WB-095 direction).
 #
 # Every hex/px literal below is copied verbatim from a `provenance` entry's
 # cited construct in design/corpus/recipes/*.yaml (enforced by
@@ -30,8 +30,8 @@ provenance:
   - source: WB-133
     sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
     construct: >-
-      formatted-text run "Source: Superstore | Created by Külii Esko
-      @ Next-Level Tableau" (fontcolor #333333) — header.subtitleColor.
+      formatted-text run "Source: Superstore | Created by [redacted: author
+      credit]" (fontcolor #333333) — header.subtitleColor.
       recipes/text_zones.yaml xpath /workbook/dashboards/dashboard/zones/zone[2]/zone[3]
   - source: WB-133
     sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff

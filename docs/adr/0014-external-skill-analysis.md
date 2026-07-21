@@ -1,4 +1,4 @@
-# ADR-0014 — an external Tableau MCP skill suite external skill analysis: applied the deterministic subset, declined the rest
+# ADR-0014 — external skill analysis: applied the deterministic subset, declined the rest
 
 **Status:** Accepted
 **Date:** 2026-07-20
@@ -9,7 +9,7 @@ Pulse schema widening)
 
 ## Context
 
-an external Tableau MCP skill suite publishes six Claude `SKILL.md` playbooks (`Pulse-Blueprint`, `Dashboard-Blueprint`,
+An external Tableau MCP skill suite publishes six Claude `SKILL.md` playbooks (`Pulse-Blueprint`, `Dashboard-Blueprint`,
 `VizCritique-Pro`, `Calc-Engine`, `Governance-Scanner`, `Scribe`) — agent-facing prompt guidance
 layered over the **official** `tableau-mcp` server's READ-only tools. They are prompts, not code:
 each skill tells an LLM agent how to *reason about* an existing read-only Tableau MCP surface
@@ -23,7 +23,7 @@ This repo's server is architecturally different in three load-bearing ways (see 
    function of its structured input. VizCritique-Pro's core mechanism — an LLM visually scoring a
    rendered dashboard against a rubric — cannot become a server tool without violating this.
 2. **Publish-oriented, not read/audit-oriented.** This server builds and publishes workbooks;
-   an external Tableau MCP skill suite's skills sit on top of the official server's *read* surface (list_content,
+   the external skill suite's playbooks sit on top of the official server's *read* surface (list_content,
    get_view_image, get_datasource_metadata, etc.) that this repo does not carry.
 3. **Stateless per call, no memory files, no scheduled agents** (ADR-0005/0007) — several skills
    assume a persistent agent session or memory file between runs; that has no analog here.

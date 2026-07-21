@@ -1,5 +1,5 @@
 /**
- * Governance-lite checks (external-skill-suite Governance-Scanner, deterministic subset).
+ * Governance-lite checks (the external skill suite's Governance-Scanner, deterministic subset).
  *
  * These are the three governance checks the server's EXISTING read surface can
  * support from a `ContentItem` list alone (`{ id, name, type, projectName?,

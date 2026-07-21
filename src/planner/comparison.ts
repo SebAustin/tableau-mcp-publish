@@ -1,5 +1,5 @@
 /**
- * Comparison-period selection heuristic (an external Tableau MCP skill suite backlog #2, GAPS.md
+ * Comparison-period selection heuristic (external skill backlog #2, GAPS.md
  * Sec 4 — pairs with #1, the computed YoY delta calc).
  *
  * A pure function mapping a business question's natural-language cues

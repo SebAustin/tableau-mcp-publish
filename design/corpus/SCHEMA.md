@@ -331,10 +331,10 @@ entirely rather than inventing a pixel value; each theme file documents this inl
 
 | Theme | Direction | Primary source(s) | Default fallback? |
 |---|---|---|---|
-| `executive_dark` | navy KPI band/header, white BANs | WB-117 (`WB-117.twbx`) | no |
-| `executive_light` | white cards, hairline borders | WB-118 (`WB-118.twbx`) + WB-114 (`WB-114.twbx`) | no |
-| `analyst_clean` | light, minimal chrome | WB-015 + WB-062 | **yes** |
-| `operational_plain` | high-density plain | WB-133 + WB-095 | no |
+| `executive_dark` | navy KPI band/header, white BANs | `WB-117` | no |
+| `executive_light` | white cards, hairline borders | `WB-118` + `WB-114` | no |
+| `analyst_clean` | light, minimal chrome | `WB-015` + `WB-062` | **yes** |
+| `operational_plain` | high-density plain | `WB-133` + `WB-095` | no |
 
 ### Retrieval (implemented in D5 — `src/design/selectTheme.ts`)
 
@@ -350,7 +350,7 @@ enough tag coverage for it to be implementable deterministically.
 A recipe/theme literal being schema-valid and mined-verbatim does not guarantee Tableau Cloud
 actually *renders* it — the KPI-tile (BAN) `<customized-label>` mechanism took three live-probe
 hotfix rounds plus a dedicated offline bisect ladder (a dozen `.twbx` variants, V0–V12, isolating
-one variable at a time against WB-118's real, published "Sales KPI (BAN) New" worksheet,
+one variable at a time against `WB-118`'s real, published "Sales KPI (BAN) New" worksheet,
 `WB-118.twbx`) to get right. These constraints are **render-time**
 facts about the Tableau Cloud engine, not corpus/provenance facts about the mined XML — they don't
 fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's own record of
@@ -425,7 +425,7 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
 
 6. **Bracketed section colors in a number format (`[Green]…;[Red]…`) are STRIPPED in the
    `<customized-label>` CDATA-placeholder context on Tableau Cloud — and they take the `▲`/`▼`
-   arrow down with them.** N4 (sign-based delta color, external-skill-suite Calc-Engine "KPI Status") tried to
+   arrow down with them.** N4 (sign-based delta color, the external skill suite's Calc-Engine "KPI Status") tried to
    color the KPI delta by sign via Tableau's documented bracketed number-format section colors:
    `[Green]*▲ #,##;[Red]▼ #,##`. Live probe (2026-07-21, workbook 2527341): the format publishes and
    XSD-validates, but Cloud renders the delta with **neither** the color **nor** the arrow — strictly
@@ -440,7 +440,7 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
 
    **Follow-up round, `sizing-mode='fixed'` hypothesis — tested, REFUTED.** Our emitted
    `<dashboard><size>` carried equal `min`/`max` but no `sizing-mode` attribute, unlike every mined
-   exemplar dashboard (WB-118/WB-117 both carry `<size ... sizing-mode='fixed'/>`) — a
+   exemplar dashboard (`WB-118`/`WB-117` both carry `<size ... sizing-mode='fixed'/>`) — a
    plausible root cause, since Tableau's server-side image renderer is documented to treat an
    equal-min/max `<size>` WITHOUT `sizing-mode='fixed'` as range/automatic sizing, not truly fixed.
    `sizing-mode='fixed'` was added unconditionally to both `<size>` emission sites
@@ -458,9 +458,8 @@ fit the `recipes/`/`themes/` layers above, but belong here as the schema layer's
    **BEAUTY-GATE hotfix round — REVISED, root cause FOUND.** A user reported "I can't see the
    numbers" after opening a themed dashboard *interactively* in a browser — the invisibility
    reproduced live on Tableau Cloud, not just in static image renders, reopening this constraint.
-   The **decisive experiment never previously run**: publishing the UNTOUCHED WB-118 exemplar
-   workbook (`design/references/WB-118.twbx`) as-is to our OWN Tableau
-   Cloud dev site. Its real "Superstore Dashboard" (mixing BAN tiles with charts) rendered every
+   The **decisive experiment never previously run**: publishing the UNTOUCHED `WB-118` exemplar
+   workbook as-is to our OWN Tableau Cloud dev site. Its real "Superstore Dashboard" (mixing BAN tiles with charts) rendered every
    number PERFECTLY on our site — conclusively ruling out "pre-existing Tableau Cloud
    dashboard-rendering characteristic... not achievable through `twb_builder.py` XML changes alone"
    as the conclusion. The failure was always in OUR dashboard's zone XML specifically; the prior
@@ -575,15 +574,28 @@ above is this codebase's fixed, documented choice — every review record must c
 exactly; there is no free-text escape hatch in these fields (see "no-literal boundary rule"
 below for why that matters).
 
-### Provenance quad (non-negotiable, orchestrator-injected)
+### Provenance triad (non-negotiable, orchestrator-injected)
 
-Every `ReviewRecord` carries `repoUrl` (matches a `design/references/top100/manifest.yaml`
-entry), `imageUrl`, `imageSha256` (of the reviewed PNG), and `workbookSha256` (of the source
-`.twb`/`.twbx`, from the manifest) — injected by the review orchestrator, never agent-guessed.
-Every aggregated bucket in `visual_norms.yaml` carries up to 5 `citations`, each the full
-provenance quad for one distinct `repoUrl`, deterministically sorted — the same "top-5 exemplar
-citations" discipline `sidecar/design_stats.py`'s `citations()` uses for the XML-mined stats,
-reimplemented 1:1 in `scripts/aggregate-visual-norms.ts`.
+Every `ReviewRecord` carries `repoUrl` (an opaque, stable `WB-NNN` identifier matching a
+`design/references/top100/manifest.yaml` entry — see "Source-identity redaction" below),
+`imageSha256` (of the reviewed PNG), and `workbookSha256` (of the source `.twb`/`.twbx`, from the
+manifest) — injected by the review orchestrator, never agent-guessed. `imageUrl` (the original
+tableau.com-hosted snapshot link) was part of this record until the anonymization pass dropped it
+— it identified the source workbook's public feed entry and carried no aggregation value the
+sha256 pair doesn't already provide. Every aggregated bucket in `visual_norms.yaml` carries up to
+5 `citations`, each the full provenance triad for one distinct `repoUrl`, deterministically sorted
+— the same "top-5 exemplar citations" discipline `sidecar/design_stats.py`'s `citations()` uses
+for the XML-mined stats, reimplemented 1:1 in `scripts/aggregate-visual-norms.ts`.
+
+### Source-identity redaction (policy)
+
+The corpus is mined from real, public Tableau Public workbooks. Source identities (author
+display names, profile handles, workbook titles, and the original `repoUrl`/filename) are
+intentionally redacted to opaque, stable `WB-NNN` identifiers everywhere in the committed corpus —
+`sha256` remains the integrity/provenance anchor (every citation is still independently
+verifiable against the exact mined bytes), and the corpus stays honest about its scale ("mined
+from N real public workbooks, identities redacted") without publishing a lookup back to any real
+person's public profile.
 
 ### No-literal boundary rule (machine-enforced)
 

@@ -2,7 +2,7 @@
   - fontcolor: '#2f2e41'
     text: 'Created by:'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[4]
   zone_role_hint: title
 - runs:
@@ -11,7 +11,7 @@
     fontsize: '15'
     text: Navigation Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[6]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -27,7 +27,7 @@
     fontsize: '14'
     text: ORDER DETAILS
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[1]/zone[1]
   zone_role_hint: title
 - runs:
@@ -35,7 +35,7 @@
     fontsize: '11'
     text: Details
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[4]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -44,7 +44,7 @@
     fontsize: '15'
     text: Navigation Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[5]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -53,7 +53,7 @@
     fontsize: '15'
     text: Filter Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[8]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -69,7 +69,7 @@
     fontsize: '14'
     text: OVERVIEW
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[1]/zone[1]
   zone_role_hint: title
 - runs:
@@ -103,7 +103,7 @@
     italic: 'true'
     text: to analyze the charts in the view.
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -111,7 +111,7 @@
     fontsize: '12'
     text: Total Sales
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[1]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -119,7 +119,7 @@
     fontsize: '12'
     text: Total Profit
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[2]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -127,7 +127,7 @@
     fontsize: '12'
     text: Total Quantity
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[3]/zone[3]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -141,7 +141,7 @@
     fontsize: '12'
     text: '> by Region and Ship Mode'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[4]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -155,7 +155,7 @@
     fontsize: '12'
     text: '> Over Time'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[5]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -169,7 +169,7 @@
     fontsize: '12'
     text: '> by Segment'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[4]/zone[5]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -178,7 +178,7 @@
     fontsize: '15'
     text: Navigation Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[6]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -187,7 +187,7 @@
     fontsize: '15'
     text: Filter Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[3]/zones/zone[9]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -203,7 +203,7 @@
     fontsize: '14'
     text: PRODUCT ANALYSIS
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[1]/zone[1]
   zone_role_hint: title
 - runs:
@@ -211,7 +211,7 @@
     fontsize: '11'
     text: Sales by Category
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[1]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -219,7 +219,7 @@
     fontsize: '11'
     text: Top 5 Products
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[1]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -227,7 +227,7 @@
     fontsize: '11'
     text: Sales by Sub-Category and Its Market Basket
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -251,7 +251,7 @@
     italic: 'true'
     text: for the selected sub-category.
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[3]/zone[2]/zone[2]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -260,7 +260,7 @@
     fontsize: '15'
     text: Navigation Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[4]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -269,7 +269,7 @@
     fontsize: '15'
     text: Filter Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[4]/zones/zone[7]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -285,7 +285,7 @@
     fontsize: '14'
     text: REGIONAL ANALYSIS
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[1]/zone[1]
   zone_role_hint: title
 - runs:
@@ -293,7 +293,7 @@
     fontsize: '11'
     text: Top 1 City
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[1]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -301,7 +301,7 @@
     fontsize: '11'
     text: Top Cities
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[1]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -309,7 +309,7 @@
     fontsize: '11'
     text: Top 1 Postal Code
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[2]/zone[1]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -317,7 +317,7 @@
     fontsize: '11'
     text: Top Postal Codes
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[2]/zone[2]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -337,7 +337,7 @@
     fontsize: '11'
     text: '>s'
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[3]/zone[1]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -361,7 +361,7 @@
     italic: 'true'
     text: for the selected Region.
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[4]/zone[2]/zone[3]/zone[2]
   zone_role_hint: subtitle
 - runs:
@@ -370,7 +370,7 @@
     fontsize: '15'
     text: Navigation Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[5]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
@@ -379,14 +379,14 @@
     fontsize: '15'
     text: Filter Menu
   sha256: 5665d0ae0fa26b268a21cdaf9a75a2372bcaa920c8da5dd58ab44795f5ae4154
-  source: WB-117.twbx
+  source: WB-117
   xpath: /workbook/dashboards/dashboard[5]/zones/zone[8]/zone[2]/zone[1]
   zone_role_hint: title
 - runs:
   - fontsize: '7'
     text: EXPORT
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[1]/zone[8]
   zone_role_hint: title
 - runs:
@@ -409,63 +409,63 @@
     text: Æ
   - text: Home Office
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]/zone[2]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: ORDER ID
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[1]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: CUSTOMER NAME
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[2]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: LOCATION
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[3]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: SALES
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[4]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: PROFIT RATIO
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[5]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: QUANTITY
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[6]
   zone_role_hint: body
 - runs:
   - fontsize: '8'
     text: STATUS
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[2]/zone/zone[3]/zone[2]/zone[2]/zone[7]
   zone_role_hint: body
 - runs:
   - fontsize: '7'
     text: EXPORT
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[1]/zone[8]
   zone_role_hint: title
 - runs:
@@ -480,14 +480,14 @@
     fontsize: '11'
     text: '!'
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[2]/zone/zone[3]/zone[2]/zone[1]
   zone_role_hint: subtitle
 - runs:
   - fontsize: '8'
     text: Select a year
   sha256: 94c01f287f726aa13551fb6bc2b05135567ed047f63411a27648d4255d7f85e6
-  source: WB-118.twbx
+  source: WB-118
   xpath: /workbook/dashboards/dashboard[2]/zones/zone[5]/zone[1]/zone[1]
   zone_role_hint: body
 - runs:
@@ -949,7 +949,7 @@
   - fontcolor: '#ffffff'
     fontname: Poppins SemiBold
     fontsize: '8'
-    text: MICHAEL McCUSKER
+    text: 'REDACTED NAME'
   sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
   source: WB-058
   xpath: /workbook/dashboards/dashboard[1]/zones/zone[1]/zone[1]/zone[9]
@@ -1077,7 +1077,7 @@
   - fontcolor: '#ffffff'
     fontname: Poppins SemiBold
     fontsize: '8'
-    text: MICHAEL McCUSKER
+    text: 'REDACTED NAME'
   sha256: 3cdbdccdcf5d7bcc46eb36acfda718fe1c5b4c2971364004f14041c70bed84c1
   source: WB-058
   xpath: /workbook/dashboards/dashboard[2]/zones/zone/zone[1]/zone[5]
@@ -1205,7 +1205,7 @@
   zone_role_hint: title
 - runs:
   - fontcolor: '#333333'
-    text: 'Source: Superstore  | Created by Külii Esko @ Next-Level Tableau'
+    text: 'Source: Superstore  | Created by [redacted: author credit]'
   sha256: 51f5b97930541635a7928fa4cf6485b1cd056c2d1e5e93afbaa94673b4d769ff
   source: WB-133
   xpath: /workbook/dashboards/dashboard/zones/zone[2]/zone[3]

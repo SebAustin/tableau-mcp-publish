@@ -570,3 +570,30 @@ Analyzed an external Tableau MCP skill suite's 6 Tableau-MCP Claude skills (ADR-
 - Remaining Mico backlog + "not worth pursuing" reasons recorded in `GAPS.md` §4.
 
 Live: demo dashboard 2527341 re-rendered clean (no regression from the bar-sort builder change).
+
+---
+
+## M2+M3 — computed YoY delta for KPI tiles (closes the NULL-delta residual)
+
+**Date:** 2026-07-21 · **Branch:** `feat/design-excellence` · **Commits:** `6f1829f` (M2) + `5e43a41` (M3 precedence fix) · **Verdict: SOLID (solution-verifier, rubric 100/100; gate independently re-run 694 TS + 622 Python; live-proven KPI deltas render)**
+
+The ACCEPTANCE-documented residual — KPI delta lines absent because the planner's auto-paired
+`*_Difference` column is 100% NULL on the Superstore CSV — is now closed. The builder **computes**
+a period-over-period delta instead of echoing a raw column.
+
+- **Data-relative YoY** (the correctness key): CY = `IF YEAR([Order Date]) = { MAX(YEAR([Order Date])) } THEN [Sales] END`,
+  PY = same with `- 1`, delta = `SUM(CY) - SUM(PY)`. Uses a FIXED-less LOD scalar for the latest
+  data year — NOT `YEAR(TODAY())`, which would NULL on historical datasets (documented in-code).
+- **Planner comparison selection** (`src/planner/comparison.ts`, pure/tested): YoY when a usable
+  date dimension exists; MoM on keyword (selected, not yet rendered — documented deferral); else none.
+- **M3 precedence fix** (live-probe-caught, the bug the 690-green M2 tests missed): computed YoY now
+  **outranks an auto-paired `*_Difference` delta column** — because auto-pairing is an unreliable
+  name heuristic (this dataset's paired columns are empty). Regression test models the real
+  exec-Superstore fieldHints (Order Date + a *_Difference col → picks YoY).
+- **No regression**: the hard-won KPI-BAN render mechanism (3-level is-fixed cascade + customized-label
+  + mark-labels-show) is untouched; all D4 render tests pass unchanged; byte-identical when no comparison.
+- **Live-proven** (workbook 2527341): the KPI band now renders **SALES $2,297.4K ▲125,493 · PROFIT
+  $286.3K ▲11,779 · QUANTITY 37.9K ▲2,693 · DISCOUNT 1,561 ▲120** — real YoY deltas with arrows,
+  confirmed both in the fresh render and the published `.twbx`'s calc columns.
+
+Gate: 694 TS + 622 Python green. Wire additions (`comparison_kind`/`date_field`) additive + schema-growth-tested.

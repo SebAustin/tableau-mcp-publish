@@ -1,0 +1,5953 @@
+{
+ "reviews": [
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 12,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Author's own 2026 habit goals (vizzes, blogs, runs, recipes) tracked over the year — personal tracking piece.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "b5ca232e4d8faabf5ad67b0b27193443d000c8e3b586f094d7676e00c86c71df",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Align each metric row as label + big number + inline progress strip on a shared grid, with a single dashed reference line marking today across all rows.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-002",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each habit is a row: label, BAN pair, and a segmented year-progress strip aligned in a table grid",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Empty outlined segments show the full year ahead; fill accrues left-to-right with a dashed today line",
+     "tag": "progress_tracker_motif"
+    },
+    {
+     "note": "Muted teal fills on white with one pink dashed reference line marking current date",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "script_decorative"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "9a58c1d2d47565b2b1ff28f593d22890b955aaf9d1b4653919c674cf39b34c65"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "saturated",
+    "tone": "mid"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal community step-tracking project with first-person narrative and sign-up call to action, not business or editorial journalism.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "other",
+    "bar",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "0571633d336c6330107c4d4ac0d8c93d7b0ea7b8502878e1221784129a2765d5",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Anchor the layout on one hero visualization and push narrative, FAQs, and calls to action into clearly separated rounded cards on a bold single-hue canvas.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-003",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Large hub-and-spoke participant network as centerpiece, each dot a person around year hubs.",
+     "tag": "network_diagram_hero"
+    },
+    {
+     "note": "Saturated blue canvas with white/light-blue rounded cards for narrative and supporting panels.",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Bottom band of FAQ, expectations, and sign-up cards guiding the reader to action.",
+     "tag": "callout_boxes"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "2e4d05945dcdec750df1b81940a4ed0484979a5e4b7b14e3b8e3733b8412eb8e"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "left_column",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial awareness piece on a public health topic (ADHD prevalence, male vs female), explanatory not operational.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "big_number_only",
+    "custom_shape_art"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "d89515836481a203d5480ccc2f949dc11a1377ca61011a2ccf525144f72f7cfd",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Encode your two key categories with the same two accent colors everywhere they appear (subtitle words, BAN digits, charts) so the legend lives inside the text itself.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-004",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Single-line scribble portrait as the right-half hero visual conveys the 'busy mind' theme.",
+     "tag": "hand_drawn_aesthetic"
+    },
+    {
+     "note": "Blue/magenta accents in subtitle and 3:1 BAN encode male vs female consistently.",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Large mixed-weight title block with heavy whitespace; no chart chrome anywhere on the cover.",
+     "tag": "generous_header_whitespace"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "6358ec846b4a56fd889d9165fe7ebf6fb69b4dbaad63fe3c411007c9e044d5f4"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Sales/operations admin dashboard with order KPIs, delivery-stage breakdowns, and an order summary table.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "table_text",
+    "big_number_only",
+    "custom_shape_art"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "1548fc52f61b7ea2d5c0c026c0f705132f26f51334655f201d045491a7d32074",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Render KPI deltas as a single high-contrast callout strip (dark fill, red/green badge) so the one number that changed is unmissable against otherwise muted charts.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-005",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Dashboard styled as a web-app UI with black nav bar, tabs, avatar, and toggle pill buttons",
+     "tag": "app_mockup_chrome"
+    },
+    {
+     "note": "Pale blue bars throughout; dark navy highlight bar + tooltip marks the selected date",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Negative orders delta shown as an inverted black callout strip with red -7.9% badge",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "4653f3ecc263654f5393b52126cc298442755fbe777f2070e2be076a431be653"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "left_column",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Explanatory public-topic infographic on LGBTQ+ population demographics with editorial framing and takeaway text.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "map",
+    "big_number_only"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 1334,
+   "imageSha256": "1b5153e398b6b83a24d411c23d34d50784f2601fe31cb84b596471725e4e7ce3",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2674,
+   "layout_archetype": "single_viz",
+   "lesson": "Pair one hero visualization with a left text column of open big-number callouts woven into narrative sentences, so the numbers explain the chart instead of floating as isolated KPIs.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-006",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "US hex-tile cartogram with continuous color scale replaces geographic map for equal-weight state comparison",
+     "tag": "hex_tile_map"
+    },
+    {
+     "note": "Rainbow-colored LGBTQ+ title word ties typography to subject and map palette",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Illustrated raised hands with pride flags anchor the header as thematic art",
+     "tag": "custom_iconography"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "de150f92e94b3e04cbee44ced31ae0afff2c690df6ca8d762c990219ea5480d0"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Editorial explanatory map guide to Amsterdam Centrum with long-form narrative text, not business KPIs.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "map"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "75598f53944fe1fe0261ce79b74ff3fd76875908e8d7fb6c270805d6c8bf84a0",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "map_centric",
+   "lesson": "Pair a hero visualization with a narrow tinted side rail that carries the title and narrative, using inline bold color-keyed phrases to link text to the visual.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-009",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Two-tone title: purple AMSTERDAM, magenta CENTRUM echo the map palette",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Numbered purple markers on the map keyed to narrative points of interest",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Right rail carries paragraph-length narrative with bold inline color-keyed phrases",
+     "tag": "long_form_sectioning"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_right",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "c421be1249fe07c3987723eb6afd6b25c23beb218cf67ec7d8b6f3854d5517f9"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on sea turtle gathering in the Atlantic, narrative text and annotation over a public-data map.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "map",
+    "heatmap"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 1176,
+   "imageSha256": "1cdf5d4e45d6013acbf2ba65a299d7ef6e671c123252c388c39597666e518d02",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2362,
+   "layout_archetype": "map_centric",
+   "lesson": "Repeat the single accent color inside the headline word that names the key metric so title, legend, and data hotspot read as one visual system.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-012",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "'Golden' in the title set in the same gold as the heatmap accent, tying headline to encoding",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Callout box with leader line explains the thermal front hotspot directly on the map",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Desaturated teal ocean canvas lets one white-to-gold sequential ramp carry all data",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "1deee29479489fbfb30b039beaaad84695c6429049eac005ed9eefc6e52a1828"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory public-topic piece on data center investment commitments with an explicit written insight, not an operational KPI dashboard.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "heatmap",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2025,
+   "imageSha256": "1cce88a59540448178643442d94b223b98be180d59de775c900add33e7cc9082",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3600,
+   "layout_archetype": "single_viz",
+   "lesson": "State the single key insight as a colored sentence beside the chart and reuse that exact accent color only on the data points it references.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-013",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Gray matrix with yellow reserved for the max value and its takeaway text",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Right-panel sentence colors 'Amazon' and '$83.0B' in the same accent as the highlighted bar",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Reference line from the $83B bar anchors the stated insight",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "744080e241b7817773a09e807d6a4117aafb85108123d385a3f25fea862013c9"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "high",
+   "category_rationale": "Aesthetic-first gallery of four generative banner-image templates with no analytical content or KPIs.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "custom_shape_art",
+    "bar",
+    "other"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "057e31f2ae1e064857c873c58f3b9dc74e8debaa089d46873551dd9f1ca97d8b",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Frame each visual in its own white card with a single bold accent-color label and generous padding to create instant modular hierarchy.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-014",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Generative marks (squares, stripes, diamonds) used purely as decorative banner textures",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Uniform 2x2 card grid with consistent panel-label typography creates a clean gallery rhythm",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "White cards on soft off-white ground with bold indigo labels give crisp figure-ground separation",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "7fa0aa779e63abee55ebb033b53f7e0c6f9c2087d4421053534b3e017a37ee73"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "medium",
+   "category_rationale": "Community tutorial piece — a mock web-app landing page teaching beginners dashboard layout, not operational business content.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "bebe841a15952d903e76f2e76bed0caf9bcfdb0c60d3fcfe103939b3cbe2f49a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Frame a dashboard as a product-like app shell with a nav bar, welcome header, and a few open BANs to make it feel polished and navigable.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-016",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Dashboard styled as a SaaS web-app landing page with nav tabs, logo, and user avatar",
+     "tag": "app_shell_mockup"
+    },
+    {
+     "note": "Large welcome headline with airy text block before content",
+     "tag": "generous_header_whitespace"
+    },
+    {
+     "note": "Thumbnail previews of the two layout variants shown as framed screenshots on gradient panel",
+     "tag": "photo_integration"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "d79e86a2c22dfd331275316d867af49ebc76cc276dca1c8a134e167c0e780216"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal top-10 favorite restaurants tracker with first-person review text; hobby/personal content, not business or editorial.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "other",
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "5bc8c414fa34a869ae4804348594bd92419b128c10a17db44f73bc5068569d8f",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Use an image or thumbnail strip as an interactive selector that dims unselected items and drives a single rich detail panel below.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-017",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Horizontal photo filmstrip acts as a clickable navigator; selected photo stays saturated, others faded",
+     "tag": "photo_integration"
+    },
+    {
+     "note": "Opacity dimming of unselected thumbnails communicates active state without chrome",
+     "tag": "selection_highlight_dimming"
+    },
+    {
+     "note": "Flat-illustration waiter cloche with CLICK ME cue reinforces theme and interactivity",
+     "tag": "custom_iconography"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "c3c30ff8520d3e1527f8d0a80d1456c125857ee8fb4c4fdc76f8aa699d71cb30"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_art",
+   "category_confidence": "high",
+   "category_rationale": "Aesthetic-first arc diagram of WB-018 cross-references on dark canvas; beauty of the form is the point.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "64468a840c4bfe8eed8591f78c1d9d771305fb44466c84546f1688bf89b5e183",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Render BANs and titles as low-contrast layered typography on the canvas itself (open numbers, watermark title) instead of boxed tiles, letting the hero visualization dominate.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-018",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Giant low-contrast BIBLE wordmark layered behind script subtitle acts as atmospheric title, not chrome",
+     "tag": "watermark_title_layering"
+    },
+    {
+     "note": "63k translucent cross-reference arcs blend into a luminous dome; density itself is the visual",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Six unboxed muted BANs flank the title symmetrically, integrated into the dark canvas",
+     "tag": "open_numbers"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_center",
+    "relative_size": "dominant",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "ce3b08794a8b5e65f7863edf58b72aa33a4ab58b52dc2a4032edaa5af63fe77c"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal resume/career visualization of the author's own jobs, degrees, and milestones.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "custom_shape_art",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "8218b9fd4e3f52d627d9397d280ac4593fba14a966c3ae8f20e655cae70fc48b",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Encode categories once with color, then reuse those exact colors as bullet markers in adjacent text lists so the list itself becomes the legend.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-019",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Pure black canvas with white text and yellow name accent creates strong contrast",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Decorative Lissajous-style career curves color-encoded by workplace serve as aesthetic hero",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Colored bullet dots in job/degree lists double as legend for the timeline curve colors",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "458c841f2ddfcdc35cd1dff79173f1ccb519f7bee71657efb8e3b2629fa4ced7"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Superstore-style sales KPIs, orders table, subcategory bars — classic operational business analytics.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "pie_donut",
+    "radial",
+    "bar",
+    "line",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "d969a1d00bfba305bca5c9bf98aa7e50fe922180708908992fdc8bf7e7c7a8dd",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Give each dashboard card its own soft background hue from a two-tone palette, reserving one dark card to spotlight the most detailed chart.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-021",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "One dark charcoal card among pastel cards creates focal contrast for the bar panel",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Each card carries its own background hue (teal, copper, charcoal) zoning the layout",
+     "tag": "color_zoned_cards"
+    },
+    {
+     "note": "KPI donut tiles pair a BAN with a progress-ring percentage",
+     "tag": "big_number_hero"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "fac61b298ba74993645ca2c06a905131649e526f7ebe6e1c5184336828a9cbbb"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational call-center KPIs, agents, and customer metrics — classic analytical business monitoring surface.",
+   "chart_count_visible": 10,
+   "chart_types": [
+    "area",
+    "bar",
+    "table_text",
+    "big_number_only"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "2b0b4da918c6bd381060fef9cc1b3ee73690fa4349b9a8f62b42df032130bab0",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Reserve one warning color (red) for the single metric that needs attention and keep every other chart in one muted base hue so the eye lands there first.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-023",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Inverse variant: pale lavender canvas with floating white rounded cards plus a pill-shaped navy sidebar",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "BAN + sparkline pairing repeated in KPI tiles and per-customer cards for rhythm",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Single red fill reserved for the problem metric (wait time) against an all-blue base",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "563c669677632f2a63467d55ff93d0c95e40fb26cd399c663f3091a9a6775704"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on food waste and climate for a public audience, framed as a conversational Q&A.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "map",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "6466261bac777d5cff415033a71bac5960b25651cd1c383a8f55722c703a5705",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Frame each dashboard section as an explicit question the visual then answers, so users always know why a chart is there.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-026",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Silhouette characters with speech-bubble questions replace a conventional title, driving section narrative",
+     "tag": "conversational_qa_framing"
+    },
+    {
+     "note": "Dark gray canvas with slightly lighter content panels separates map from action funnel",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Green-to-orange diverging scale on choropleth ties good/bad semantics to color",
+     "tag": "diverging_map_encoding"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "684b53c15ad85300098f8e1732869655f231a9ed90371a4a0bd3d401b720c590"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Service desk case-volume operational analytics with filters by agent group, category, priority.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "heatmap",
+    "bar",
+    "line",
+    "area"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "e65bc2c52548548788b6bbca262a13febcc7fa061214d87c7c95e30908da0059",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Use a muted gray base palette and reserve one warm accent color solely to encode peak or notable values, so attention lands on the insight without a legend.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-027",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Gray-blue base cells with orange reserved exclusively for peak values across all charts",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Each panel titled with the analytical question it answers, in blue",
+     "tag": "question_as_chart_title"
+    },
+    {
+     "note": "Small gray area sparklines behind per-agent-group daily bars add trend context",
+     "tag": "sparkline_rows"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "1315190a40edd5c370beb2389792331662d17d23b404e3df2327715acb6d8eeb"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "medium",
+   "category_rationale": "Fan-made ranked list of anime titles for a community challenge (B2VB); hobby/pop-culture tracking, not business or editorial journalism.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "bar",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "002a75e7442f8e6e9950838f18bf031108954843c067cf0ad37886c6f3c635cf",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Fuse label, metric, and bar into a single aligned row grid so a ranked list reads as one clean table-chart hybrid instead of separate panels.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-028",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Deep navy-purple canvas with a single pale lavender accent for bars and star ratings",
+     "tag": "dark_canvas_single_accent"
+    },
+    {
+     "note": "Page 1 of 5 pager keeps the top-50 list readable at 10 rows per view",
+     "tag": "paginated_ranking"
+    },
+    {
+     "note": "Rank, title+genres, star rating, bar, and year fused into one aligned table-chart hybrid row",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "6e42da046d5ca1aa76015e4593aa6eda5b1a535f53006fda775c7aa24695ef10"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "KPI band, filters, and analytical panels for crypto returns — operational-analytical layout, not editorial.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "line",
+    "bar",
+    "scatter",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "58ba8180f51c7648357d39b667656f26f8cd05474eee86d05f654989e1a0fd1e",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Keep base charts in neutral gray and reserve green/red exclusively for semantic gain/loss encoding so color reads as meaning, not decoration.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-029",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Gray base charts with semantic green/red reserved for gains and losses",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Line legend embedded in chart subtitle text (Close Price | 30 day Moving Average)",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Crypto coin logos used as scatter marks and sidebar identity",
+     "tag": "custom_iconography"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "9bd713f93ef2b251be24aecb61ce9f1d2113ba9b6e83f2381b64f99c1d10289b"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Customer segmentation KPIs (lifetime value, efficiency, platinum count) with analytical charts on shopper behavior.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "line",
+    "bar",
+    "scatter"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "40adb2177674511345563b06382efee3c099835c54275cf80e7563014007343e",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair each top BAN with a supporting chart column below it so KPIs and their explanatory detail read as aligned vertical stories.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-030",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Lines and lollipops rely on direct value labels; almost no axis lines or gridlines.",
+     "tag": "minimal_axis_chrome"
+    },
+    {
+     "note": "Soft lavender base with blue for numbers and pink/magenta segment accents in scatter.",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Compact segment legend sits under the scatter, color-matched to the jitter plot.",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "d0bcbc48820238e1307bcfb05e6277e8e3b323c03d251b0251e491c6a18ce922"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "high",
+   "category_rationale": "Letters spelled out with chart-like geometric shapes; purely aesthetic composition with no data readout, titled \"Data Art\".",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "f01119a70f9ad80de886c3a279251fe307fdcb849e4cdeb7dffbe28092cf13dd",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "single_viz",
+   "lesson": "Reserve a small, consistent footer line for data-source and author credit so attribution never competes with the visualization.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-031",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Bar, circle, and radial chart fragments assembled as letterforms spelling a message",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Tiny bottom-right inspiration and designer credit line",
+     "tag": "footer_credit_bar"
+    },
+    {
+     "note": "Concentric arc motif forms the letter C, echoing gauge/radial charts",
+     "tag": "radial_composition"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "5f040379a2b03eb5878797110f5c4a5591b01e8a354d5374371a1b65bda0845f"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on public survey data about schools, with narrative intro text, not operational KPIs.",
+   "chart_count_visible": 18,
+   "chart_types": [
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "7edb9d0bdfd2d294ba6bcea4563d374d149b6b41600c28e55de4c57168b17e3c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Move all narrative, legend, and source context into a single left sidebar so a repeated small-multiples grid can stay minimal and directly comparable.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-033",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "18 identical dot-lollipop panels in a 4-column grid, one per skill, enabling instant cross-comparison",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Year legend rendered as color-filled pencil-like bars in the sidebar, doubling as a design motif",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Left narrative column carries question, context, and source, keeping chart grid label-light",
+     "tag": "long_form_sectioning"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "3ce5a4846b360d3eb5b6839f162a951f61ee3775a74dd987c8934d63b7feb164"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "E-commerce sales KPIs, RFM/customer analytics, filters — classic operational-analytical business dashboard.",
+   "chart_count_visible": 9,
+   "chart_types": [
+    "area",
+    "bar",
+    "map",
+    "pie_donut",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "777c7cc56ee4b897feae04dc3575ea7bf7fd225549f76d27fd7c336cd6703ccf",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair each top-band KPI with an inline gradient sparkline inside a white rounded card so headline numbers carry trend context without extra panels.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-034",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each KPI tile pairs its big number with a gradient area sparkline of monthly trend",
+     "tag": "ban_with_sparkline"
+    },
+    {
+     "note": "Soft tinted background with elevated white rounded cards creates clear panel separation",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Left icon rail groups chart nav, PDF/PNG download and social links out of the analytic canvas",
+     "tag": "utility_sidebar_rail"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "8bb8db9640caf0bd1275856741882aea7af4f5161ebac5c5aa1d1228a3986ae3"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "E-commerce sales KPIs (revenue, customers, refund rate) in an operational product-analytics app mockup.",
+   "chart_count_visible": 8,
+   "chart_types": [
+    "big_number_only",
+    "line",
+    "bar"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "8e42bd2bfd55f907f6924573d6879ff80b42353de610f1492e27ef237888792c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Keep the entire dashboard grayscale and reserve one accent color to mark bar endpoints, sparklines, and the active filter state.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-035",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Gray-scale UI with a single coral/red accent for brand, sparklines, and bar tips",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "BAN cards pair big numbers with area sparklines and minimal month-letter axes",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Full SaaS app chrome: sidebar nav, avatar, filter pills, and product list filter panel",
+     "tag": "app_shell_mockup"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "8eabcb6db04614548c3494e3377fc2488392aad450e856eb0c853a92c70f6e76"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Operational-analytical KPI layout (BANs, filters, drilldowns) applied to EPL injury data rather than an editorial narrative.",
+   "chart_count_visible": 9,
+   "chart_types": [
+    "bar",
+    "line",
+    "custom_shape_art",
+    "scatter",
+    "other"
+   ],
+   "density": "dense",
+   "disputed": true,
+   "imageHeight": 2109,
+   "imageSha256": "0cdf6a5d62c13d6bc02e5c399339ae6a3c4c797875f2822a27d78d1d0a88b034",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every headline KPI number with a small in-card trend or breakdown chart so each BAN carries context instead of standing alone.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-039",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Clickable human-body diagram highlights injured muscle groups and filters the whole dashboard",
+     "tag": "anatomical_body_filter"
+    },
+    {
+     "note": "Each KPI tile pairs the big number with a mini trend/bar chart in the same card",
+     "tag": "ban_with_context_chart"
+    },
+    {
+     "note": "Curved snake-path timeline encodes injury/return events across seasons",
+     "tag": "serpentine_timeline"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "67c3bd052f92d7f288fa24cba955050c207d335011855d3e5f0358abd692d029"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "left_column",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Company finance KPIs (revenue, net income, margins) with what-if forecast parameter controls — operational business analytics.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "bar",
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "ae4c1ff9399e8ff6b9f0ad23d575809626269338a97b328264f703c945858378",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Pair each KPI card with a muted inline bar series that highlights only the current period bar, so the BAN carries trend context without a separate chart.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-040",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Four KPI cards pair BAN + delta badge + inline bar sparkline with single highlighted bar",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "Green/red pill chips encode favorable/unfavorable what-if deltas directly in the table",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Interactive parameter sliders per P&L line make the forecast scenario tangible",
+     "tag": "progress_tracker_motif"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "90c93eba2ddf5b90eb3613cc9dc1a063a3d57f868c8d39222993e3d51a740947"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "medium",
+   "category_rationale": "Aesthetic-first radial bump chart of F1 constructor rankings; form over analytical utility, hobby/sports topic.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "radial"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "1c5c8ec69a93accfb9bc5a622904e8486c914d5f1149b5230a9ab00c85121afe",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Label series directly at line endpoints instead of relying solely on a separate legend so readers can trace each series instantly.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-042",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Bump chart wrapped into a spiral arc with year labels along the rim",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Current-season team names label line endpoints directly, doubling as a live legend",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Near-black canvas makes saturated team-brand line colors glow",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "2e32bdbab9503a58f976e116659bd3ff932e015e09ed41c184a0ded092c8903c"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on British Empire's influence on UK cuisine with narrative intro and quotes.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "map",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "f50ef3e8a25f09269973ca033104f9b75194d01d5ba89caf221d574a10b6b7cb",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "map_centric",
+   "lesson": "Commit to one cohesive theme (palette, texture, iconography, and typography all matching the subject) so every element reinforces the story rather than decorating it.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-043",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Parchment texture, sailing ship, scroll toggle, and dashed voyage route reinforce the historical maritime theme",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Dashed origin-to-UK flow lines over the choropleth plus orange pull-quote caption at the bottom",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Subtitle highlights key words in accent orange, echoing the flow-line color on the map",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "script_decorative"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "e7321f7b1b4dc262b8b7168b5003c5e64188f92d6859b038510f4802a11dcd36"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal gym workout tracking (workouts, sets, 1RM) presented as an operational-style tracker.",
+   "chart_count_visible": 8,
+   "chart_types": [
+    "bar",
+    "pie_donut",
+    "custom_shape_art",
+    "area",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "ef4e30d7b9bc44d20be2f457c0b0515f5131e11ff947c96e5712387a3146b5fe",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every KPI callout with an explicit prior-period comparison line (delta percent plus prior value) so numbers carry instant context.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-046",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Front/back body-map silhouette color-encodes muscle-group workout intensity",
+     "tag": "anatomical_heatmap"
+    },
+    {
+     "note": "Every KPI tile pairs the number with vs-prior-month value and percent",
+     "tag": "ban_with_delta_context"
+    },
+    {
+     "note": "Month calendar with filled circles marks workout days, doubling as a filter",
+     "tag": "calendar_heatmap_panel"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "a4803b2cc4853fa6be76336dd291ec6dabb18df8944ec913a4176e45913df530"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on England penalty shootout performance, structured as a question-led sports story.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "scatter",
+    "pie_donut",
+    "bar",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 946,
+   "imageSha256": "1ef599825cdb6e794b07925e24347a82813f34df09bcbfebd3f5c6a8d48d1c88",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1894,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Anchor charts on a domain-relevant illustration (e.g., plot data directly onto the object being analyzed) so spatial data reads instantly.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-048",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Penalty locations plotted on a rendered goal-net image; donut gauges placed on goal-zone illustration",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Gray base with red reserved for goals/success metrics, dark gray for misses",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Centered all-caps section question flanked by horizontal rules with arrow endpoints",
+     "tag": "section_divider_rules"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "337f71f2410cf461759dd61f363ccf9e1ea04cfcbcdccfdfb84807eab69eb5c1"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on email-filing research (CHI/Whittaker studies) presented as a playful Outlook-style interface",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "radial",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "5392beab3132c8396f630f961fdba1e0f57af27fbb8e3cec9d56a4084bc0f88c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Wrap dashboards in a familiar interface metaphor the audience already knows, using its native navigation (e.g., an inbox list) as the content selector.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-049",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Entire viz styled as a classic Outlook inbox; navigation metaphor (email list) drives content selection",
+     "tag": "ui_skeuomorph_framing"
+    },
+    {
+     "note": "Reading-pane prose with bolded key stats carries the narrative alongside charts",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Radial dot rings embed their labels/values (emails, folders, mins/day) inside the ring center",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "ecf117924381031cf00072c6110d93ee06498a81d462efe73859e6a03cb80118"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational KPI catalogue with call-center metrics, MoM deltas, and industry tabs — clearly analytical business content.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "8e39a3e31a7e2f7fdabe358b305c5a3ce98bd43a1efbb233ce237dfc9b3ad001",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Structure each KPI card as BAN + colored delta + muted monthly trend with per-period better/worse indicators, keeping semantic green/pink as the only saturated colors.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-050",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each card leads with a large BAN plus colored MoM delta before the trend chart",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "'MoM difference: Better/Worse' legend embedded inline under each BAN",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Green/pink used strictly semantically (better/worse arrows per month) on a pale-blue neutral base",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "7e1eb4c8f37e479eed4385ac061a39a69a4beb64f65319d978c7fc2401982be5"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 7,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Insurance operations customer-analysis screen with KPIs, customer table, and drill-in profile panel.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "pie_donut",
+    "table_text",
+    "map",
+    "big_number_only"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "033e07b4d22fe4749ad1689ba7aa87687cebbc4204d96f31e597043efc347521",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every headline KPI with a small adjacent distribution chart so the number carries context, not just magnitude.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-051",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Near-black app chrome frames a light card body, giving product-UI depth",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Right panel shows selected customer profile with avatar, mini-map, and KPI tiles",
+     "tag": "detail_panel_drilldown"
+    },
+    {
+     "note": "Each top KPI pairs its big number with an adjacent mini histogram/donut",
+     "tag": "ban_with_context_chart"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "e0ea896ac35cda26bf7a324c3054dbe1d755480c3dc0a839178d8b6f665e1497"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 10,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Sales pipeline opportunity analysis comparing account managers' win rates and stage progression (fictitious business data).",
+   "chart_count_visible": 11,
+   "chart_types": [
+    "other",
+    "bar",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "fd48a10d8253fa27e67949ed0c611a4c4911fde2d99bc2fea2e467f0a41c1185",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "small_multiples",
+   "lesson": "Repeat one identical card template per entity (small multiples) with a single accent-colored KPI in each card's corner so viewers compare performers at a glance.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-052",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Identical jump-plot cards per account manager enable instant cross-person comparison",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Grey arc paths with blue highlighted flows; orange reserved for win-rate BANs",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Rich tooltip shows per-opportunity stage Gantt with dates and durations",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "e934fca7d698161ecb02799b29027b6e43ef692fa8d904f83d09db69b40a5403"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "high",
+   "category_rationale": "Interactive generative kaleidoscope art tool; aesthetic-first with parameter controls, no analytical data.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 1288,
+   "imageSha256": "25569d148d833fda35de790089644ef1f2bef751910ceaa19c780d6af74628a9",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2572,
+   "layout_archetype": "single_viz",
+   "lesson": "Anchor the layout on one dominant hero visual and move all controls/readouts to a quiet, letter-spaced side rail with thin rule dividers.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-053",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Left column pairs serif display title with airy letter-spaced labels and thin rule accents",
+     "tag": "generous_header_whitespace"
+    },
+    {
+     "note": "Single centered rainbow mandala dominates the canvas as the hero visual",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Soft watercolor wash bleeds into the lower-left corner, adding atmosphere behind text",
+     "tag": "chart_as_texture"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "serif_display"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "d872e70afedd2ea2caf7bf13aaa7e0512288d7e107f7c79e729a3c43864980b1"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "saturated",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on public survey data (dinner times vs bedtimes), narrative headers and prose, IronViz entry.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "line",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "6cdd5a4101b1a57151da2dae013b6e20ba905e26c2b265713b334a2f95bc5120",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Color key words in section headlines with the exact hues of the chart series they reference so text and visuals bind into one narrative.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-055",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Key phrases in headers colored to match chart series (cyan gap, orange dinner, pink bed).",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Shaded '6-7 hour gap!' band annotated directly on the overlapping histogram.",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Charts sit on slightly lighter navy panels over a deep indigo canvas, with tabbed sections.",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "bc9628602a7268026bb0c39a5c3a3201e6c89a65f245415be47f3e29853463b9"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on UK fuel prices with geopolitical event annotations, aesthetic radial treatment",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "radial",
+    "line",
+    "map"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "88fae785e175a01a5913e156cb81ef5d8b04ef9e2d1ae08e20a3fa257adfb17a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Anchor key inflection points on a trend line with short annotated event callouts (headline + one-sentence cause) instead of leaving spikes unexplained.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-069",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Time series bent into an arc sweeping around the page, years as radial axis labels",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Geopolitical event callouts (Ukraine invasion, Iran attack) anchored to price spikes with halo circles",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "UK map outline drawn as a faint line sketch behind the oversized title as atmosphere",
+     "tag": "chart_as_texture"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "overlay_on_viz",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "9c2efc082ab0ab6040b00a662983801a223fc2a35904fed19ba993ab57c309a8"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on gold prices/volatility 2006-2026 with narrative annotations and takeaways.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "radial"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "9e21d6494b7127085a3823093a4d9ec139a45447f57a983b91b36fb6a4b35d9a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Pair one dramatic hero chart with a right-hand text column of bolded, color-labeled takeaways so the visual carries emotion and the text carries the conclusions.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-070",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Four dated callout boxes with leader lines narrate key eras directly on the spiral",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "20 years of daily prices as a radial spike vortex; magnitude encoded as ray length with dashed gridline rings",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Giant yellow title matches gold data color; pink accent reserved for takeaway labels",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_right",
+    "relative_size": "dominant",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "269ac0f3d130498d7df1e54ae9d6a856088fcccc31aaecdd42b138832670427b"
+  },
+  {
+   "accent_count": 0,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on a public-interest topic (women/non-binary Broadway conductors) with annotated historical milestones.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "custom_shape_art",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 1194,
+   "imageSha256": "b2a4531ec9b0269d967acf89b853322c36f8040f0dcbcb3626db2b1341d6773e",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2398,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Theme the entire canvas around one domain metaphor — encode marks, legend, and even filter controls in the subject's visual language (here musical notation and a ticket stub) for cohesion.",
+   "palette_mood": "monochrome",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-072",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Timeline rendered as musical staves with note glyphs encoding role and count per decade — metaphor matches subject.",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Milestone callouts (1955, 1960, 1965, 1974) with arrows pointing at specific notes.",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Ticket-stub styled filter panel and note-glyph legend extend the Broadway theme into UI chrome.",
+     "tag": "custom_iconography"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "serif_display"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "fe7459f2d98f618155a7c81de6f9ca720810074a5408456502268cb6de33509f"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "MakeoverMonday explanatory piece on US job demand with narrative takeaway subtitle, not operational KPIs.",
+   "chart_count_visible": 9,
+   "chart_types": [
+    "map",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "efe94dc6e7a83af71ad94b0047f232d0e8954a9f6c0f47501b5c65c17a8da1c6",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Encode key terms in the headline/subtitle with the same colors used in the charts so the text itself acts as the legend.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-071",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Subtitle words colored to match chart category hues, so the headline doubles as the legend",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Small 'How to See' key uses the AK glyph itself to explain 1st/2nd/3rd dot positions",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Right panel of waffle/dot-matrix counts per job title in a tidy 3-column grid",
+     "tag": "small_multiples_rhythm"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "422a3b81701e789b9478aea7325a92716f1d67d4ee74629eafa9e757f4ae0d3d"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Healthcare KPI-card layout with metrics and sparklines, though framed as a technique demo (map layers tutorial)",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "area",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "e252e6c7214baf3d203c4718b2b993077977b54de38c81d76a98cd5577d12373",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Build KPI tiles as BAN + area sparkline + dotted prior-period reference line + green/red endpoint dot so each metric shows value, trend, and status in one compact card.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-056",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each KPI card pairs a BAN with an area sparkline, dotted reference line, and colored endpoint dot",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Green/red endpoint dots and delta arrows encode good/bad status directly on each metric",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Solid blue left rail holds branding and step navigation, isolating chrome from content",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "fda40017dfdf62a28346279e0bb701c1be6781857c2b9b52470950aa86a548a8"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory tutorial catalogue teaching Map Layers chart techniques with annotated demos, not an operational KPI dashboard.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "scatter",
+    "line",
+    "bar",
+    "map",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "d286adf63b54ef3c66345a5deb19d9ce53391f1f6da97f4faf4c72de6316862c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Embed compact visual columns (sparklines, mini bars, dot plots) inside table rows so each row reads as a self-contained KPI story.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-059",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Callout bubbles on a demo scatter explain MAKEPOINT() calculations directly on the chart",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Super Advanced Table embeds sparklines, mini bars, hex maps and dot plots per category row",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Warm cream canvas with gray marks; blue/orange reserved for semantic +ve/-ve and high/low encoding",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "5da83264f40fcaeb28a9ac54811eabd66b59c01161b179541c5ac6a60a252bcd"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Marketing KPI overview with WoW deltas, filters, and operational metrics — classic analytical business dashboard.",
+   "chart_count_visible": 10,
+   "chart_types": [
+    "big_number_only",
+    "line",
+    "bar",
+    "heatmap"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "d6f50c8e53643e72123476bea167ce161f7937bde76f1560e6453a316ebf1dd0",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every KPI number with an inline sparkline and a color-coded WoW delta badge inside one card so level, trend, and change read at a glance.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-060",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each KPI card pairs a BAN + WoW delta badge with an inline trend sparkline",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Small metric icons (eye, cursor, dollar) in each KPI card corner",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Dark teal navigation rail contrasts with light card canvas; interactive KPI-card-as-filter hint",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "44f77e2b65547d215835b9999a5add4289e5b823e72d4e33a0b6ac0e1ed4f945"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Educational/explanatory piece teaching a Tableau technique (calendar date logic), not operational KPIs.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "heatmap",
+    "table_text",
+    "other"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "dfb7214c19bab11c9d097bb163e70389bd28436f2ba1a914a2cb1c0526fa114d",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Render dense repeated units (calendars, sparkgrids) in neutral gray and use color only for the selected/current state so highlights carry all the meaning.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-061",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "12 mini month calendars per section create a uniform, scannable grid",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "gray calendar cells with teal/orange/red highlights encode only the selected periods",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "inline colored labels (Current date | Selected Period) double as legend and header",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "714596c41934cb3b42bc5385b518e66d2f5e1689dfd59b427271fb35c13053e7"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Technique demo built on sample sales data; reads as an analytical/business style showcase, not editorial.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "bar",
+    "line",
+    "pie_donut"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 1182,
+   "imageSha256": "6b6bc457b4e84e28013ea7d517d636ded5ba43a33181c1f42d98dfd2998bfb05",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2358,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Color value labels and series names to match their marks so labels double as the legend, eliminating separate legend boxes and axis clutter.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-064",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Series names colored and placed directly on line ends and donut segments; no separate legend box",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Value labels ($755K etc.) colored to match their series, doubling as legend",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Bar charts drop axes entirely, relying on inline value labels; line chart keeps sparse gridless ticks",
+     "tag": "minimal_axis_chrome"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "2c0a1e346b6ccb5d858aecc243080adc7b48563b935ffb819ef73205b3bf640d"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 5,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "KPI band with month-over-month deltas plus supplier/contract operational metrics; classic analytical business monitoring layout.",
+   "chart_count_visible": 9,
+   "chart_types": [
+    "big_number_only",
+    "area",
+    "bar",
+    "radial",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "563fc5c2c5ff37771101877e7f1bf0b8224991821b14a93153654b71cda57840",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every KPI number with a colored vs-last-period delta and a small trend chart directly beneath it so magnitude, direction, and history read in one glance.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-065",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each BAN pairs value, colored delta vs last month, and a stepped area sparkline beneath it",
+     "tag": "kpi_with_trend_pairing"
+    },
+    {
+     "note": "Greeting header and BANs use the purple-pink brand gradient, unifying chrome and data",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Bordered explainer panel beside the radial chord tells readers how to use the view",
+     "tag": "callout_boxes"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "8a23a4d89e7d477f1087c4028cb94e893028d42a4ee7eb766a158f302f300320"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "high",
+   "category_rationale": "Songs rendered as a star field / Milky Way metaphor; aesthetic composition dominates over analytical readout.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "scatter",
+    "custom_shape_art"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "513eaac528414c937c0861a389f0dba0eec2e2de5f93380d93200bacacf9ca72",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Reserve one warm accent color strictly for the top-priority data points and place a short how-to-read legend in empty canvas space instead of chart chrome.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-067",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Deep navy night-sky canvas with cream dots; warm orange accent reserved for No.1 hits",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "'How to read this view' bullet legend placed inside empty canvas space, no chart chrome",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Only year labels along the bottom; no gridlines, axes, or borders anywhere",
+     "tag": "minimal_axis_chrome"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "ba89ab13ea11045e1cf75e95c149c6403ce767370c55a09df624ee84bf117ae8"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Branded operational calendar tool (events, reminders, timesheets) styled as a company scheduling dashboard rather than editorial content.",
+   "chart_count_visible": 13,
+   "chart_types": [
+    "heatmap",
+    "table_text",
+    "other"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "2313a955173ae03fdab5a456630de3b3c1a6f22ed85b5cefd188dec041a7d41c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Encode categorical status directly into repeated cell shapes (fill, outline, split fill) with a compact header legend so dense grids stay readable without labels.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-075",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Twelve identical month grids in a 4x3 rhythm make a full year scannable at a glance",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Compact fill/outline/split-cell legend sits in the header row, encoding four event states",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "White base with magenta-family encodings; color alone carries all status meaning",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "d2c09a345bdebbdb89094b62845e786289caf0371821691c7fd0468c4ffa122a"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 5,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational customer-service KPIs (contacts, AHT, ASA) with filters and nav tabs — clearly an ops dashboard.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "bar",
+    "table_text",
+    "line",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "cf364279c0d3a742250c2d003bb07163526d7b598e7f817a8960e5336c336a5d",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Place white content cards on a dark neutral canvas and reserve one saturated accent only for the values needing attention, keeping all other marks desaturated tints.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-076",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Near-black canvas with floating white rounded cards creates strong panel separation",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Pale pink bars with saturated red reserved for peak/worst values encodes attention",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Each chart carries an italic guiding question (e.g. 'Is wait time improving?')",
+     "tag": "question_as_subtitle"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "35ff426b8a757473a87fe5b216d8e58e5d8a311f494e5446567458eeb717e19a"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "saturated",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "KPI band plus funnel and trend charts for SaaS conversion metrics — classic operational analytics.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "bar",
+    "line"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "bc6cbf530cf3611fa6e2250b9f3d148ffe8d3a7e6b3a38312f37a5a6deac50fc",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Anchor a dark monochrome canvas with one warm accent color reserved exclusively for the numbers and trend line you want read first.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-078",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Four KPI numbers set inside large ring medallions, giving BANs strong visual identity",
+     "tag": "radial_ban_medallions"
+    },
+    {
+     "note": "Deep maroon canvas with slightly lighter card panels creates layered depth",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Bulleted one-line insights along the bottom edge summarize each key finding",
+     "tag": "footer_takeaway_captions"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_center",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "3f383523bb25744407d979f6e3ae91c32d11222fda80ada789a3662531c854f6"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Public-topic Airbnb traveller guide: explanatory/exploratory consumer tool, not operational KPIs or personal tracking.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "map",
+    "pie_donut",
+    "table_text",
+    "bar",
+    "scatter"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "a8141d8869a679f99881f6802c2ed984328d6937e5534a85ff68310636f83161",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Commit to a single hue and encode data with its lightness ramp so every chart, icon, and container reads as one cohesive branded system.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-079",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Entire UI, charts, and icons committed to one pink hue with sequential shading for encoding",
+     "tag": "monochrome_pink_system"
+    },
+    {
+     "note": "Hand-styled left icon rail and filter toggles make navigation feel like a designed app",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Consistent pill/rounded-corner card frames unify search bar, panels, and footer prompt",
+     "tag": "rounded_card_containers"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "edcaa35fd579f039d68a9df7dc460fe991ccc7094735ae33db5cecc7ec9266f8"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 1,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Program-impact analytics for a social enterprise (participant wellbeing scores), operational-analytical with editorial styling.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "radial",
+    "line",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": true,
+   "imageHeight": 1100,
+   "imageSha256": "5df16d11f501ba7d5e4ee5022b78504cf9cf19a6c9924879dcbb6da600ee4704",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2206,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Layer the full population as faint background traces behind one highlighted selection so individual detail reads against overall context in a single chart.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-080",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "All 35 participants' ternary traces layered as faint texture behind the selected highlighted profile",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Neon lime and purple accents color key phrases in body text, linking narrative to chart encoding",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Overall mean score 5.7 placed inside the radar's center as focal anchor",
+     "tag": "big_number_hero"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "354e5af34d8256e938d34b2d355380bbbcb27abab002a94ea3ff611ab7aa1969"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Editorial explanatory piece on dim sum nutrition (IronViz), narrative case-study framing rather than business KPIs.",
+   "chart_count_visible": 12,
+   "chart_types": [
+    "custom_shape_art",
+    "radial"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "4c6c99e99cf461187ac754a0252972a30e8abb6139ee1ee0d8575d29f2300f28",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Teach one custom encoding with a single compact header legend, then repeat it as uniform small multiples so saturation differences alone carry the comparison.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-081",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each dish rendered as a lotus-flower glyph whose petals encode nutrient values",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Compact fan-shaped nutrient-type key in the header explains the petal encoding once",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "12 identical glyph panels on a consistent 4-column grid make outliers pop by color saturation",
+     "tag": "small_multiples_rhythm"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "serif_display"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "8ca32827b5d9d627a27180ba362539d769921ee2703340074c6bda3737b68b42"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial narrative on alcohol-free social rituals with prose blocks and a search-trend chart supporting the story.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "line"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "d9c5ead7856fb9efa44ef2c49b441d64332c0c1899fc2407dec384c0f2c7f62a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Sandwich a single axis-free chart between short narrative callout boxes, labeling only the data points that carry the story.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-084",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Gold-bordered black prose boxes frame narrative before and after the chart",
+     "tag": "callout_boxes"
+    },
+    {
+     "note": "Line chart with no axes, only labeled December peak annotations",
+     "tag": "minimal_axis_chrome"
+    },
+    {
+     "note": "Teal accent word 'mocktails' in takeaway text matches the chart line color",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "3cb2f80df443e95d03fd1b5c3cbfc46835f81ab6fe067e73a8a93c64a34ac112"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "IronViz editorial piece explaining Mars-mission space food; narrative intro with hover-image storytelling on a public topic.",
+   "chart_count_visible": 0,
+   "chart_types": [
+    "other"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "8460b490f70a68311c2311235ce3b3d787b657499b4aef8dc6c4989b62c80364",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Open with a dominant themed title block and a one-sentence framing question before any chart, so viewers know the story before they see data.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-086",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Sweeping orange/teal orbital arcs and starfield frame the light canvas, giving a retro NASA-poster atmosphere",
+     "tag": "retro_space_illustration_frame"
+    },
+    {
+     "note": "Techno display title plus typewriter monospace body evoke mission-log character",
+     "tag": "typeface_as_theme"
+    },
+    {
+     "note": "Inline camera-icon hover cues with an explicit instruction callout teach interaction upfront",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "211fc8001aec10d69dad2b8946f414c6a806420b2689044096817a61bdb07e6d"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory public-topic piece exploring 26 years of Pantone Colours of the Year; exploratory-editorial, not business KPIs.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "radial",
+    "table_text",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "2ecfcb9aeb2945819b647e8f040306ca6f7674a426d3fcc958c2ec68841515b5",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "When a categorical attribute is intrinsically visual (color, logo, icon), let the attribute itself be the mark and merge legend and detail into one panel.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-087",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "The data itself is color; swatches double as marks and legend, no separate encoding needed",
+     "tag": "color_as_data"
+    },
+    {
+     "note": "Right panel swatch matrix serves as legend, detail table, and click-through index simultaneously",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Hub-and-spoke network radiates color families from a central total node",
+     "tag": "radial_composition"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "overlay_on_viz",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "3214a266738fb3ac8c4980aabb2256a752b8b8c7227a33a35e0b87c1c3c518da"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Editorial explanatory piece on women/nonbinary Broadway conductors; narrative intro plus stats, public-topic storytelling.",
+   "chart_count_visible": 0,
+   "chart_types": [
+    "big_number_only"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "d52167b04b985c4489ba7e60b21206e48fb30af74f81a17729c0386817666eb4",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Reserve one saturated accent color and apply it only to the headline keyword and the KPI callouts so the eye lands on the numbers first.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-088",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Intro paragraph typeset along flowing musical-staff lines ending at a conductor's baton",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Hand-drawn treble clef and crowned conductor illustration anchor the theme",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Single yellow accent highlights the key word QUEENS and the three BAN circles",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "70f1da9ad78485a6f7c5586a2dfcc1a8d5a41a1556af56a5d464c446043f6219"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on 30 years of Premier League positions with annotated records and narrative text.",
+   "chart_count_visible": 21,
+   "chart_types": [
+    "area",
+    "line",
+    "scatter",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "ed9784512aaaef7c745dff66d3212973104cf55cc4f6f0aee775593f4825c9dd",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Use a strict small-multiples grid with identical axes and semantic two-color encoding, then link on-chart lettered markers to a sidebar annotation list for storytelling.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-090",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "20 identical position panels (1st-20th) make the green-to-red gradient of decline instantly legible",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Lettered markers (a-f) on charts link to a sidebar of record-breaking season callouts",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Charcoal canvas with semantic green/red fills and white points line; per-panel averages as mini stat rows",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "a3050a3346f3093c97caff3c5fa1037e0137f6077d749e76b6f4284fece749b9"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on space launch history with narrative text blocks and a public-topic timeline.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "area",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "1fa0cdc06875bceed6491132446f3350bd5bae795bcd0d2baa5eab39a61049ef",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "single_viz",
+   "lesson": "Pair a single hero visualization with a compact narrative text card that states the key numbers and trend arc so the chart never has to explain itself alone.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-100",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Timeline streamgraph bends 180 degrees like a racetrack lane to pack decades into one canvas",
+     "tag": "serpentine_timeline_flow"
+    },
+    {
+     "note": "Narrative paragraphs in a rounded card carry the full story beside the viz",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Starfield speckle background sets a space atmosphere without harming legibility",
+     "tag": "chart_as_texture"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "0d53939e20acf67b94a4f6a9939478e062bcafcc97de27221332f12ff81bad28"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational ER admin dashboard with KPIs, wait times, admission rates, and tab navigation styled as an app.",
+   "chart_count_visible": 10,
+   "chart_types": [
+    "big_number_only",
+    "area",
+    "heatmap",
+    "bar"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "94312532d25b3bd253f11d95a69ae30f724960999cfbb762b5e7fadc3a157aaa",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every KPI callout with its delta, a one-sentence plain-language interpretation, and a mini trend sparkline inside the same tile.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-102",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each BAN tile pairs the number, delta vs last month, a plain-language caption, and a mini area sparkline",
+     "tag": "kpi_sparkline_pairing"
+    },
+    {
+     "note": "Dashboard styled as a web app with rounded browser-like frame, user greeting, tabs, and notification icons",
+     "tag": "app_chrome_mockup"
+    },
+    {
+     "note": "Single dark-red hue in tonal steps carries all encoding on a neutral light canvas",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "4fd8806439da89cbcd92fb5dda545d9f33f09e3080c8a2a1e812cd151ff82eda"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Booth-feedback radar scores shown as a technique demo with an educational layer legend; business content in tutorial framing.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "radial",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": true,
+   "imageHeight": 2109,
+   "imageSha256": "b744c62195b37ba7147d832293bcbb077feadd981c1a133d03c26a5eb9e8bd1c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "When using an unfamiliar chart type, add a compact side panel that visually decomposes the chart into its layers so readers learn to read it in place.",
+   "palette_mood": "monochrome",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-094",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Right column decomposes the radar into its 5 visual layers, each with a mini rendering plus caption",
+     "tag": "exploded_layer_legend"
+    },
+    {
+     "note": "Explanation panels double as legend and onboarding, teaching readers how to interpret the chart",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Neutral gray fills with slim blue spokes keep focus on structure over color",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "577dcec201af488d3c747c8c46e06ab234391780353178a5dceefc0d8cde191f"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Educational/explanatory gallery teaching 10 bar-chart variants, not operational KPIs; tutorial-editorial intent.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "e8e4405baccbc6c80f26415be0890f69fdde6f02e88b5e9f398cf44d5ba848fe",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Use white cards on a warm tinted canvas with one muted green data color and in-bar value labels to make bar variants readable without axis chrome.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-096",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Identical 2-column white cards, same data restyled 6+ ways for direct comparison",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Numbered green section labels (BAR 1..BAR 6) name each variant above its card",
+     "tag": "section_divider_rules"
+    },
+    {
+     "note": "Axes removed except one exemplar; in-bar percent labels replace tick marks",
+     "tag": "minimal_axis_chrome"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "bb173ddbd4526b8dc6a3990baa14da9ba3dd1f0cf5bf42e1b262b0cb71bcc6dc"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "bottom_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Explanatory piece teaching how the random forest algorithm votes, aimed at a general audience, not operational KPIs.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "custom_shape_art",
+    "other",
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 1202,
+   "imageSha256": "1323e3186242ff3a4c371acfe706934ea0ab52def6e86d74ee84517595833932",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2396,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Reserve one semantic color pair for the outcome dimension and repeat it identically across every element (paths, dots, result pill) so the dashboard reads as one continuous encoding.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-097",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Faded ghost trees in the background create depth while three focal decision trees carry the explanation",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Hand-built tree/mushroom/figure illustrations double as the data encoding (edible teal vs poisonous red leaf nodes)",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Gray canvas with teal/coral semantic pair; vote dots and final-prediction pill reuse the same encoding",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "384a225ff2a97005a92ffb2f4c4c815d79f55ef75d0805d7338560dccfa9bd6e"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "SaaS revenue KPIs, product/location revenue breakdowns, and filters — classic operational-analytical business content.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "bar",
+    "line",
+    "heatmap",
+    "area"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "6f3d6df547cd4c97891fe65ef8ca68910b7f0500c3b5eed3800b5937c946468b",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Give every chart panel a bold title plus a one-line plain-language subtitle stating what the reader should look for.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-098",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Near-black canvas with subtly lighter KPI tiles and gold divider rule under the header band",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Every panel pairs a bold title with a plain-language subtitle explaining what the view shows",
+     "tag": "two_line_chart_titles"
+    },
+    {
+     "note": "Gold/amber carries most encodings; secondary hues kept desaturated so the dark theme stays cohesive",
+     "tag": "muted_gold_dominant_palette"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "865205eaf174b6bf0741059cb5f87365db4e3117c16a456a3107ac1176b48b2d"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory single-graphic piece on a literary/public topic; strong aesthetic bent but clear explainer text and legend.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2025,
+   "imageSha256": "5beed6bcd1ff6156a9ea48f0295e9c0f74bec8a99115af763789aee1d26db03e",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3600,
+   "layout_archetype": "single_viz",
+   "lesson": "Give one hero visualization the full canvas and move title, explanation, and legend into a clean right-hand text column so the graphic breathes.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-099",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Force-directed rhyme network arranged in a circular canvas as the sole hero visual",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Two-column IPA vowel/example/color legend embedded in the right text panel",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Side panel explains node size and edge encoding in plain prose with bolded key terms",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_right",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "b4f7dfdbe60ea792c409a59a5382d867308ccbc965d74df8f86ad129f6f45b31"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "KPI band with role/company counts and salary medians plus analytical filters — an operational-analytical exploration tool.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "big_number_only",
+    "other",
+    "map"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "ca6627a5e3aed8a523e11f911030993aec1010ea8ddca63e1a08665e4065b797",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Style BANs as open numbers over thin colored underline bars matched to each metric, rather than boxing them in tiles.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-101",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each BAN gets a colored underline bar instead of a boxed tile, keeping the dark canvas open",
+     "tag": "color_coded_ban_underlines"
+    },
+    {
+     "note": "Dark gray canvas with white charts/text and saturated accent geometry in the header",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Circular icon badges prefix each section title, with bold-word emphasis in headings",
+     "tag": "custom_iconography"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_right",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "ff44e1ddafd4d65c23eb84006292daa1ab4965a0f801cfa135c32a72220fb6ee"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Sales agent KPI monitoring dashboard with metric tiles, MoM deltas, ranks, and agent/region/month selectors.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "line",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "0856d95c3a4a2aad7c6bea24feee5104cef0d8af21d0cc381db1618364bff3ad",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Structure each KPI as a uniform card: big number on top, mini trend bars with only the selected period colored, and tinted delta/rank chips below.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-103",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each tile leads with an oversized gray BAN, with trend bars and delta chips beneath.",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "Gray base bars with one colored bar highlighting the selected month per metric.",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Tinted MoM-delta and category-rank chips give at-a-glance good/bad semantics.",
+     "tag": "callout_boxes"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "2b4e107ed9f634b49fd23e11c281a02c7d7a1b5247933490bbcad77b14b3612f"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "left_column",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "medium",
+   "category_rationale": "Community-tracking piece on Slack channel job postings; playful exploratory tone rather than operational KPIs or editorial narrative.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "heatmap",
+    "map",
+    "pie_donut",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "1e73430ed2f43f17839b24066894eea00c4e1ef847006e820dcaeeb0b62af85d",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Strip axis chrome entirely and label bars with inline bracketed category names in a single hue family so charts read as clean typographic elements.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-105",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "GitHub-style dot calendar encodes daily posting activity across three months",
+     "tag": "calendar_dot_matrix"
+    },
+    {
+     "note": "Legend with playful megaphone icon (Your Opportunity to Post) woven into chart header",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Bar charts use bracket-style labels with no axes, gridlines, or value clutter",
+     "tag": "minimal_axis_chrome"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "f65ca66d95c4f4954f6e60b09067c7d460a35a768405b3622d9ab882ca4260f7"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 5,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Marketing analytics dashboard with funnel KPIs, cost/performance scatter, and operational filters.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "bar",
+    "scatter",
+    "heatmap",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "2421bd8448b8539646ac0a5b4e3ce5a41ec2c40b70bc2786ddde3ca36fdfb8ef",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair each funnel-stage BAN with a stage-to-stage conversion percentage caption and a width-proportional bar so numbers, rates, and magnitude read together.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-108",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Funnel stage BANs paired with proportional bar widths plus stage-to-stage conversion captions",
+     "tag": "funnel_ban_fusion"
+    },
+    {
+     "note": "Scatter uses shaded quadrant with inline caption 'White Area: Low cost, High Impact Content'",
+     "tag": "quadrant_annotation"
+    },
+    {
+     "note": "Dropdowns swap scatter axes and heatmap metric, one chart serving many questions",
+     "tag": "parameter_swappable_axes"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "1f5ab430feec44740925487389cc6050d17d99a33609ddebc5f9e1cae7e70d8c"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Social media KPI monitoring layout with BAN band, engagement charts, and export controls — clearly operational-analytical.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "bar",
+    "line",
+    "heatmap",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "00b0836b5a0f180c2020d338944c1769f56641ad1f99ac100a9c2c5d43c5b745",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Give each BAN a small icon, a caps label, and a one-line micro-caption of context to make a KPI band scannable and self-explanatory.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-109",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Colorful line icons above each BAN with label and micro-caption beneath",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Pale blue tinted canvas with floating white rounded cards and soft shadows",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Bar chart labels values directly at bar ends, no axis or legend chrome",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "serif_display"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "eeb23da0f44776519c69c301ea7134799487a99e0398940039e91763f97335cf"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal country-song/emotion tracking told through custom guitar-chord-chart small multiples.",
+   "chart_count_visible": 23,
+   "chart_types": [
+    "custom_shape_art",
+    "scatter"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "34989cf90b50da46bc94647182f599d0a4bc26797d938e306a35aaa338bc7219",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "When repeating one chart form many times, dedicate a left onboarding panel that teaches the encoding once, then keep every panel identical in size and axis scale.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-111",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "23 uniform chord-chart panels in a strict grid create instant comparability and rhythm",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Guitar-headstock legend maps six string colors to emotions; chart form mimics real chord charts",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Left panel combines legend, how-to-read instructions, and credits into one onboarding column",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "57da7934493190debcd21445f1f1342fc70246f549ea9e23f1c032fdd180e969"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "left_column",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on stuttering recovery statistics with narrative sectioning (\"Scene 06\") and cited research.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "custom_shape_art",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "7556cc8a5a12341ff1c79c13a8ddad152a171131383046d13b08bf3576cd4d42",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "small_multiples",
+   "lesson": "Reuse the chart's category colors inline in headline and body text so the narrative and the visualization share one encoding.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-112",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Four identical pictogram circles across age groups make the shifting male/female ratio instantly comparable.",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Body text and chart labels reuse the exact orange/teal encoding for male/female, binding prose to charts.",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Inverted dark BAN tiles anchor the bottom of the light editorial column with accent-colored numerals.",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "0b7f135bf2ff6dfba5dc56bc05303c34471d70923c4ce793d9471cc8d736a1df"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "First-person comfort-food memoir (kuy teav) with personal narrative text; hobby/personal storytelling, not business or editorial journalism.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "bar",
+    "map",
+    "other",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "4239c733cf11ea842cf6ba79c86be751604ecca52b97794f9fb44d9ecdf21b67",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Commit to one hue family across every chart on a warm neutral canvas so the whole dashboard reads as a single cohesive composition.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-113",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Hand-illustrated noodle bowl as centerpiece with sketch-style ingredient icons",
+     "tag": "hand_drawn_aesthetic"
+    },
+    {
+     "note": "Cream canvas with an all-green sequential palette unifying every chart",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Curved arrow annotation and narrative captions tie charts to personal story",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "2a884c869d0774cc35f89da8dc6f1e7a0a7a72088cc2e17b7074c8fc42f7a7ba"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Superstore YTD KPIs (sales, profit, orders) with CY/PY comparison — classic operational business analytics.",
+   "chart_count_visible": 4,
+   "chart_types": [
+    "line",
+    "bar",
+    "big_number_only"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "e6adaeca104be1456974271f39f1083218dbb2a578ebc8c6cdc849f18874523a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Combine each KPI number, its percent-change badge, and a small CY-vs-PY sparkline into a single card so the headline and its trend context read together.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-115",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each KPI tile pairs BAN + delta pill + CY/PY sparkline in one card",
+     "tag": "ban_with_sparkline_combo"
+    },
+    {
+     "note": "CY/PYTD/PY legend as colored pill toggles in the header doubles as interaction hint",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Periwinkle accent for CY vs gray dashed PY keeps comparison legible",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "serif_display"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "4c3eec75f48d22100b665cc252cefff45289f64d7f2db21e4e3e1f36af04a04d"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 5,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Superstore sales/profit KPIs with operational segment and shipping breakdowns — classic business analytics dashboard.",
+   "chart_count_visible": 11,
+   "chart_types": [
+    "area",
+    "line",
+    "map",
+    "radial",
+    "sankey_flow"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "0aef144c1eeb5189897cf050b8155909f6598f08441a88e1f8f2800539a295c2",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair every KPI BAN with a delta-vs-prior-period and a small trend sparkline inside one card so each number carries context at a glance.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-116",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each BAN tile pairs value, delta-vs-last-month, and a gradient-filled area sparkline",
+     "tag": "sparkline_kpi_tiles"
+    },
+    {
+     "note": "White rounded cards float on a pale lavender canvas, grouping sections cleanly",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Everything indigo-monochrome; red/green reserved semantically for deltas",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "fdd970fedb88c2adde8936bf0fe5a0dd0f55aadb068f6eae287ef89930e18392"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Superstore sales/quantity/profit KPIs with top-N analytical breakdowns — classic operational business dashboard.",
+   "chart_count_visible": 7,
+   "chart_types": [
+    "bar",
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "929d0282afb53348f69a6febd25566bc8c911731c2a26b1f90b37b8595f843f5",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair each KPI tile with an inline trend sparkline and vs-prior-period delta, and color-link the selected measure across all downstream chart titles.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-120",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "KPI tiles pair a colored BAN chip with an inline monthly bar sparkline and vs-PY delta",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "Selected measure name in card titles is colored to match the active KPI accent",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Bar charts carry reference ticks and vs-PY percent deltas beside each bar for target context",
+     "tag": "progress_tracker_motif"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "911411860fddac1e192bfbcda7f9169cc9d6c4a79598cb0bdfae494c1ddf2e4e"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "left_column",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Executive KPI overview of Superstore sales/profit/orders/customers with filters and drilldowns.",
+   "chart_count_visible": 8,
+   "chart_types": [
+    "bar",
+    "map",
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "ad37d0f20490cdbb1c9779831e0845250f143c1208fe69211685ad4fca0178e4",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Combine each KPI headline number, its YoY delta, and a small embedded trend chart in a single card so status and trajectory read together at a glance.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-119",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each BAN tile pairs the big number and YoY delta with a monthly bar trend plus prior-year reference ticks.",
+     "tag": "kpi_card_with_embedded_trend"
+    },
+    {
+     "note": "Hexagon tile map of US states gives equal visual weight to every state and acts as a filter.",
+     "tag": "hex_tile_map"
+    },
+    {
+     "note": "Grey bars for context with one navy accent for current/selected values across all panels.",
+     "tag": "muted_base_single_accent"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "f5e3f995031accf360325841b07b7b11feb70182d08b3b6f54b81bbf9febb464"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "left_column",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational shipping KPIs (delivery days, orders, returns) with filters and YoY comparisons for a retail business.",
+   "chart_count_visible": 12,
+   "chart_types": [
+    "bar",
+    "area",
+    "map",
+    "scatter",
+    "line"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "b3562c5072f50b30484c20a5a26f201945ff24602015db7fa9ac07fb4757535d",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Stack all KPI BANs into one left rail, each with a sparkline and vs-prior-year delta, so trends and current values are read in a single vertical scan.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-122",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Each BAN in the left rail pairs with a 12-month sparkline area chart plus vs-PY delta",
+     "tag": "sparkline_rows"
+    },
+    {
+     "note": "Dark teal outer frame with branded icon nav wraps a light rounded content card",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Shipping-class colors repeat consistently across breakdown bars and the sales dot plot",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "d757b4a46640a012ebc8398f9351186da39877f7113779a8fd27e5ec911c0d77"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Telco churn KPIs, filters, and operational-analytical charts for business decision-making.",
+   "chart_count_visible": 7,
+   "chart_types": [
+    "pie_donut",
+    "bar",
+    "map",
+    "heatmap",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "b360f14c5b74e082f5adf8b20914fc656fc209676c08b2e6087117155850ff57",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Place a four-tile icon+number KPI band on white cards over a softly tinted canvas so metrics read first and detail charts sit in clearly layered cards below.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-123",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Illustrated icons paired with each KPI tile soften the metric band",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Soft blue-tinted canvas with white floating cards creates clear layering",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Grouped reason-for-leaving table with inline bars merges detail table and visual encoding",
+     "tag": "sparkline_rows"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "968f6ddb127a33b1f3317ed42e64e4aa846fd9e3ab8b2bea9504196285525615"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 1,
+    "placement": "bottom_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on candy brand ownership concentration with narrative intro text, public-topic framing",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "pie_donut",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "5fd1cf26406d5140276525f3ebd7afed7a5e04dadf8bfe724c66f76124a46d8a",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Anchor the single key finding as one oversized number placed away from the hero chart so the takeaway survives a glance.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-124",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Title emphasizes CON in CONfection/CONnection wordplay tying to CONsumer/CONspectus section heads",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Voronoi-tessellated pie slices give candy-like texture, one cell per brand",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Large 70% callout anchors the key concentration finding in bottom corner",
+     "tag": "big_number_hero"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "de0dfa315f00593816e37bc21a18e71fb46f92a9f0d09d0b9ccac9df9d1744e2"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 6,
+    "placement": "right_column",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "personal_infographic",
+   "category_confidence": "high",
+   "category_rationale": "Personal daily step and weight tracking app-style dashboard by the author",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "big_number_only",
+    "area",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "f76fed42a95538274f78597c6ed86db856352522e2a2e37aec18b94e7eb1f7af",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Color-encode the title's key words with the same accent hues used by the corresponding dashboard sections to create instant navigation cues.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-126",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Dashboard styled as a phone-app card floating on a dark canvas with connector lines",
+     "tag": "mobile_app_mockup_frame"
+    },
+    {
+     "note": "Title words colored purple/green to match the Steps and Scale view accents",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Nested darker card tiles on a subtly dotted dark gradient background",
+     "tag": "dark_canvas_light_cards"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "dominant",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "66b1ad2ce60a77ea001bc00d6720204ad6c40d9c88aa200a39b7172eb0758829"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "left_column",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on 125 years of Nobel laureates with narrative text and public-topic data",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "radial",
+    "bar",
+    "big_number_only",
+    "table_text"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "7af98becc37ff7a8959c464fe638fa5058f7198819ea3f6fb4d97126708597f6",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Anchor the layout on one striking hero visualization and relegate supporting bars, BANs, and detail cards to disciplined side columns.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-128",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "1,025 laureate curves radiate around an embedded Nobel medal photo as the hero centerpiece",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Medal image at chart center and laureate portrait cards in right rail add human texture",
+     "tag": "photo_integration"
+    },
+    {
+     "note": "How-to-read mini legend, WWII silent-years callout, and Did You Know box guide interpretation",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "serif_display"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "8c3464ea0dab2fe0f69e4cb97a7c547e530840db24b72b0a31239c54e89c39af"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece mapping the AI startup landscape as a periodic-table metaphor for a public audience",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art",
+    "bar",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "0de60ac722c4da25c39d7e9ede3e9e67a3c6aef52d19f771aa0c5d2905e11105",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "single_viz",
+   "lesson": "Embed micro bar indicators and a status glyph inside each repeated card so a uniform tile grid carries multiple metrics without separate charts.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-129",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Element-style tiles with two-letter symbols organize AI sectors into rows by layer",
+     "tag": "periodic_table_metaphor"
+    },
+    {
+     "note": "Group colors and trend emoji glyphs explained inline in the header band",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Each tile embeds mini funding and company-count progress bars plus YoY figure",
+     "tag": "sparkline_rows"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "1ab499af0326598db19e87b7d1631b5758d3322a2dd54866bf13400720b5250f"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "saturated",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on a public-interest topic (Delta Dental Tooth Fairy Poll) with annotated findings, not operational KPIs.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "line",
+    "other",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "36857bd3759650438949a099ade7bf965f38beaf00ee8cd754b753d508cc254f",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Make legend and narrative do double duty: label series through an adjacent ranked annotation list instead of a separate legend block.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-130",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Star-and-comet dumbbell marks encode national-vs-first-tooth delta, matching the night-sky theme",
+     "tag": "custom_iconography"
+    },
+    {
+     "note": "Ranked list pairs each region's value with a one-line YoY narrative",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Numbered color chips in the rankings panel double as the bump-chart legend",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "2ca5aa47e279b5ce9114556c053547d76aadabb495723840a38aa5da6e2859e1"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Educational chart-type reference (visual vocabulary) with sample data; explanatory/teaching intent rather than operational KPIs",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "sankey_flow",
+    "map",
+    "bar",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 1194,
+   "imageSha256": "6e0baa651323fe4a8d364e2f5427a830465b20cc31da3a2bd481612f45246695",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2396,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Place each chart in its own white card with a consistent header row on a softly tinted canvas, and gray out all context marks so one accented series carries the message.",
+   "palette_mood": "categorical_multi",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-131",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Uniform white cards on a soft mint canvas give six diverse chart types a consistent rhythm",
+     "tag": "small_multiples_rhythm"
+    },
+    {
+     "note": "Gray base strokes in chord/network panels with a single green/blue accent path highlights the story",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Each panel labeled with a plain-sans chart-type header plus NEW! pill badges for recent additions",
+     "tag": "section_divider_rules"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "bed8a8ddeec0f3a7fbc50cb3a7d362bd9ea855a3373fc879d37454c6bbe6a38c"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "medium",
+   "category_rationale": "Sales-threshold analytical tables on business data, though framed as a Tableau technique comparison demo",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "e45ad933b1f5fb001c888036594d1f8c612ca866396c194935de5d2908fdf2f9",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Group related content on softly tinted rounded cards with matching colored section headings so each analytical block reads as a self-contained unit.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-134",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each method sits on a softly tinted rounded card (peach vs pale blue) that visually separates the two approaches",
+     "tag": "tinted_section_cards"
+    },
+    {
+     "note": "Section headings colored to match their card tint (orange/blue), binding label to content",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Subtitle poses the two analytical questions the tables answer, with the dynamic threshold bolded inline",
+     "tag": "question_led_subtitle"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "condensed_bold"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "833bd3bd5e1aa588d6bd259a1a0d73d52ab34bfc3e46192f15b6824335ec51e8"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial multi-slide story explaining global tuna trade with narrative text panels and a hero flow chart.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "sankey_flow"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "976be950ccc558be01bde52de16cc40f8d0f17cfb3cf7bee1e055f8a3d2816ac",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Color-code narrative subheads to exactly match the accent colors of the chart series they describe, so text and marks read as one unit.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-135",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Gray sankey base with blue (Japan) and red (US) accents that match colored keywords in the sidebar text",
+     "tag": "muted_base_dual_accent"
+    },
+    {
+     "note": "Section subheads colored to match the chart series, tying narrative to marks",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Dot pager with a fish icon marking the current slide, plus Back/Next navigation",
+     "tag": "progress_tracker_motif"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "203bd3167bae8de6d70e7826dd52c65a83ba71aa54c1e7a1e911606a3a648f54"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 2,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explainer on a public-interest topic (UFO sightings) with narrative takeaway text, not operational KPIs.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "radial",
+    "bar"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 1172,
+   "imageSha256": "1b6e34a1df1167f78759f005589bfc9d583f80208037c2ce071b98cec77a9eee",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2344,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Put the headline takeaway as short annotated prose beside the hero chart, bolding key figures in the same accent color the chart uses.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-136",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "24-hour radial bar clock as hero chart with UFO image and total BAN in the hollow center",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Narrative text bolds key stats (47%, 6 PM-10 PM, after dark) in the accent cyan used by the charts",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Left column is prose takeaways with thin rule dividers instead of a chart legend",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "9c87d5d8c974b3d4768e501de7c8918493ad7161279a31e8bafdff120196a52a"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 4,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Explanatory public-topic piece on UN SDG 15 with narrative text blocks and global biodiversity indicators.",
+   "chart_count_visible": 6,
+   "chart_types": [
+    "map",
+    "line",
+    "bar",
+    "table_text",
+    "big_number_only"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "3aa05971113d4c543ae8fc6074dcdb6c3d1a66400ff3be0205a0f766aa5d8d14",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Pair each KPI number with a small vs-baseline delta and a minimal sparkline, and color-code metric names in headings to match their chart series instead of adding a separate legend.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-137",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each KPI pairs a big percentage with a vs-2000 delta arrow and a minimal trend line beneath it",
+     "tag": "ban_with_delta_sparkline"
+    },
+    {
+     "note": "Category words (Freshwater, Terrestrial, Mountain, Red List) colored to match chart series, replacing a legend",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Country results table embeds labeled horizontal bars per metric, merging table and chart",
+     "tag": "table_with_inline_bars"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "576739539d6ce3262e93b83c0c6e1635b366b6b378f3c4eba16ba1463f11822e"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory science piece visualising spacetime curvature per planet; educational public-topic content, not business or personal.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art",
+    "table_text"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 906,
+   "imageSha256": "8356e2064a93d7a180e5719ad323aaa48cd8abe2172e05d8c1c6cfe7883afa85",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1818,
+   "layout_archetype": "single_viz",
+   "lesson": "Render key selected-item stats as unboxed typographic lines that share the canvas style instead of default KPI tiles.",
+   "palette_mood": "monochrome",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-138",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Starfield space canvas with white wireframe gravity well; imagery doubles as data encoding",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Large thin all-caps title with instruction subtitle overlaid bottom-left directly on the scene",
+     "tag": "overlay_title_lockup"
+    },
+    {
+     "note": "Selected-planet stats rendered as elegant typographic lines bottom-right instead of boxed KPI tiles",
+     "tag": "integrated_stat_readout"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "overlay_on_viz",
+    "relative_size": "dominant",
+    "style": "serif_display"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "ea6ed621d8c61cf3ef32a67894b16a41450658109b9984bd1e4fd5b61304d202"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Sales quota attainment KPI cards for executives; explicitly operational business content.",
+   "chart_count_visible": 9,
+   "chart_types": [
+    "bar",
+    "line",
+    "area",
+    "scatter",
+    "radial"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "fc599e8a1b682de1a7ff84bbb2412b2126792ab5eb5d5c4cfa7b29cbd2254414",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "small_multiples",
+   "lesson": "Pair every KPI card with a one-line plain-language takeaway strip so executives read the conclusion, not just the number.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-139",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Same KPI rendered 9 ways as rounded cards to compare executive summary treatments",
+     "tag": "kpi_card_variants"
+    },
+    {
+     "note": "Gray/white base with a single blue accent for the key metric and charts",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Each card ends with a plain-language takeaway strip ('exceeding FY2025 quota by 15%')",
+     "tag": "callout_boxes"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "3c0a6b33c1eb6d5c29b2eec264bd3a6b6260ec6879f14d5615a6325fea1cfc40"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Explanatory/educational piece teaching variance-visualization techniques, not an operational KPI dashboard",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "bar",
+    "line"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "b4415f7ca12b382dc53c7b597c4c22de097b4df59ec8d54c4b11c902b510b60c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Encode performance-vs-target semantically: gray the base measure and color only the variance segment (green above target, red below) so the eye reads the gap, not the totals.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-140",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Color-coded inline legends in each section header explain semantic red/green/gray encoding",
+     "tag": "integrated_legend"
+    },
+    {
+     "note": "Second panel grays out base bars and colors only the delta vs objective, focusing attention on the gap",
+     "tag": "variance_only_emphasis"
+    },
+    {
+     "note": "Min/max outliers labeled directly on bars ($2.4K, $19.1K) instead of axis reliance",
+     "tag": "annotation_layer_storytelling"
+    }
+   ],
+   "title": {
+    "case": "all_caps",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "condensed_bold"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "607847dff6764013682d74877719d32e1d37035801c25a3e0c32671baa5d30ae"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_art",
+   "category_confidence": "medium",
+   "category_rationale": "Aesthetic-first wireframe gem illustrations on a timeline; visual craft dominates over data content",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "custom_shape_art",
+    "other"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 2025,
+   "imageSha256": "1395d0cf29e8ccc1b6ee93c5ae4438aecefd300fbfa9260d5c7153889cdaf849",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3600,
+   "layout_archetype": "single_viz",
+   "lesson": "Use a single fine line-weight and one restrained accent on a dark neutral canvas so shapes themselves carry the visual hierarchy without competing colors.",
+   "palette_mood": "monochrome",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-141",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Wireframe diamond-cut illustrations serve as the data marks themselves along a flowing timeline",
+     "tag": "chart_as_texture"
+    },
+    {
+     "note": "Charcoal canvas with fine light line work creates jewel-box atmosphere",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Logo mark + bilingual serif title floats with large empty space before content",
+     "tag": "generous_header_whitespace"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "serif_display"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "e4c18f478ad940cad6fe4eeb759e1693b774af88074c1808cb73a41291903eca"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 1,
+    "placement": "top_band",
+    "present": true,
+    "style": "open_numbers"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Tableau Pulse-style KPI card: sales metric BAN, forecast band trend, operational parameters.",
+   "chart_count_visible": 1,
+   "chart_types": [
+    "line",
+    "area",
+    "big_number_only"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "1f7937b16495046cc92eced20c2fa97c7a066170775eaaada155dbe7fd5437da",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "single_viz",
+   "lesson": "Pair one hero KPI number with its trend line and a plain-language sentence stating whether the latest value is above or below the expected range.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-143",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Single dominant BAN with delta-vs-prior-period subtext above the trend chart",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "Natural-language insight sentence below chart explains the latest value vs expected range",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Light expected-range band and sparse axes keep focus on the metric line",
+     "tag": "minimal_axis_chrome"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "f09e82b02b593ae072970986f7f07205c7965873539991835728d95b44553195"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "neutral",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 3,
+    "placement": "top_band",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Sales/Orders/Profit Ratio KPI cards with YoY deltas on Superstore data — operational business KPI content.",
+   "chart_count_visible": 3,
+   "chart_types": [
+    "big_number_only",
+    "bar"
+   ],
+   "density": "minimal",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "45192c329b364934a38720b32b9ad1d70d9b0479b5eb73606441e8a16218428c",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Structure KPI cards as a consistent vertical stack — label, period, large accent-colored number, red/green delta vs prior period, then a monthly bar trend — repeated identically across metrics.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-144",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Each card leads with a large green BAN, then a color-coded delta line, then trend bars",
+     "tag": "big_number_hero"
+    },
+    {
+     "note": "Slightly lighter card panels on a dark gray canvas create subtle layering",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Delta text colored red/green by direction (e.g. -21% red, +27% green) for instant read",
+     "tag": "color_encoded_headline"
+    }
+   ],
+   "title": {
+    "case": "sentence_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "8ee6e793c831458b7c7d1320a7c1086ab2f9f8be4bbcc0fbaa92b28944c8d4e3"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "neutral",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 9,
+    "placement": "scattered_inline",
+    "present": true,
+    "style": "boxed_tiles"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "high",
+   "category_rationale": "Operational KPI monitoring of wind turbine fleet output, capacity, and utilization with drill-down to a selected turbine.",
+   "chart_count_visible": 7,
+   "chart_types": [
+    "bar",
+    "heatmap",
+    "map",
+    "scatter",
+    "radial"
+   ],
+   "density": "dense",
+   "disputed": false,
+   "imageHeight": 675,
+   "imageSha256": "3afac95ebc9527215df8bc3e7840c07b42ab6d6f0a7e59ef8709db329c1170f4",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "kpi_band_top",
+   "lesson": "Pair an overview KPI band with a selectable detail panel (list-driven drill-down) so one dashboard serves both fleet-level and single-entity views without clutter.",
+   "palette_mood": "single_hue_sequential",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-142",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Soft lavender-gray sequential palette with red/green deltas as the only semantic color",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Dark header band and inverted KPI tile anchor an otherwise light card layout",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Month selector pills and in-chart labeled bars replace conventional legends and filters",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "modest",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "4d7d6f37f1fea24e9d390e406ef6babeba1f670545c12f078a8dfba767af774d"
+  },
+  {
+   "accent_count": 1,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "high",
+   "category_rationale": "Editorial explanatory piece on African language diversity with narrative headline and prose intro.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "map",
+    "sankey_flow",
+    "other"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 2109,
+   "imageSha256": "af4113f1bbd153da1b0950833afe3597d74350667a724371ad78dde52e8e5d6f",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 3750,
+   "layout_archetype": "long_scroll_infographic",
+   "lesson": "Highlight one focus series in a single warm accent while rendering all other series as faint gray context, and echo that accent in a key headline word.",
+   "palette_mood": "muted_plus_one_accent",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-007",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "Headline word 'Voices' set in the accent orange used across the whole viz",
+     "tag": "color_encoded_headline"
+    },
+    {
+     "note": "Cream canvas, gray context arcs, single burnt-orange accent highlighting the selected family",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Hundreds of fine arcs form an expressive fan that doubles as hero art",
+     "tag": "chart_as_texture"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_left",
+    "relative_size": "prominent",
+    "style": "serif_display"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "5960aeb4ac23c65b3b396995a9d1ca039b0c5a76cc1a00d0e97f86e7e874752a"
+  },
+  {
+   "accent_count": 3,
+   "background": {
+    "tint": "tinted",
+    "tone": "dark"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "data_journalism",
+   "category_confidence": "medium",
+   "category_rationale": "Editorial explanatory piece on 2019 Ridgecrest quakes with narrative annotation citing Omori's law; leans toward data art.",
+   "chart_count_visible": 2,
+   "chart_types": [
+    "radial",
+    "scatter"
+   ],
+   "density": "moderate",
+   "disputed": false,
+   "imageHeight": 1242,
+   "imageSha256": "caab5af096c890675cb30ab6629e28d45b8a484a93fd9f75fcf58e3277b5bf1d",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 2494,
+   "layout_archetype": "hero_chart_supporting",
+   "lesson": "Pair any unconventional chart form with a small how-to-read diagram and plain-language definitions in a right-rail legend panel.",
+   "palette_mood": "full_color_illustrative",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": false
+   },
+   "repoUrl": "WB-036",
+   "sidebar_panel": true,
+   "standout_techniques": [
+    {
+     "note": "Time-spiral polar scatter: day rings x time-of-day angle encodes a month of quakes in one hero chart",
+     "tag": "radial_composition"
+    },
+    {
+     "note": "Narrative text box explains the Ridgecrest sequence and Omori's law decay directly on the canvas",
+     "tag": "annotation_layer_storytelling"
+    },
+    {
+     "note": "Right rail combines mini how-to-read spiral diagram, color toggle, magnitude ramp, and definitions",
+     "tag": "integrated_legend"
+    }
+   ],
+   "title": {
+    "case": "mixed",
+    "position": "none",
+    "relative_size": "minimal",
+    "style": "plain_sans"
+   },
+   "whitespace": "generous",
+   "workbookSha256": "517ae005af74bb531216d9d5c571c7ad15d2fa9c2b357138e626efc423246542"
+  },
+  {
+   "accent_count": 2,
+   "background": {
+    "tint": "tinted",
+    "tone": "light"
+   },
+   "bans": {
+    "count": 0,
+    "placement": "none",
+    "present": false,
+    "style": "none"
+   },
+   "category": "business_dashboard",
+   "category_confidence": "low",
+   "category_rationale": "Gallery showcasing viz extension chart types on Superstore-style business data; demo/resource piece rather than operational KPIs.",
+   "chart_count_visible": 5,
+   "chart_types": [
+    "scatter",
+    "sankey_flow",
+    "radial",
+    "pie_donut",
+    "table_text"
+   ],
+   "density": "moderate",
+   "disputed": true,
+   "imageHeight": 675,
+   "imageSha256": "9315503fb7ea299c5e3966cea25a0cd881f2dcb5bcc587fdeff3a9ac640511bc",
+   "imageUrl": "[redacted-url]",
+   "imageWidth": 1200,
+   "layout_archetype": "grid_of_charts",
+   "lesson": "Unify visually diverse chart types by enforcing one small shared palette (gray base plus two brand hues) and identical white-card panel framing on a subtly tinted canvas.",
+   "palette_mood": "two_tone",
+   "quality_flags": {
+    "image_unreadable": false,
+    "marketing_frame_chrome": false,
+    "truncated_long_scroll": true
+   },
+   "repoUrl": "WB-091",
+   "sidebar_panel": false,
+   "standout_techniques": [
+    {
+     "note": "White chart cards floating on soft lavender canvas give clean panel separation without borders",
+     "tag": "dark_canvas_light_cards"
+    },
+    {
+     "note": "Gray base with navy and periwinkle accents kept identical across all five chart types",
+     "tag": "muted_base_single_accent"
+    },
+    {
+     "note": "Each panel titled in bold italic with an inline 'Learn more' link acting as integrated legend/caption",
+     "tag": "section_divider_rules"
+    }
+   ],
+   "title": {
+    "case": "title_case",
+    "position": "top_center",
+    "relative_size": "prominent",
+    "style": "plain_sans"
+   },
+   "whitespace": "balanced",
+   "workbookSha256": "1c964237629e6532afd39a288e7140d77d7d138e5e23e6f4e25e0c327a6f5b09"
+  }
+ ],
+ "runMeta": {
+  "category_counts": {
+   "business_dashboard": 36,
+   "data_art": 7,
+   "data_journalism": 41,
+   "disputed": 4,
+   "personal_infographic": 11
+  },
+  "date": "2026-07-20",
+  "failures": [],
+  "images_of_manifest": "99/100 (missing: \"WB-001\")",
+  "model": "claude-fable-5 (vision subagents, low effort)",
+  "n_disputed": 4,
+  "n_reviewed": 99,
+  "n_verified": 40,
+  "passes": 2
+ }
+}

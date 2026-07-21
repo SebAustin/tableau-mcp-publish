@@ -501,3 +501,191 @@ calculated field format → V9/V10 mark-labels-show necessary-but-not-sufficient
 V13–V23 multi-zone-dashboard isolation → `sizing-mode='fixed'` follow-up, refuted → BEAUTY-GATE
 hotfix round, V24–V25 + three-level cascade, root cause found and fixed — see
 `test_twb_kpi_styling_beauty_gate.py`).
+
+## Visual layer (reviews + visual norms) — Slice V
+
+A second, independent evidence layer alongside `stats/*.yaml`'s XML-mined norms: a **vision**
+review of the top-100 VOTD corpus's rendered PNG snapshots, which sees layout gestalt, palette
+mood, and title treatment the way a human viewer does — structure the XML miner cannot express
+and a cross-check on T2's title fix from the pixel side.
+
+```
+design/corpus/
+  reviews/    design/corpus/reviews/visual_reviews.json  — raw resolved vision-agent reviews, never hand-edited
+  stats/      design/corpus/stats/visual_norms.yaml       — aggregated visual norms, produced by scripts/aggregate-visual-norms.ts
+```
+
+Both files are produced by a separate (concurrent) vision-review workflow slice; this section
+documents the CONTRACT `scripts/aggregate-visual-norms.ts` and `tests/designVisual.test.ts`
+enforce against them — the schemas exported from `scripts/aggregate-visual-norms.ts` are the
+single source of truth for both files' shapes (imported directly by the test, never
+re-implemented) — until the data lands, `tests/designVisual.test.ts` skips its entire suite
+(with a console warning) rather than failing.
+
+### Per-image rubric summary
+
+Each vision agent reads one top-100 corpus PNG and produces one `ReviewRecord` (see
+`scripts/aggregate-visual-norms.ts`'s `ReviewRecordSchema` for the exact zod shape):
+
+- `category` (`business_dashboard | data_journalism | personal_infographic | data_art`) +
+  `category_confidence` (`high | medium | low`) + `category_rationale` (<=140 chars) +
+  `disputed` (category disagreement across the full pass and the classification-only verify
+  pass — see "Dispute semantics" below).
+- `quality_flags` (`image_unreadable`, `truncated_long_scroll`, `marketing_frame_chrome`) —
+  honesty flags, never silently dropped.
+- `layout_archetype` (`kpi_band_top | grid_of_charts | hero_chart_supporting | single_viz |
+  small_multiples | long_scroll_infographic | map_centric`) + `sidebar_panel` (boolean modifier).
+- `background` (`{tone: light|dark|mid|image, tint: neutral|tinted|saturated}`).
+- `palette_mood` — exactly 6 enums: `monochrome | single_hue_sequential |
+  muted_plus_one_accent | two_tone | categorical_multi | full_color_illustrative`.
+- `accent_count` (integer), `density` (`minimal | moderate | dense`), `whitespace` (`generous |
+  balanced | tight`).
+- `title` (`{position: top_left|top_center|top_right|overlay_on_viz|none, relative_size:
+  dominant|prominent|modest|minimal (anchored: dominant >15% canvas height, prominent 8-15%,
+  modest 4-8%, minimal <4%), case: all_caps|title_case|sentence_case|mixed, style:
+  plain_sans|serif_display|condensed_bold|script_decorative}`).
+- `bans` (`{present: boolean, count, placement: top_band|left_column|right_column|bottom_band|
+  scattered_inline|none, style: boxed_tiles|open_numbers|none}`) — `count`, `placement`, `style`
+  are only meaningful (non-null-and-non-"none") when `present` is `true`; `placement`'s `"none"`
+  value is a REAL observation on every `present === false` record (verified against the data),
+  not a schema escape hatch — see the `BanPlacementEnum` docstring in
+  `scripts/aggregate-visual-norms.ts`.
+- `chart_types` (<=5, open-ended lowercase snake_case tags — not a closed enum) +
+  `chart_count_visible` (integer).
+- `standout_techniques` (<=3 of `{tag: snake_case, note}`) + `lesson` (one actionable takeaway).
+
+Where the V-phase plan left an enum's exact option set unspecified (`palette_mood`'s "6 enums",
+`density`/`whitespace`, `title.case`/`title.style`, `bans.placement`/`bans.style`), the vocabulary
+above is this codebase's fixed, documented choice — every review record must conform to it
+exactly; there is no free-text escape hatch in these fields (see "no-literal boundary rule"
+below for why that matters).
+
+### Provenance quad (non-negotiable, orchestrator-injected)
+
+Every `ReviewRecord` carries `repoUrl` (matches a `design/references/top100/manifest.yaml`
+entry), `imageUrl`, `imageSha256` (of the reviewed PNG), and `workbookSha256` (of the source
+`.twb`/`.twbx`, from the manifest) — injected by the review orchestrator, never agent-guessed.
+Every aggregated bucket in `visual_norms.yaml` carries up to 5 `citations`, each the full
+provenance quad for one distinct `repoUrl`, deterministically sorted — the same "top-5 exemplar
+citations" discipline `sidecar/design_stats.py`'s `citations()` uses for the XML-mined stats,
+reimplemented 1:1 in `scripts/aggregate-visual-norms.ts`.
+
+### No-literal boundary rule (machine-enforced)
+
+Visual-layer files describe **observations**, never literals a theme could cite directly:
+`palette_mood`/`background.tone`/etc. are closed enums, never a hex string, and no field in
+either `visual_reviews.json` or `visual_norms.yaml` may contain a `#rrggbb`-shaped substring —
+enforced by `tests/designVisual.test.ts`'s hex-literal guard (the same `#[0-9a-fA-F]{3,8}`
+pattern `tests/designCorpus.test.ts`'s theme-cites-recipe check uses). The guard blanks the
+handful of known free-text fields (`category_rationale`, `lesson`,
+`standout_techniques[].note`, `runMeta.failures[].reason`) before scanning `visual_reviews.json`
+— those are the only fields where a hex-shaped substring could appear by pure English-prose
+coincidence, never by design — so the guard only ever flags a real structured-field leak.
+`visual_norms.yaml` has no free-text fields at all (aggregated buckets only), so it is scanned
+unmodified. This keeps the visual layer strictly on the "observations, not literals" side of the
+corpus's provenance discipline (see the top of this file) — application happens only through the
+stats-reading CI gates below and `GAPS.md` §3 routing, never through a theme citing a visual-review
+literal directly.
+
+### Dispute semantics
+
+The V-phase plan's reliability design: one full pass over all reviewed images, plus a
+classification-only second ("verify") pass over `business_dashboard ∪ category_confidence=low`
+— category errors are the only ones that corrupt the norm-driving `business_dashboard` stratum;
+other field noise is absorbed by the existing `n < 15` confidence guard. `visual_reviews.json` is
+the review workflow's **already-resolved** output — `scripts/aggregate-visual-norms.ts` performs
+no dispute resolution of its own, it only reads the resolved flags:
+
+- **Category disagreement** across the two passes -> `disputed: true` on the record. Its
+  best-effort `category` value is retained for reference, but the record is EXCLUDED from the
+  `business_dashboard` stratum (an uncertain category cannot safely gate the norm-driving
+  stratum) and is counted in `category_distribution`'s own `disputed` bucket instead of its
+  `category` value's bucket. It is NOT excluded from `strata.all_images` (a disputed record's
+  non-category fields — layout, palette, density, ... — are still real observations; only its
+  category is uncertain).
+- **Field-level disagreement or a per-agent extraction failure** ("catch -> null -> filter")
+  resolves to `null` for that one field only — dropped from just that field's own `n`, never
+  from the record's other fields or the stratum's overall `n`. `truncated_long_scroll` is a
+  special case of this: it excludes a record from `layout_archetype`'s `n` ONLY (a partially
+  captured long-scroll infographic cannot be reliably shape-classified, but every other field
+  is still a valid observation).
+- `quality_flags.image_unreadable === true` excludes the record ENTIRELY — every bucket, every
+  stratum, `category_distribution` included.
+
+### `visual_norms.yaml` structure
+
+```yaml
+corpus_images: <int>       # reviews.length + runMeta.failures.length (derived, not copied)
+n_reviewed: <int>          # reviews.length
+method:
+  model: <string>
+  date: <string>           # the review run's date (provenance, not a "generated at" field)
+  passes: <int>
+  disputed_excluded_from_strata: true
+category_distribution:     # {n, confidence, buckets: {business_dashboard|data_journalism|
+  ...                      #  personal_infographic|data_art|disputed: {count, rate}}, citations}
+strata:
+  business_dashboard:      # PRIMARY — category === business_dashboard AND NOT disputed
+    n: <int>
+    confidence: ok|low
+    layout_archetype: {...}            # categorical; truncated_long_scroll excluded from n only
+    sidebar_panel_usage_rate: {...}    # rate bucket (no citations, matches design_stats.py's rate())
+    ban_usage_rate: {...}              # rate bucket
+    ban_placement: {...}               # categorical, gated on bans.present === true (numerator)
+    ban_count: {...}                   # numeric, gated on bans.present === true (numerator)
+    title_position: {...}              # categorical
+    title_relative_size: {...}         # categorical
+    title_case: {...}                  # categorical
+    title_style: {...}                 # categorical
+    background_tone: {...}             # categorical
+    palette_mood: {...}                # categorical
+    accent_count: {...}                # numeric
+    density: {...}                     # categorical
+    whitespace: {...}                  # categorical
+    chart_type_prevalence: {...}       # MULTI-label categorical (rates need not sum to 1)
+    chart_count_visible: {...}         # numeric
+  all_images:               # context stratum — every readable review, any category/dispute status
+    <same shape as business_dashboard>
+```
+
+Every numeric (`{n, confidence, median, p25, p75, citations}`) and categorical
+(`{n, confidence, buckets: {value: {count, rate}}, citations}`) bucket carries up to 5
+citations; simple usage-rate buckets (`{n, confidence, count, total, rate}`) do not — the exact
+same split `sidecar/design_stats.py`'s `distribution()`/`rate()` precedent establishes for
+`dashboard_norms.yaml`. `n < 15` -> `confidence: "low"` everywhere (`MIN_CONFIDENT_N`, identical
+to the T1 stats floor) — a `confidence: low` bucket is never auto-applied, exactly like the
+XML-mined stats.
+
+### Auto-applied CI gates (T2 precedent)
+
+`tests/designVisual.test.ts` auto-applies exactly 3 stats-reading gates, each individually
+skipped (not failed) when its stratum bucket is `confidence: low`:
+
+1. **Layout-vocabulary coverage** — `kpi_band_top` + `grid_of_charts` (this codebase's
+   emittable archetypes) must jointly cover >=40% of `strata.business_dashboard.layout_archetype`.
+2. **BAN placement** — the modal `strata.business_dashboard.ban_placement` bucket must be
+   `top_band` (validates the `kpi_band_over_charts` construct).
+3. **Title position sanity** — the builder's title placement (`top_left`, per the current header
+   zone emission) must fall within the `strata.business_dashboard.title_position` buckets that
+   jointly cover >=50% cumulative rate (sorted by rate, descending).
+
+Everything else (layout-default flips, density/gutter px defaults, palette-mood -> theme
+hints, long-scroll grammar, any low-confidence bucket) routes to `GAPS.md` §3 instead of being
+auto-applied — see that file.
+
+### Regenerating
+
+```bash
+npx tsx scripts/aggregate-visual-norms.ts \
+  --reviews design/corpus/reviews/visual_reviews.json \
+  --out design/corpus/stats/visual_norms.yaml
+```
+
+Both flags default to those exact paths (repo-root-relative) — `npx tsx
+scripts/aggregate-visual-norms.ts` with no arguments regenerates in place. `aggregateVisualNorms()`
+itself is a pure function (no filesystem or wall-clock access) exported for
+`tests/designVisual.test.ts`'s REGENERATION EQUALITY check: it imports the function, runs it
+in-process against the committed `visual_reviews.json`, and deep-equals the result against the
+committed `visual_norms.yaml` — the same "aggregate twice -> byte-identical output" contract
+`sidecar/design_stats.py` documents for the T1 stats files (see "No wall-clock timestamp" above),
+just enforced by a TS unit test instead of a Python one.

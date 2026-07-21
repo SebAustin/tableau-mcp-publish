@@ -38,3 +38,102 @@ the closest candidates and their actual corpus rates (all `confidence: ok`, n >=
 its "implement the top ONE if cheap" mandate on re-checking this table after any future corpus
 refresh, rather than implementing something today that the mined evidence does not yet support at
 the plan's stated bar.
+
+## 3. Visual-layer norms awaiting application slices
+
+`design/corpus/reviews/visual_reviews.json` (99/99 reviewable top-100 images) and
+`design/corpus/stats/visual_norms.yaml` (produced by `scripts/aggregate-visual-norms.ts`) have
+landed — see `design/corpus/SCHEMA.md`'s "Visual layer" section for the schema/provenance contract
+and `design/corpus/VISUAL_REVIEW.md` for the full qualitative synthesis (method, coverage,
+technique-tag frequency table, top-10 business-dashboard lessons, T2 title cross-check). This
+section routes every visual norm the V-phase plan marks NOT auto-applied — the 3 auto-applied
+stats-reading CI gates already live in `tests/designVisual.test.ts` and are exempt from this
+routing table (they are additive citations of the mined evidence, not new constructs); everything
+below is a candidate for a FUTURE slice's explicit judgment call, not something this slice applies.
+
+**The `business_dashboard` stratum landed `n=36` (`confidence: ok`, above the `n>=15` floor)** —
+the plan's own headlined worst case ("VOTD cannot source business-dashboard visual norms — curate
+a business gallery") did NOT materialize; the norms below are usable, with the VOTD-skew caveat
+`VISUAL_REVIEW.md`'s closing section documents (business_dashboard is only 36.4% of the reviewed
+corpus — journalism is the plurality at 41.4%).
+
+### `confidence: low` buckets (routed, not applied)
+
+Every bucket in both strata landed `n >= 15` (`confidence: ok`) EXCEPT the `data_art` category
+itself as an implicit sub-population: `category_distribution`'s `data_art` bucket is `n=7`
+(count, not a distribution `n` — the categorical distribution's own top-level `n=99` is `ok`, but
+if a future slice wanted an art-specific stratum the way `business_dashboard` gets one, `n=7`
+would land `confidence: low`). No `visual_norms.yaml` bucket within `strata.business_dashboard` or
+`strata.all_images` itself is `confidence: low` — both landed `n` at or above the floor for every
+sub-bucket (`business_dashboard.layout_archetype` sub-`n=31` after the `truncated_long_scroll`
+exclusion; `business_dashboard.ban_placement`/`ban_count` sub-`n=32` after the `bans.present`
+numerator gate — both still `ok`). This is a stronger evidence base than T1's XML-mined
+`dashboard_norms.yaml` strata (which DID hit `n<15` on the `<900`px canvas stratum and the
+corpus-wide `kpi_band` bucket — see §1 above); no visual-layer bucket needs the same "treat as
+directional only" caveat T1's low-n buckets require.
+
+### Layout-default flips (candidate future slices)
+
+- **`kpi_band_top` (58.1%, n=31 eligible) is the dominant business-dashboard layout archetype**,
+  well ahead of `grid_of_charts` (19.4%) and `hero_chart_supporting` (12.9%) — this directly
+  validates the existing `kpi_band_over_charts` builder default (a KPI band on top of supporting
+  charts) rather than suggesting a flip. No action indicated; corroborates the current default.
+- **`hero_chart_supporting` (12.9%) is a real, non-trivial minority pattern** — a single dominant
+  chart with smaller supporting visuals around it, distinct from both `kpi_band_top` and
+  `grid_of_charts`. Not currently an emittable builder archetype. A future slice could consider it
+  as a second layout choice (e.g. for a "spotlight one KPI/chart" persona/audience combination),
+  but at 12.9% (well under the plan's own >=40% high-frequency bar used elsewhere in this file) it
+  does not clear the "implement automatically" threshold — candidate for future judgment, not a
+  T-phase mandate.
+- **`grid_of_charts` (19.4%) is a real secondary pattern** but, combined with `kpi_band_top`,
+  already clears CI gate (a)'s >=40% joint-coverage bar (58.1% + 19.4% = 77.4% combined in the
+  `business_dashboard` stratum) — no gap here, the builder's emittable vocabulary already covers
+  the two dominant real-world shapes.
+
+### Palette-mood -> theme-selection hints (candidate future slice)
+
+`muted_plus_one_accent` is the dominant business-dashboard `palette_mood` (55.6%, n=36) — a
+neutral/muted base with exactly one saturated accent color reserved for the metric that matters.
+This is qualitatively consistent with the existing `executive_dark`/`executive_light` themes'
+"one accent, mostly neutral" design language, but no theme currently encodes `palette_mood` as an
+explicit selection axis (`selectTheme` only reads `audience`/`persona`/`artifact` tags — see
+`SCHEMA.md`'s "Retrieval" section). A future slice could add a `palette_mood` tag to each theme
+and let `selectTheme` prefer a `muted_plus_one_accent`-tagged theme by default for the
+`business_dashboard` artifact, falling back to today's audience/persona-only resolution otherwise.
+`single_hue_sequential` (19.4%) and `categorical_multi` (13.9%) are secondary but real patterns —
+worth a second/third theme variant in a future slice, not a T-phase requirement today.
+
+### Density/whitespace defaults (candidate future slice)
+
+`moderate` density (52.8%) and `balanced` whitespace (75.0%) are the business-dashboard norms —
+directionally consistent with this codebase's existing chrome defaults (no gap flagged; T1's own
+`chrome_rules.yaml`/`mark-labels-show` precedent already leans toward a clean-but-not-sparse
+default). `dense` (38.9%) is a real, sizeable minority — a future slice could offer a
+`density: dense` builder variant (tighter KPI-band packing, more charts per row) for
+data-team/analyst personas that specifically want higher information density, gated on explicit
+persona choice rather than a silent default flip.
+
+### Long-scroll grammar
+
+Zero `business_dashboard` records use `long_scroll_infographic` (0/36) — the archetype exists
+entirely in `data_journalism`/`data_art`/`personal_infographic` territory (long-form
+storytelling), not business dashboards. No long-scroll grammar work is indicated for this
+codebase's business-dashboard-only builder scope; this finding CLOSES that candidate rather than
+opening it.
+
+### BAN placement/style (validates existing construct, one new candidate)
+
+`top_band` (68.8% of `bans.present===true` records, n=32) is the dominant BAN placement — directly
+validates the CI-gated `kpi_band_over_charts` construct (see gate (b) above). `scattered_inline`
+(21.9%) is a real secondary pattern (BANs distributed inline throughout a dashboard rather than
+banded at top) — the qualitative lessons in `VISUAL_REVIEW.md` (particularly lesson #1, the
+BAN+delta+sparkline atomic-card pattern) suggest this is less about WHERE the band sits and more
+about what's INSIDE each tile; a future slice's highest-leverage single addition, per the top-10
+lessons digest, would be embedding a delta badge + inline sparkline INTO the existing KPI tile
+construct (lessons #1, #9) rather than a placement change.
+
+### T2 title fix — cross-checked, not flagged
+
+See `VISUAL_REVIEW.md`'s dedicated "T2 title cross-check" section: both the `_HEADER_ZONE_H`
+pixel-ratio fix and the `top_left` placement independently agree with the vision-side evidence.
+No action routed here — this is a confirmation, not a gap.
